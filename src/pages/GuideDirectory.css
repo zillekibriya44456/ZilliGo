@@ -1,0 +1,43 @@
+.guide-directory-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-glass);
+  padding: var(--space-3xl) 0 var(--space-xl);
+}
+
+.guide-directory-header h1 { margin-bottom: 0.25rem; }
+.guide-directory-header p { color: var(--text-muted); margin-bottom: var(--space-xl); }
+
+.guide-dir-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.guide-avail-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.guide-avail-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-teal);
+  cursor: pointer;
+}
+
+.guide-specialty-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+
+.guide-specialty-tabs::-webkit-scrollbar { display: none; }

@@ -1,0 +1,185 @@
+.dashboard-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-glass);
+  padding: var(--space-2xl) 0;
+}
+
+.dashboard-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.dashboard-welcome {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.dashboard-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--accent-teal);
+}
+
+.dashboard-welcome h1 { font-size: 1.6rem; margin-bottom: 4px; }
+.dashboard-welcome p { color: var(--text-muted); font-size: 0.875rem; }
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+  margin: var(--space-2xl) 0;
+}
+
+.dashboard-stat {
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.dashboard-stat__icon { font-size: 1.8rem; }
+.dashboard-stat__value { font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: var(--accent-teal); }
+.dashboard-stat__label { font-size: 0.78rem; color: var(--text-muted); }
+
+.dashboard-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-glass);
+  margin-bottom: var(--space-2xl);
+}
+
+.dashboard-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: -1px;
+}
+
+.dashboard-tab:hover { color: var(--text-primary); }
+.dashboard-tab.active { color: var(--accent-teal); border-bottom-color: var(--accent-teal); }
+
+.dashboard-section { padding-bottom: var(--space-3xl); }
+
+.dashboard-empty {
+  text-align: center;
+  padding: var(--space-3xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.dashboard-empty > div { font-size: 3rem; }
+
+/* Upcoming */
+.upcoming-list { display: flex; flex-direction: column; gap: var(--space-md); }
+
+.upcoming-item {
+  display: flex;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.upcoming-img {
+  position: relative;
+  width: 120px;
+  height: 80px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.upcoming-img img { width: 100%; height: 100%; object-fit: cover; }
+
+.upcoming-status {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: capitalize;
+}
+
+.upcoming-status--confirmed { background: rgba(0,212,170,0.8); color: #060b16; }
+.upcoming-status--pending { background: rgba(245,158,11,0.8); color: #060b16; }
+
+.upcoming-info { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.upcoming-info h3 { font-size: 1rem; font-weight: 700; }
+
+.upcoming-meta {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.upcoming-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.upcoming-guide {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+}
+
+.upcoming-actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* Past */
+.past-list { display: flex; flex-direction: column; gap: var(--space-md); }
+
+.past-item {
+  display: flex;
+  gap: var(--space-lg);
+  align-items: center;
+  padding: var(--space-md) var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.past-img {
+  width: 80px;
+  height: 60px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.past-info { flex: 1; min-width: 0; }
+.past-info h4 { font-size: 0.95rem; font-weight: 700; }
+
+@media (max-width: 768px) {
+  .dashboard-stats { grid-template-columns: repeat(2, 1fr); }
+  .upcoming-item { flex-direction: column; align-items: flex-start; }
+  .upcoming-img { width: 100%; height: 160px; }
+}

@@ -1,0 +1,34 @@
+# Render.com Deployment Configuration for ZillGO
+# Deploy as a single fullstack service (backend serves frontend)
+
+services:
+  - type: web
+    name: zillgo-api
+    env: node
+    region: singapore  # Change to oregon/ohio/frankfurt as needed
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: zillgo-db
+          property: connectionString
+      # Optional: Add these after getting your API keys
+      # - key: STRIPE_SECRET_KEY
+      #   value: sk_live_...
+      # - key: FRONTEND_URL
+      #   value: https://your-netlify-site.netlify.app
+
+databases:
+  - name: zillgo-db
+    databaseName: zillgo
+    user: zillgo
+    plan: free

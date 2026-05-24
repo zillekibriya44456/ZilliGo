@@ -1,0 +1,113 @@
+.vm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 11, 22, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+}
+
+.vm-modal {
+  width: 100%;
+  max-width: 480px;
+  padding: var(--space-3xl);
+  position: relative;
+  animation: bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.vm-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.vm-close:hover {
+  color: var(--text-primary);
+}
+
+.vm-header {
+  text-align: center;
+  margin-bottom: var(--space-2xl);
+}
+
+.vm-header h2 {
+  font-size: 1.6rem;
+  margin-bottom: 8px;
+}
+
+.vm-header p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.vm-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.vm-upload-area {
+  position: relative;
+  height: 180px;
+  border: 2px dashed var(--border-glass-strong);
+  border-radius: var(--radius-lg);
+  background: rgba(255,255,255,0.02);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.vm-upload-area:hover {
+  border-color: var(--accent-teal);
+  background: rgba(0,212,170,0.03);
+}
+
+.vm-upload-area input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.vm-upload-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.vm-success {
+  text-align: center;
+  padding: var(--space-xl) 0;
+}
+
+.vm-success-icon {
+  width: 80px;
+  height: 80px;
+  background: var(--accent-teal-glow);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-xl);
+}
+
+.vm-success p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-top: 1rem;
+}

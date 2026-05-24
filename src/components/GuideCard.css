@@ -1,0 +1,144 @@
+.guide-card {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.guide-card__header {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+}
+
+.guide-card__avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.guide-card__avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-glass-strong);
+}
+
+.guide-card__status {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-secondary);
+}
+
+.guide-card__status.available { background: var(--accent-teal); }
+.guide-card__status.busy { background: var(--accent-amber); }
+
+.guide-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.guide-card__name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.guide-card__name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.guide-card__location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.guide-card__rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.guide-card__rating strong { color: var(--text-primary); }
+
+.guide-card__bio {
+  font-size: 0.83rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.guide-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.guide-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.guide-card__langs {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.guide-card__rate-amount {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-teal);
+}
+
+.guide-card__rate-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.guide-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.guide-card__badge-item {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  background: var(--bg-glass-strong);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+}
+
+.guide-card__response {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.guide-card__response strong {
+  color: var(--accent-teal);
+}

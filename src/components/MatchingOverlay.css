@@ -1,0 +1,315 @@
+.matching-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 11, 22, 0.88);
+  backdrop-filter: blur(12px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+}
+
+.matching-modal {
+  width: 100%;
+  max-width: 440px;
+  padding: var(--space-xl);
+  border-color: var(--border-glass-strong);
+}
+
+.matching-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-xl);
+}
+
+.matching-modal__header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.matching-modal__close {
+  width: 32px;
+  height: 32px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.matching-modal__close:hover {
+  color: var(--text-primary);
+  border-color: var(--border-glass-strong);
+}
+
+/* Radar */
+.matching-searching {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xl);
+}
+
+.matching-radar {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.matching-radar__ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent-teal);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: radar-pulse 2s ease-out infinite;
+}
+
+.matching-radar__ring--1 { width: 60px; height: 60px; opacity: 0.8; animation-delay: 0s; }
+.matching-radar__ring--2 { width: 110px; height: 110px; opacity: 0.5; animation-delay: 0.4s; }
+.matching-radar__ring--3 { width: 160px; height: 160px; opacity: 0.2; animation-delay: 0.8s; }
+
+@keyframes radar-pulse {
+  0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+.matching-radar__center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  background: var(--grad-teal);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #060b16;
+  box-shadow: var(--shadow-teal);
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.matching-radar__dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--accent-amber);
+  border-radius: 50%;
+  border: 2px solid var(--bg-primary);
+  box-shadow: 0 0 8px var(--accent-amber);
+  animation: float 3s ease-in-out infinite;
+}
+
+.matching-searching__text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.matching-searching__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.matching-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+}
+
+.matching-step--active {
+  color: var(--accent-teal);
+  border-color: rgba(0, 212, 170, 0.3);
+  background: var(--accent-teal-glow);
+}
+
+/* Found */
+.matching-found {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.matching-found__guide {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+  padding: var(--space-md);
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass-strong);
+  border-radius: var(--radius-lg);
+}
+
+.matching-found__avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.matching-found__avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent-teal);
+}
+
+.matching-found__check {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: var(--bg-primary);
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.matching-found__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.matching-found__info h4 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.matching-found__rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.matching-found__location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.matching-found__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+}
+
+.matching-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: var(--space-sm);
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+}
+
+.matching-stat__value {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--accent-teal);
+}
+
+.matching-stat__label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Waiting */
+.matching-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.matching-waiting p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.matching-timer {
+  width: 100%;
+  height: 4px;
+  background: var(--border-glass);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.matching-timer__bar {
+  height: 100%;
+  background: var(--grad-teal);
+  border-radius: 2px;
+  animation: timer-count 30s linear forwards;
+}
+
+@keyframes timer-count {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+/* Accepted */
+.matching-accepted {
+  text-align: center;
+  padding: var(--space-md);
+  background: rgba(0, 212, 170, 0.06);
+  border: 1px solid rgba(0, 212, 170, 0.2);
+  border-radius: var(--radius-lg);
+}
+
+.matching-accepted__icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.matching-accepted p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* Confirmed */
+.matching-confirmed {
+  text-align: center;
+  padding: var(--space-lg);
+  background: rgba(0, 212, 170, 0.06);
+  border: 1px solid rgba(0, 212, 170, 0.2);
+  border-radius: var(--radius-lg);
+}
+
+.matching-confirmed__icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--space-sm);
+  animation: bounce-in 0.5s ease;
+}
+
+.matching-confirmed h4 {
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+
+.matching-confirmed p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}

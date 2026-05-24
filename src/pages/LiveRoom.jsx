@@ -1,0 +1,288 @@
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { Mic, MicOff, Video, VideoOff, MessageCircle, Users, Heart, Share2, Phone, Settings, MoreHorizontal, Send, Star, Globe, Clock, ShieldAlert, ShoppingBasket, Glasses } from 'lucide-react';
+import { getTourById, getGuideForTour } from '../data/mockData';
+import RatingModal from '../components/RatingModal';
+import './LiveRoom.css';
+
+const MOCK_CHAT = [
+  { id: 1, user: 'Sarah C.', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=40&q=80', msg: 'This is incredible! 😍', time: '2:34 PM' },
+  { id: 2, user: 'David O.', avatar: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?w=40&q=80', msg: 'How old is that building?', time: '2:35 PM' },
+  { id: 3, user: 'Maria G.', avatar: 'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?w=40&q=80', msg: '🔥🔥🔥 Amazing!', time: '2:36 PM' },
+  { id: 4, user: 'James W.', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&q=80', msg: 'What\'s the best time to visit?', time: '2:37 PM' },
+];
+
+export default function LiveRoom() {
+  const { id } = useParams();
+  const tour = getTourById(id);
+  const guide = getGuideForTour(id);
+  const [chatMsg, setChatMsg] = useState('');
+  const [chatMessages, setChatMessages] = useState(MOCK_CHAT);
+  const [micOn, setMicOn] = useState(true);
+  const [videoOn, setVideoOn] = useState(true);
+  const [viewers, setViewers] = useState(213);
+  const [tipSent, setTipSent] = useState(false);
+  const [activeTab, setActiveTab] = useState('chat');
+  const [showRating, setShowRating] = useState(false);
+  const [emergencyActive, setEmergencyActive] = useState(false);
+  const [vrMode, setVrMode] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setViewers(v => v + Math.floor(Math.random() * 3 - 1));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const sendMessage = (e) => {
+    e.preventDefault();
+    if (!chatMsg.trim()) return;
+    setChatMessages(prev => [...prev, {
+      id: Date.now(),
+      user: 'You',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&q=80',
+      msg: chatMsg,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    }]);
+    setChatMsg('');
+  };
+
+  const sendTip = (amount) => {
+    setTipSent(true);
+    setTimeout(() => setTipSent(false), 3000);
+  };
+
+  if (!tour || !guide) {
+    return (
+      <div className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem' }}>📡</div>
+          <h2>Tour not available</h2>
+          <Link to="/explore" className="btn btn-primary" style={{ marginTop: '1rem' }}>Browse Tours</Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="live-room">
+      {/* Video Area */}
+      <div className="live-video-area">
+        <img src={tour.coverImage} alt={tour.title} className="live-video-bg" />
+        <div className="live-video-overlay" />
+
+        {/* Top Bar */}
+        <div className="live-top-bar">
+          <div className="live-top-left">
+            <span className="badge badge-live">🔴 LIVE</span>
+            <div className="live-viewers">
+              <Users size={14} /> {viewers.toLocaleString()} watching
+            </div>
+          </div>
+          <div className="live-top-center">
+            <h3 className="live-title">{tour.title}</h3>
+            <div className="live-location"><Globe size={13} /> {tour.location}</div>
+          </div>
+          <div className="live-top-right">
+            <button className="live-icon-btn"><Share2 size={18} /></button>
+            <button className="live-icon-btn"><Settings size={18} /></button>
+          </div>
+        </div>
+
+        {/* Guide Info */}
+        <div className="live-guide-info">
+          <img src={guide.avatar} alt={guide.name} className="live-guide-avatar" />
+          <div>
+            <div className="live-guide-name">{guide.name}</div>
+            <div className="live-guide-rating"><Star size={11} fill="var(--accent-amber)" stroke="none" /> {guide.rating} · Your Guide</div>
+          </div>
+        </div>
+
+        {/* Simulated Video Placeholder */}
+        <div className="live-video-placeholder" style={{ display: vrMode ? 'flex' : 'block', background: vrMode ? '#000' : '' }}>
+          {vrMode ? (
+            <>
+              <div style={{ flex: 1, borderRight: '2px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.4, backgroundImage: 'url("https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                <Glasses size={48} color="var(--accent-teal)" style={{ opacity: 0.5, zIndex: 1 }} />
+                <span style={{ position: 'absolute', bottom: 20, fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', zIndex: 1 }}>Left Eye</span>
+              </div>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.4, backgroundImage: 'url("https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                <Glasses size={48} color="var(--accent-teal)" style={{ opacity: 0.5, zIndex: 1 }} />
+                <span style={{ position: 'absolute', bottom: 20, fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', zIndex: 1 }}>Right Eye</span>
+              </div>
+            </>
+          ) : (
+            <div className="live-video-text">
+              <div className="live-connecting">
+                <div className="live-connecting__pulse" />
+                <span>Live stream powered by Agora RTC</span>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem' }}>
+                Connect Agora App ID in .env to enable real video streaming
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Controls */}
+        <div className="live-controls">
+          <button className={`live-control-btn ${!micOn ? 'live-control-btn--off' : ''}`} onClick={() => setMicOn(!micOn)}>
+            {micOn ? <Mic size={20} /> : <MicOff size={20} />}
+          </button>
+          <button className={`live-control-btn ${!videoOn ? 'live-control-btn--off' : ''}`} onClick={() => setVideoOn(!videoOn)}>
+            {videoOn ? <Video size={20} /> : <VideoOff size={20} />}
+          </button>
+          <button className={`live-control-btn ${!vrMode ? 'live-control-btn--off' : ''}`} onClick={() => setVrMode(!vrMode)} title="Toggle VR Headset Mode">
+            <Glasses size={20} />
+          </button>
+          <button className="live-control-btn" style={{ background: 'rgba(245, 158, 11, 0.2)', borderColor: 'var(--accent-amber)' }} onClick={() => { setEmergencyActive(true); setTimeout(() => setEmergencyActive(false), 5000); }} title="Emergency Support">
+            <ShieldAlert size={20} style={{ color: 'var(--accent-amber)' }} />
+          </button>
+          <button className="live-control-btn live-control-btn--end" onClick={() => setShowRating(true)}>
+            <Phone size={20} />
+          </button>
+          <button className="live-control-btn" onClick={() => sendTip(5)}>
+            <Heart size={20} style={{ color: tipSent ? 'var(--accent-rose)' : 'inherit' }} />
+          </button>
+        </div>
+
+        {tipSent && (
+          <div className="live-tip-toast">💰 Tip sent to {guide.name}!</div>
+        )}
+
+        {emergencyActive && (
+          <div className="live-tip-toast" style={{ background: 'var(--accent-amber)', color: '#060b16' }}>
+            <ShieldAlert size={16} style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle' }} /> 
+            Emergency Support connected. We are monitoring this session.
+          </div>
+        )}
+      </div>
+
+      {showRating && (
+         <RatingModal 
+           tour={tour} 
+           guide={guide} 
+           onSubmit={(rating, review) => {
+             setShowRating(false);
+             window.location.href = '/dashboard';
+           }} 
+         />
+      )}
+
+      {/* Sidebar */}
+      <div className="live-sidebar">
+        {/* Tabs */}
+        <div className="live-tabs">
+          {['chat', 'shop', 'info', 'tips'].map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)}
+              className={`live-tab ${activeTab === tab ? 'active' : ''}`}>
+              {tab === 'chat' ? <><MessageCircle size={14} /> Chat</> :
+               tab === 'shop' ? <><ShoppingBasket size={14} /> Shop</> :
+               tab === 'info' ? <><Globe size={14} /> Info</> :
+               <><Heart size={14} /> Tips</>}
+            </button>
+          ))}
+        </div>
+
+        {/* Chat Tab */}
+        {activeTab === 'chat' && (
+          <>
+            <div className="live-chat">
+              {chatMessages.map(msg => (
+                <div key={msg.id} className="live-chat-msg">
+                  <img src={msg.avatar} alt={msg.user} className="live-chat-avatar" />
+                  <div className="live-chat-body">
+                    <div className="live-chat-user">{msg.user} <span className="live-chat-time">{msg.time}</span></div>
+                    <div className="live-chat-text">{msg.msg}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <form className="live-chat-input" onSubmit={sendMessage}>
+              <input
+                type="text"
+                placeholder="Send a message..."
+                value={chatMsg}
+                onChange={e => setChatMsg(e.target.value)}
+                id="live-chat-input"
+              />
+              <button type="submit"><Send size={16} /></button>
+            </form>
+          </>
+        )}
+
+        {/* Shop Tab */}
+        {activeTab === 'shop' && (
+          <div className="live-shop">
+            <div style={{ padding: '0 0 var(--space-md) 0', borderBottom: '1px solid var(--border-glass)', marginBottom: 'var(--space-md)' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingBasket size={16} color="var(--accent-teal)" /> Live Commerce</h4>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Guide purchases these items live and ships them to you.</p>
+            </div>
+            <div className="live-shop-items" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+              {[
+                { id: 'item1', name: 'Handwoven Silk Scarf', price: '$45', image: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=150&q=80', desc: 'Local artisan craft, 100% pure silk.' },
+                { id: 'item2', name: 'Vintage Brass Compass', price: '$85', image: 'https://images.unsplash.com/photo-1577083165230-07e15d862e31?w=150&q=80', desc: 'Antique market find, working condition.' },
+                { id: 'item3', name: 'Spices Gift Box', price: '$25', image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=150&q=80', desc: 'Assorted local spices and herbs.' }
+              ].map(item => (
+                <div key={item.id} className="glass-card" style={{ padding: 'var(--space-sm)', display: 'flex', gap: '12px' }}>
+                  <img src={item.image} alt={item.name} style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: 'var(--radius-sm)' }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{item.name}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '2px 0 6px 0' }}>{item.desc}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 700, color: 'var(--accent-teal)' }}>{item.price}</span>
+                      <button className="btn btn-primary btn-sm" style={{ padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => alert('Secure Checkout Started (Simulated Stripe Flow)')}>Buy & Ship</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Info Tab */}
+        {activeTab === 'info' && (
+          <div className="live-info">
+            <h4 style={{ marginBottom: 'var(--space-md)' }}>{tour.title}</h4>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{tour.description}</p>
+            <div className="live-info-stats">
+              <div className="live-info-stat"><Clock size={14} /> {tour.duration} min</div>
+              <div className="live-info-stat"><Globe size={14} /> {tour.language}</div>
+              <div className="live-info-stat"><Star size={14} fill="var(--accent-amber)" stroke="none" /> {tour.rating}</div>
+              <div className="live-info-stat"><Users size={14} /> {viewers} watching</div>
+            </div>
+            <div style={{ marginTop: 'var(--space-md)' }}>
+              {tour.tags.map(t => <span key={t} className="badge badge-teal" style={{ marginRight: '6px', marginBottom: '6px' }}>{t}</span>)}
+            </div>
+          </div>
+        )}
+
+        {/* Tips Tab */}
+        {activeTab === 'tips' && (
+          <div className="live-tips">
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 'var(--space-lg)' }}>
+              Show your appreciation for {guide.name}'s amazing tour!
+            </p>
+            <div className="live-tips-grid">
+              {[5, 10, 20, 50].map(amount => (
+                <button key={amount} className="btn btn-secondary" onClick={() => sendTip(amount)}>
+                  💰 ${amount}
+                </button>
+              ))}
+            </div>
+            <div className="live-top-tippers">
+              <div className="live-tippers-label">Recent Tips</div>
+              {[{ name: 'Sarah', amount: 20 }, { name: 'David', amount: 10 }, { name: 'Maria', amount: 50 }].map(t => (
+                <div key={t.name} className="live-tipper-item">
+                  <span>❤️ {t.name} sent ${t.amount}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

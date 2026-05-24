@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: zillgo
+    ports:
+      - "5432:5432"
+
+  server:
+    build: ./server
+    ports:
+      - "5001:5001"
+    environment:
+      DATABASE_URL: postgres://user:password@db:5432/zillgo
+      JWT_SECRET: your_super_secret_jwt_key_zillgo_2026
+      PORT: 5001
+    depends_on:
+      - db
+
+  client:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
