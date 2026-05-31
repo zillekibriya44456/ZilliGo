@@ -51,11 +51,7 @@ npm run dev
 
 Open **http://localhost:3001** in your browser.
 
-## 🔑 Demo Login (No DB needed)
 
-The app works in **Demo Mode** without a real database:
-- **Email:** `admin@zillgo.com`
-- **Password:** `password123`
 
 ## 📦 Tech Stack
 
