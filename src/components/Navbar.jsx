@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { t } from '../utils/translations';
+import { api } from '../utils/api';
 import {
   Globe, Search, Bell, Menu, X, ChevronDown,
   User, LogOut, Star, Map, Video, MessageSquare
@@ -17,6 +18,8 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
   const profileRef = useRef(null);
 
   useEffect(() => {
@@ -30,11 +33,40 @@ export default function Navbar() {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setProfileOpen(false);
         setLangOpen(false);
+        setNotifOpen(false);
       }
     };
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchNotifs = async () => {
+      try {
+        const data = await api.getNotifications();
+        if (Array.isArray(data)) {
+          setNotifications(data);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchNotifs();
+    const interval = setInterval(fetchNotifs, 15000); // Poll every 15s
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.markAllNotificationsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true, isRead: true })));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const hasUnread = notifications.some(n => n.is_read === false || n.isRead === false);
 
   const handleLogout = () => {
     logout();
@@ -104,10 +136,44 @@ export default function Navbar() {
 
           {user ? (
             <>
-              <button className="navbar__icon-btn" title="Notifications">
-                <Bell size={18} />
-                <span className="navbar__notif-dot" />
-              </button>
+              <div className="navbar__notif-wrapper">
+                <button className="navbar__icon-btn" title="Notifications" onClick={() => setNotifOpen(!notifOpen)}>
+                  <Bell size={18} />
+                  {hasUnread && <span className="navbar__notif-dot" />}
+                </button>
+                {notifOpen && (
+                  <div className="navbar__dropdown navbar__notif-dropdown">
+                    <div className="navbar__notif-header">
+                      <span>Notifications</span>
+                      {hasUnread && (
+                        <button className="navbar__notif-clear-btn" onClick={handleMarkAllRead}>
+                          Mark all as read
+                        </button>
+                      )}
+                    </div>
+                    <hr className="navbar__dropdown-divider" />
+                    <div className="navbar__notif-list">
+                      {notifications.length === 0 ? (
+                        <div className="navbar__notif-empty">No notifications yet</div>
+                      ) : (
+                        notifications.map(n => (
+                          <div 
+                            key={n.id} 
+                            className={`navbar__notif-item ${(!n.is_read && !n.isRead) ? 'unread' : ''}`}
+                            onClick={() => setNotifOpen(false)}
+                          >
+                            <span className="navbar__notif-item-title">{n.title}</span>
+                            <span className="navbar__notif-item-msg">{n.message}</span>
+                            <span className="navbar__notif-item-time">
+                              {new Date(n.created_at || n.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               <div className="navbar__profile-wrapper">
                 <button className="navbar__profile-btn" onClick={() => setProfileOpen(!profileOpen)}>
                   <img src={user.avatar} alt={user.name} className="navbar__avatar" />
