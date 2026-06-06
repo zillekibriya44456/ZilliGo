@@ -96,6 +96,7 @@ export default function TourDetail() {
       {showPayment && (
         <PaymentOverlay 
           amount={total} 
+          tourId={tour.id}
           onPaymentSuccess={handlePaymentSuccess} 
           onClose={() => setShowPayment(false)} 
         />

@@ -159,3 +159,27 @@ exports.refundPayment = async (req, res) => {
     res.status(500).json({ message: 'Refund failed' });
   }
 };
+
+// @desc    Verify Razorpay Payment Signature
+// @route   POST /api/payments/razorpay/verify
+exports.verifyRazorpayPayment = async (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+  const crypto = require('crypto');
+  try {
+    const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'secret_placeholder');
+    hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+    const generatedSignature = hmac.digest('hex');
+
+    if (generatedSignature === razorpay_signature) {
+      await db.query(
+        "UPDATE payments SET status = 'succeeded' WHERE provider_id = $1",
+        [razorpay_order_id]
+      );
+      res.json({ status: 'success', message: 'Payment verified successfully' });
+    } else {
+      res.status(400).json({ status: 'failure', message: 'Invalid signature verification' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Verification failed', error: error.message });
+  }
+};

@@ -3,6 +3,7 @@ const router = express.Router();
 const { 
   createStripeCheckout, 
   createRazorpayOrder, 
+  verifyRazorpayPayment,
   createPaypalOrder, 
   handleWebhook,
   refundPayment
@@ -11,6 +12,7 @@ const { protect } = require('../middleware/authMiddleware');
 
 router.post('/stripe/create-checkout', protect, createStripeCheckout);
 router.post('/razorpay/create-order', protect, createRazorpayOrder);
+router.post('/razorpay/verify', protect, verifyRazorpayPayment);
 router.post('/paypal/create-order', protect, createPaypalOrder);
 router.post('/refund', protect, refundPayment);
 

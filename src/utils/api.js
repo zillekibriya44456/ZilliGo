@@ -85,6 +85,18 @@ export const api = {
     body: JSON.stringify(data),
   }).then(res => res.json()),
 
+  createRazorpayOrder: (data) => fetch(`${API_BASE}/payments/razorpay/create-order`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+
+  verifyRazorpayPayment: (data) => fetch(`${API_BASE}/payments/razorpay/verify`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+
   // Admin
   getAdminStats: () => fetch(`${API_BASE}/admin/stats`, {
     headers: getHeaders(),
