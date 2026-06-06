@@ -1,64 +1,136 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { TrendingUp, Star, Users, DollarSign, Calendar, Play, BarChart3, Clock, CheckCircle, AlertCircle, MapPin, Upload, CreditCard, Bell, Lock } from 'lucide-react';
+import {
+  TrendingUp, Star, Users, DollarSign, Calendar, Play,
+  BarChart3, Clock, CheckCircle, AlertCircle, MapPin,
+  Upload, CreditCard, Bell, XCircle, MessageCircle, Settings
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../utils/api';
 import { TOURS } from '../data/mockData';
+import './Dashboard.css';
 import './GuideDashboard.css';
 
-const EARNINGS_DATA = [
-  { month: 'Nov', amount: 1200 },
-  { month: 'Dec', amount: 1800 },
-  { month: 'Jan', amount: 1500 },
-  { month: 'Feb', amount: 2200 },
-  { month: 'Mar', amount: 2800 },
-  { month: 'Apr', amount: 3100 },
+/* ─── Demo Booking Requests ─── */
+const DEMO_REQUESTS = [
+  { id: 'r1', tourTitle: 'Tokyo Neon Lights Tour', tourCoverImage: TOURS[0]?.coverImage, bookingDate: '2026-06-14', bookingTime: '14:00', status: 'pending', totalAmount: 45, travelerName: 'Alex Johnson', travelerAvatar: null, participants: 2 },
+  { id: 'r2', tourTitle: 'Tokyo Street Food Walk', tourCoverImage: TOURS[2]?.coverImage, bookingDate: '2026-06-16', bookingTime: '10:00', status: 'pending', totalAmount: 35, travelerName: 'Maria Garcia', travelerAvatar: null, participants: 1 },
+  { id: 'r3', tourTitle: 'Tokyo Neon Lights Tour', tourCoverImage: TOURS[0]?.coverImage, bookingDate: '2026-06-08', bookingTime: '18:00', status: 'confirmed', totalAmount: 45, travelerName: 'John Smith', travelerAvatar: null, participants: 3 },
+  { id: 'r4', tourTitle: 'Historical Kyoto Walk', tourCoverImage: TOURS[4]?.coverImage, bookingDate: '2026-05-25', bookingTime: '09:00', status: 'completed', totalAmount: 60, travelerName: 'Priya Patel', travelerAvatar: null, participants: 2 },
 ];
 
-const UPCOMING_SESSIONS = [
-  { id: 1, title: 'Bangalore Tech Tour', time: 'Today, 11:00 AM', participants: 6, status: 'confirmed' },
-  { id: 2, title: 'Silicon Valley of India', time: 'May 5, 2:00 PM', participants: 8, status: 'confirmed' },
-  { id: 3, title: 'Food Trail Bangalore', time: 'May 8, 10:00 AM', participants: 4, status: 'pending' },
+const DEMO_STATS = { netEarnings: 8450, totalBookings: 47, avgRating: 4.7, reviewCount: 389, totalTours: 12 };
+
+const EARNINGS_DATA = [
+  { month: 'Jan', amount: 1200 },
+  { month: 'Feb', amount: 1800 },
+  { month: 'Mar', amount: 2200 },
+  { month: 'Apr', amount: 2800 },
+  { month: 'May', amount: 3100 },
+  { month: 'Jun', amount: 2650 },
 ];
+
+const StatusBadge = ({ status }) => {
+  const map = {
+    pending:   { cls: 'badge-amber',  label: '⏳ Pending' },
+    confirmed: { cls: 'badge-teal',   label: '✅ Confirmed' },
+    completed: { cls: 'badge-purple', label: '🏁 Completed' },
+    declined:  { cls: 'badge-error',  label: '🚫 Declined' },
+    cancelled: { cls: 'badge-error',  label: '❌ Cancelled' },
+  };
+  const s = map[status] || { cls: 'badge-amber', label: status };
+  return <span className={`badge ${s.cls}`}>{s.label}</span>;
+};
 
 export default function GuideDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('requests');
+  const [bookings, setBookings] = useState([]);
+  const [stats, setStats] = useState(DEMO_STATS);
+  const [loading, setLoading] = useState(true);
+  const [isAvailable, setIsAvailable] = useState(true);
   const [coverPhoto, setCoverPhoto] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
 
   if (!user) return <Navigate to="/auth" />;
-  if (user.role !== 'guide') return <Navigate to="/dashboard" />;
+  if (user.role !== 'guide' && user.role !== 'admin') return <Navigate to="/dashboard" />;
 
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [bData, sData] = await Promise.all([
+          api.getGuideBookings().catch(() => null),
+          api.getGuideStats().catch(() => null),
+        ]);
+        setBookings(Array.isArray(bData) && bData.length > 0 ? bData : DEMO_REQUESTS);
+        if (sData && sData.totalTours !== undefined) setStats(sData);
+      } catch (_) {
+        setBookings(DEMO_REQUESTS);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const handleBookingAction = async (bookingId, status) => {
+    setActionLoading(bookingId);
+    try {
+      await api.updateBookingStatus(bookingId, status).catch(() => {});
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status } : b));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const pendingRequests = bookings.filter(b => b.status === 'pending');
+  const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
+  const completedBookings = bookings.filter(b => b.status === 'completed');
   const maxEarning = Math.max(...EARNINGS_DATA.map(d => d.amount));
 
   return (
-    <div className="page-wrapper gd-page">
+    <div className="gd-page">
+      {/* ── Header ── */}
       <div className="gd-header">
         <div className="container">
           <div className="gd-welcome">
-            <img src={user.avatar} alt={user.name} className="dashboard-avatar" />
+            <img
+              src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=8B5CF6&color=fff`}
+              alt={user.name}
+              className="db-avatar"
+            />
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <h1>Guide Dashboard</h1>
-                <span className="badge badge-teal">✓ Verified</span>
-              </div>
-              <p>Welcome back, <strong>{user.name}</strong> · {user.location}</p>
+              <h1 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+                Guide Dashboard
+              </h1>
+              <p style={{ color: '#94A3B8', fontSize: '0.875rem', margin: 0 }}>
+                Welcome back, <strong style={{ color: '#F8FAFC' }}>{user.name}</strong>
+                {pendingRequests.length > 0 && <span style={{ color: '#FBBF24', marginLeft: '8px' }}>· {pendingRequests.length} pending request{pendingRequests.length !== 1 ? 's' : ''}</span>}
+              </p>
             </div>
           </div>
           <div className="gd-header-actions">
-            <span className="gd-status-pill">🟢 Available for Bookings</span>
-            <Link to="/explore" className="btn btn-secondary btn-sm">View My Tours</Link>
+            <button
+              className={`gd-status-pill ${!isAvailable ? 'gd-status-offline' : ''}`}
+              onClick={() => setIsAvailable(p => !p)}
+              style={{ cursor: 'pointer', border: 'none' }}
+            >
+              {isAvailable ? '🟢 Available for Bookings' : '🔴 Not Available'}
+            </button>
+            <Link to="/explore" className="db-btn-secondary">View My Tours</Link>
           </div>
         </div>
       </div>
 
-      <div className="container gd-body">
-        {/* KPI Cards */}
+      <div className="container">
+        {/* ── KPI Cards ── */}
         <div className="gd-kpis">
           {[
-            { icon: <DollarSign size={22} />, label: 'Total Earnings', value: `$${user.earnings?.toLocaleString() || '8,450'}`, sub: '+18% this month', color: 'teal' },
-            { icon: <Star size={22} />, label: 'Rating', value: user.rating || '4.7', sub: '389 reviews', color: 'amber' },
-            { icon: <Users size={22} />, label: 'Total Travelers', value: '1,247', sub: '47 this month', color: 'purple' },
-            { icon: <Calendar size={22} />, label: 'Tours Done', value: '456', sub: '12 this month', color: 'blue' },
+            { icon: <DollarSign size={22} />, label: 'Net Earnings', value: `$${stats.netEarnings.toLocaleString()}`, sub: '85% after platform fee', color: 'teal' },
+            { icon: <Star size={22} />, label: 'Rating', value: stats.avgRating.toFixed(1), sub: `${stats.reviewCount} reviews`, color: 'amber' },
+            { icon: <Users size={22} />, label: 'Total Bookings', value: stats.totalBookings, sub: `${pendingRequests.length} pending`, color: 'purple' },
+            { icon: <Calendar size={22} />, label: 'Active Listings', value: stats.totalTours, sub: 'Published tours', color: 'blue' },
           ].map(k => (
             <div key={k.label} className={`gd-kpi glass-card gd-kpi--${k.color}`}>
               <div className="gd-kpi__icon">{k.icon}</div>
@@ -69,23 +141,184 @@ export default function GuideDashboard() {
           ))}
         </div>
 
-        {/* Tabs */}
-        <div className="dashboard-tabs">
-          {['overview', 'sessions', 'earnings', 'create', 'settings'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`dashboard-tab ${activeTab === tab ? 'active' : ''}`}>
-              {tab === 'create' ? '+ Create Listing' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+        {/* ── Tabs ── */}
+        <div className="db-tabs">
+          {[
+            { id: 'requests', label: 'Booking Requests', count: pendingRequests.length },
+            { id: 'confirmed', label: 'Confirmed', count: confirmedBookings.length },
+            { id: 'completed', label: 'Completed', count: completedBookings.length },
+            { id: 'earnings', label: 'Earnings' },
+            { id: 'create',   label: '+ New Listing' },
+            { id: 'settings', label: 'Settings' },
+          ].map(t => (
+            <button
+              key={t.id}
+              className={`db-tab ${activeTab === t.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(t.id)}
+            >
+              {t.label}
+              {t.count !== undefined && <span className="db-tab-count">{t.count}</span>}
             </button>
           ))}
         </div>
 
-        {/* Overview */}
-        {activeTab === 'overview' && (
-          <div className="gd-overview">
-            {/* Earnings Chart */}
-            <div className="gd-chart-card glass-card">
+        {/* ── Booking Requests ── */}
+        {activeTab === 'requests' && (
+          <div className="db-content">
+            {loading ? (
+              <div className="db-loading"><div className="db-spinner" /> Loading requests...</div>
+            ) : pendingRequests.length === 0 ? (
+              <div className="db-empty">
+                <span>📬</span>
+                <h3>No pending requests</h3>
+                <p>New booking requests from travelers will appear here.</p>
+              </div>
+            ) : (
+              pendingRequests.map(b => (
+                <div key={b.id} className={`gd-request-card ${b.status}`}>
+                  <img
+                    src={b.tourCoverImage || `https://images.unsplash.com/photo-1488085061387-422e29b40080?w=120`}
+                    alt={b.tourTitle}
+                    className="gd-request-img"
+                  />
+                  <div className="gd-request-info">
+                    <div className="gd-request-title">{b.tourTitle}</div>
+                    <div className="gd-request-meta">
+                      <span><Calendar size={12} /> {b.bookingDate}</span>
+                      <span><Clock size={12} /> {b.bookingTime?.slice(0,5)}</span>
+                      <span><Users size={12} /> {b.participants || 1} participant{(b.participants || 1) !== 1 ? 's' : ''}</span>
+                      <span><DollarSign size={12} /> ${b.totalAmount}</span>
+                    </div>
+                    <div className="gd-request-traveler">
+                      <img
+                        src={b.travelerAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(b.travelerName || 'T')}&background=00F5D4&color=030712`}
+                        alt={b.travelerName}
+                      />
+                      <span>Traveler: <strong>{b.travelerName}</strong></span>
+                    </div>
+                  </div>
+                  <div className="gd-request-actions">
+                    <StatusBadge status={b.status} />
+                    <button
+                      className="db-btn-primary btn-sm"
+                      disabled={actionLoading === b.id}
+                      onClick={() => handleBookingAction(b.id, 'confirmed')}
+                    >
+                      {actionLoading === b.id ? '...' : <><CheckCircle size={13} /> Accept</>}
+                    </button>
+                    <button
+                      className="db-btn-ghost btn-sm"
+                      style={{ color: '#FB7185', borderColor: 'rgba(244,63,94,0.2)' }}
+                      disabled={actionLoading === b.id}
+                      onClick={() => handleBookingAction(b.id, 'declined')}
+                    >
+                      <XCircle size={13} /> Decline
+                    </button>
+                    <Link to="/messages" className="db-btn-ghost btn-sm">
+                      <MessageCircle size={13} /> Message
+                    </Link>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ── Confirmed Bookings ── */}
+        {activeTab === 'confirmed' && (
+          <div className="db-content">
+            {confirmedBookings.length === 0 ? (
+              <div className="db-empty"><span>✅</span><h3>No confirmed bookings</h3><p>Accept pending requests to fill your calendar.</p></div>
+            ) : confirmedBookings.map(b => (
+              <div key={b.id} className="gd-request-card confirmed">
+                <img src={b.tourCoverImage || `https://images.unsplash.com/photo-1488085061387-422e29b40080?w=120`} alt={b.tourTitle} className="gd-request-img" />
+                <div className="gd-request-info">
+                  <div className="gd-request-title">{b.tourTitle}</div>
+                  <div className="gd-request-meta">
+                    <span><Calendar size={12} /> {b.bookingDate}</span>
+                    <span><Clock size={12} /> {b.bookingTime?.slice(0,5)}</span>
+                    <span><Users size={12} /> {b.participants || 1} travelers</span>
+                  </div>
+                  <div className="gd-request-traveler">
+                    <img src={b.travelerAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(b.travelerName || 'T')}&background=00F5D4&color=030712`} alt="" />
+                    <span>{b.travelerName}</span>
+                  </div>
+                </div>
+                <div className="gd-request-actions">
+                  <StatusBadge status="confirmed" />
+                  <Link to={`/live/${b.tourId || '1'}`} className="db-btn-primary btn-sm">
+                    <Play size={13} /> Start Tour
+                  </Link>
+                  <button className="db-btn-ghost btn-sm" onClick={() => handleBookingAction(b.id, 'completed')}>
+                    <CheckCircle size={13} /> Mark Complete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Completed ── */}
+        {activeTab === 'completed' && (
+          <div className="db-content">
+            {completedBookings.length === 0 ? (
+              <div className="db-empty"><span>🏁</span><h3>No completed tours yet</h3></div>
+            ) : completedBookings.map(b => (
+              <div key={b.id} className="gd-request-card">
+                <img src={b.tourCoverImage || `https://images.unsplash.com/photo-1488085061387-422e29b40080?w=120`} alt={b.tourTitle} className="gd-request-img" />
+                <div className="gd-request-info">
+                  <div className="gd-request-title">{b.tourTitle}</div>
+                  <div className="gd-request-meta">
+                    <span><Calendar size={12} /> {b.bookingDate}</span>
+                    <span><DollarSign size={12} /> ${(b.totalAmount * 0.85).toFixed(0)} earned</span>
+                  </div>
+                  <div className="gd-request-traveler">
+                    <img src={b.travelerAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(b.travelerName || 'T')}&background=00F5D4&color=030712`} alt="" />
+                    <span>{b.travelerName}</span>
+                  </div>
+                </div>
+                <div className="gd-request-actions">
+                  <StatusBadge status="completed" />
+                  <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#00F5D4' }}>${(b.totalAmount * 0.85).toFixed(0)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Earnings ── */}
+        {activeTab === 'earnings' && (
+          <div className="db-content" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              {/* Wallet */}
+              <div className="db-wallet-card">
+                <div className="db-wallet-label"><DollarSign size={18} /> Available Balance</div>
+                <div className="db-wallet-amount">${stats.netEarnings.toLocaleString()}</div>
+                <p>Cleared funds ready for withdrawal</p>
+                <button className="db-btn-primary" onClick={() => alert('Initiating Stripe Connect payout...')}>
+                  Withdraw Funds
+                </button>
+              </div>
+
+              {/* Pending */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="gd-kpi glass-card gd-kpi--amber">
+                  <div className="gd-kpi__label">Pending (Escrow)</div>
+                  <div className="gd-kpi__value">$1,200</div>
+                  <div className="gd-kpi__sub">Funds from upcoming confirmed tours</div>
+                </div>
+                <div className="gd-kpi glass-card">
+                  <div className="gd-kpi__label">Lifetime Gross</div>
+                  <div className="gd-kpi__value" style={{ color: '#F8FAFC' }}>$18,450</div>
+                  <div className="gd-kpi__sub">Total across {stats.totalBookings} bookings</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bar Chart */}
+            <div className="glass-card" style={{ padding: '1.5rem' }}>
               <div className="gd-chart-header">
-                <h3>Earnings (6 months)</h3>
+                <h3>Monthly Earnings</h3>
                 <span className="badge badge-teal">+18% ↑</span>
               </div>
               <div className="gd-bar-chart">
@@ -101,268 +334,158 @@ export default function GuideDashboard() {
                 ))}
               </div>
             </div>
-
-            {/* Upcoming Sessions */}
-            <div className="gd-sessions-preview">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
-                <h3>Upcoming Sessions</h3>
-                <button onClick={() => setActiveTab('sessions')} className="btn btn-ghost btn-sm">View All</button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-                {UPCOMING_SESSIONS.map(s => (
-                  <div key={s.id} className="gd-session-item glass-card">
-                    <div className="gd-session-info">
-                      <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{s.title}</div>
-                      <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
-                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}><Clock size={11} /> {s.time}</span>
-                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}><Users size={11} /> {s.participants} travelers</span>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <span className={`badge ${s.status === 'confirmed' ? 'badge-teal' : 'badge-amber'}`}>{s.status}</span>
-                      <Link to="/live/1" className="btn btn-primary btn-sm"><Play size={13} /> Start</Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Tips */}
-            <div className="gd-tips glass-card">
-              <h3 style={{ marginBottom: 'var(--space-lg)' }}>📈 Pro Tips</h3>
-              {[
-                { icon: '📸', tip: 'Add high-quality photos to your profile to get 3x more bookings.' },
-                { icon: '🌍', tip: 'Guides who speak 3+ languages earn 40% more on average.' },
-                { icon: '⭐', tip: 'Respond to bookings within 2 minutes for Top Guide status.' },
-              ].map(t => (
-                <div key={t.tip} className="gd-tip-item">
-                  <span style={{ fontSize: '1.2rem' }}>{t.icon}</span>
-                  <span style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{t.tip}</span>
-                </div>
-              ))}
-            </div>
           </div>
         )}
 
-        {/* Sessions */}
-        {activeTab === 'sessions' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', paddingBottom: 'var(--space-3xl)' }}>
-            {UPCOMING_SESSIONS.map(s => (
-              <div key={s.id} className="gd-session-item glass-card" style={{ padding: 'var(--space-lg)' }}>
-                <div className="gd-session-info">
-                  <div style={{ fontWeight: 700 }}>{s.title}</div>
-                  <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}><Clock size={12} /> {s.time}</span>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}><Users size={12} /> {s.participants} participants</span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <span className={`badge ${s.status === 'confirmed' ? 'badge-teal' : 'badge-amber'}`}>{s.status}</span>
-                  <Link to="/live/1" className="btn btn-primary btn-sm">Join</Link>
-                  <button className="btn btn-ghost btn-sm">Reschedule</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Earnings */}
-        {activeTab === 'earnings' && (
-          <div className="gd-earnings-tab" style={{ paddingBottom: 'var(--space-3xl)' }}>
-            <div className="grid-3">
-              {[
-                { label: 'This Month', value: '$3,100', change: '+18%' },
-                { label: 'Last Month', value: '$2,800', change: '+12%' },
-                { label: 'All Time', value: '$8,450', change: '' },
-              ].map(e => (
-                <div key={e.label} className="glass-card" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{e.label}</div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 900, color: 'var(--accent-teal)', margin: '8px 0' }}>{e.value}</div>
-                  {e.change && <div style={{ fontSize: '0.8rem', color: 'var(--accent-teal)' }}>↑ {e.change}</div>}
-                </div>
-              ))}
-            </div>
-            <div className="glass-card" style={{ padding: 'var(--space-xl)', marginTop: 'var(--space-xl)' }}>
-              <h3 style={{ marginBottom: 'var(--space-lg)' }}>Payout History</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {[{ date: 'Apr 30', amount: '$2,635', status: 'paid' }, { date: 'Mar 31', amount: '$2,380', status: 'paid' }, { date: 'Feb 28', amount: '$1,870', status: 'paid' }].map((p, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)' }}>
-                    <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{p.date}</span>
-                    <strong style={{ color: 'var(--accent-teal)' }}>{p.amount}</strong>
-                    <span className="badge badge-teal" style={{ fontSize: '0.68rem' }}>✓ {p.status}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Create Listing */}
+        {/* ── Create Listing ── */}
         {activeTab === 'create' && (
-          <div className="gd-create-tab glass-card" style={{ padding: 'var(--space-2xl)' }}>
-            <h2 style={{ marginBottom: 'var(--space-sm)' }}>Create a New Listing</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-2xl)' }}>Publish a standard tour or monetize a special live event (like a wedding or festival).</p>
-            
-            <form className="form" onSubmit={(e) => { e.preventDefault(); alert('Listing published successfully!'); setActiveTab('overview'); }}>
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Listing Title</label>
-                  <input type="text" className="input" placeholder="e.g. Kyoto Cherry Blossom Walk" required />
+          <div className="db-content">
+            <div className="glass-card" style={{ padding: '2rem' }}>
+              <h2 style={{ marginBottom: '0.5rem' }}>Create a New Tour Listing</h2>
+              <p style={{ color: '#94A3B8', marginBottom: '2rem', fontSize: '0.9rem' }}>
+                Publish a virtual or in-person experience. Travelers can discover and book it immediately.
+              </p>
+              <form onSubmit={e => { e.preventDefault(); alert('✅ Listing published! Travelers can now book it.'); setActiveTab('confirmed'); }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div>
+                    <label className="gd-label">Tour Title *</label>
+                    <input type="text" className="gd-input" placeholder="e.g. Kyoto Cherry Blossom Walk" required />
+                  </div>
+                  <div>
+                    <label className="gd-label">Location *</label>
+                    <input type="text" className="gd-input" placeholder="e.g. Kyoto, Japan" required />
+                  </div>
+                  <div>
+                    <label className="gd-label">Price (USD) *</label>
+                    <input type="number" className="gd-input" placeholder="45" min="1" required />
+                  </div>
+                  <div>
+                    <label className="gd-label">Duration</label>
+                    <select className="gd-input">
+                      <option>60 mins</option>
+                      <option>90 mins</option>
+                      <option>120 mins</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="gd-label">Max Participants</label>
+                    <input type="number" className="gd-input" placeholder="20" min="1" />
+                  </div>
+                  <div>
+                    <label className="gd-label">Category</label>
+                    <select className="gd-input">
+                      <option>Cultural</option>
+                      <option>Food</option>
+                      <option>Historical</option>
+                      <option>Adventure</option>
+                      <option>Nature</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Location (City, Country)</label>
-                  <input type="text" className="input" placeholder="e.g. Kyoto, Japan" required />
+                <div style={{ marginBottom: '1rem' }}>
+                  <label className="gd-label">Description *</label>
+                  <textarea className="gd-input" rows={4} placeholder="Describe the experience in detail..." required style={{ resize: 'vertical' }} />
                 </div>
-              </div>
-              
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Listing Type</label>
-                  <select className="input" required>
-                    <option value="standard">Standard Virtual Tour</option>
-                    <option value="event">Special Event (Wedding, Concert)</option>
-                    <option value="shopping">Live Personal Shopping</option>
-                  </select>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label className="gd-label">Cover Photo</label>
+                  <label className="gd-upload-zone" htmlFor="cover-photo">
+                    {coverPhoto ? (
+                      <div style={{ color: '#00F5D4', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <CheckCircle size={18} /> {coverPhoto.name}
+                      </div>
+                    ) : (
+                      <>
+                        <Upload size={24} style={{ color: '#64748B', marginBottom: '8px' }} />
+                        <span style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Click to upload cover image</span>
+                      </>
+                    )}
+                    <input id="cover-photo" type="file" accept="image/*" style={{ display: 'none' }} onChange={e => setCoverPhoto(e.target.files[0])} />
+                  </label>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Ticket Price (USD)</label>
-                  <input type="number" className="input" placeholder="25" required />
-                </div>
-              </div>
-
-              <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-md)' }}>
-                <div className="form-group">
-                  <label className="form-label">Duration</label>
-                  <select className="input" required>
-                    <option value="30">30 mins</option>
-                    <option value="60">60 mins</option>
-                    <option value="90">90 mins</option>
-                    <option value="120">120 mins</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Max Participants</label>
-                  <input type="number" className="input" placeholder="20" required />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Primary Language</label>
-                  <select className="input" required>
-                    <option value="en">English</option>
-                    <option value="es">Spanish</option>
-                    <option value="fr">French</option>
-                    <option value="hi">Hindi</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Included Features</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px', marginTop: '8px' }}>
-                  {['Interactive Q&A', 'High-Res Photos', 'Post-tour Guidebook', 'Live Polling', 'Shopping Access'].map(feature => (
-                    <label key={feature} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.875rem', cursor: 'pointer' }}>
-                      <input type="checkbox" style={{ accentColor: 'var(--accent-teal)' }} />
-                      {feature}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Description</label>
-                <textarea className="input" rows="4" placeholder="Describe the experience..." required></textarea>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Cover Photo</label>
-                <div style={{ position: 'relative', border: '2px dashed var(--border-glass-strong)', borderRadius: 'var(--radius-md)', height: '120px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', transition: 'border-color 0.2s ease' }}
-                     onMouseOver={e => e.currentTarget.style.borderColor = 'var(--accent-teal)'}
-                     onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border-glass-strong)'}>
-                   <input type="file" accept="image/*" onChange={(e) => setCoverPhoto(e.target.files[0])} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
-                   {coverPhoto ? (
-                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-teal)' }}>
-                       <CheckCircle size={20} />
-                       <strong>{coverPhoto.name}</strong>
-                     </div>
-                   ) : (
-                     <>
-                       <Upload size={24} style={{ color: 'var(--text-muted)', marginBottom: '8px' }} />
-                       <p style={{ color: 'var(--text-muted)', margin: 0 }}>Drag and drop an image, or click to browse.</p>
-                     </>
-                   )}
-                </div>
-              </div>
-
-              <button type="submit" className="btn btn-primary btn-lg" style={{ marginTop: 'var(--space-lg)' }}>
-                Publish Listing
-              </button>
-            </form>
+                <button type="submit" className="db-btn-primary" style={{ padding: '0.85rem 2rem', fontSize: '1rem' }}>
+                  Publish Listing
+                </button>
+              </form>
+            </div>
           </div>
         )}
 
-        {/* Settings */}
+        {/* ── Settings ── */}
         {activeTab === 'settings' && (
-          <div className="gd-settings slide-up">
-            <div className="grid-2">
-              <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
-                <h3 style={{ marginBottom: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Users size={20} /> Profile Settings
+          <div className="db-content">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              {/* Profile */}
+              <div className="glass-card" style={{ padding: '1.75rem' }}>
+                <h3 style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Settings size={18} /> Profile Settings
                 </h3>
-                <form className="form" onSubmit={(e) => { e.preventDefault(); alert('Profile updated!'); }}>
-                  <div className="form-group">
-                    <label className="form-label">Full Name</label>
-                    <input type="text" className="input" defaultValue={user.name} />
+                <form onSubmit={e => { e.preventDefault(); alert('✅ Profile updated!'); }}>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label className="gd-label">Full Name</label>
+                    <input type="text" className="gd-input" defaultValue={user.name} />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Bio</label>
-                    <textarea className="input" rows="4" defaultValue={user.bio || "Professional guide dedicated to sharing local stories..."}></textarea>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label className="gd-label">Location</label>
+                    <input type="text" className="gd-input" defaultValue={user.location || ''} placeholder="Your city" />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Location</label>
-                    <input type="text" className="input" defaultValue={user.location} />
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <label className="gd-label">Bio</label>
+                    <textarea className="gd-input" rows={4} defaultValue={user.bio || ''} placeholder="Tell travelers about yourself..." style={{ resize: 'vertical' }} />
                   </div>
-                  <button type="submit" className="btn btn-primary">Save Changes</button>
+                  <button type="submit" className="db-btn-primary">Save Changes</button>
                 </form>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
-                <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
-                  <h3 style={{ marginBottom: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <CreditCard size={20} /> Payout Settings
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* Payout */}
+                <div className="glass-card" style={{ padding: '1.75rem' }}>
+                  <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <CreditCard size={18} /> Payout Method
                   </h3>
-                  <div style={{ background: 'rgba(0, 212, 170, 0.1)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', border: '1px solid var(--accent-teal)', marginBottom: 'var(--space-md)' }}>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--accent-teal)', fontWeight: 600, marginBottom: '4px' }}>STRIPE CONNECTED</div>
-                    <div style={{ fontWeight: 700 }}>Bank Account ending in ****4242</div>
+                  <div style={{ padding: '0.75rem 1rem', background: 'rgba(0,245,212,0.08)', border: '1px solid rgba(0,245,212,0.2)', borderRadius: '10px', marginBottom: '1rem' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#00F5D4', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Stripe Connected</div>
+                    <div style={{ fontWeight: 700 }}>Bank ending in ****4242</div>
                   </div>
-                  <button className="btn btn-secondary btn-sm" style={{ width: '100%' }}>Update Payout Method</button>
+                  <button className="db-btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
+                    Update Payout Method
+                  </button>
                 </div>
 
-                <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
-                  <h3 style={{ marginBottom: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Bell size={20} /> Notifications
+                {/* Notifications */}
+                <div className="glass-card" style={{ padding: '1.75rem' }}>
+                  <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Bell size={18} /> Notifications
                   </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {[
-                      { label: 'Booking Requests', sub: 'Instant email for new tour requests' },
-                      { label: 'Chat Messages', sub: 'Mobile push for traveler messages' },
-                      { label: 'Payout Alerts', sub: 'Notifications when funds are cleared' },
-                    ].map(n => (
-                      <label key={n.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-                        <div>
-                          <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{n.label}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{n.sub}</div>
-                        </div>
-                        <input type="checkbox" defaultChecked style={{ width: '18px', height: '18px', accentColor: 'var(--accent-teal)' }} />
-                      </label>
-                    ))}
-                  </div>
+                  {[
+                    { label: 'New Booking Requests', sub: 'Instant email & push' },
+                    { label: 'Traveler Messages', sub: 'In-app & push' },
+                    { label: 'Payout Confirmations', sub: 'Email when funds clear' },
+                  ].map(n => (
+                    <label key={n.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', marginBottom: '12px' }}>
+                      <div>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>{n.label}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{n.sub}</div>
+                      </div>
+                      <input type="checkbox" defaultChecked style={{ width: '18px', height: '18px', accentColor: '#00F5D4' }} />
+                    </label>
+                  ))}
                 </div>
 
-                <div className="glass-card" style={{ padding: 'var(--space-xl)', border: '1px solid var(--accent-amber)', background: 'rgba(245, 158, 11, 0.05)' }}>
-                  <h3 style={{ marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-amber)' }}>
-                    <AlertCircle size={20} /> Availability
+                {/* Availability */}
+                <div className="glass-card" style={{ padding: '1.75rem', border: '1px solid rgba(245,158,11,0.2)' }}>
+                  <h3 style={{ marginBottom: '0.75rem', color: '#FBBF24', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <AlertCircle size={18} /> Availability
                   </h3>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-md)' }}>Toggle your status to control if you appear in "Instant Match" results.</p>
-                  <button className="btn btn-primary" style={{ background: 'var(--accent-amber)', borderColor: 'var(--accent-amber)', color: '#000', width: '100%' }}>Go Offline</button>
+                  <p style={{ fontSize: '0.85rem', color: '#94A3B8', marginBottom: '1rem' }}>
+                    Toggle to control if travelers can book you via Instant Match.
+                  </p>
+                  <button
+                    className={isAvailable ? 'db-btn-amber' : 'db-btn-primary'}
+                    style={{ width: '100%', justifyContent: 'center' }}
+                    onClick={() => setIsAvailable(p => !p)}
+                  >
+                    {isAvailable ? '🔴 Go Offline' : '🟢 Go Online'}
+                  </button>
                 </div>
               </div>
             </div>

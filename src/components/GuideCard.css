@@ -1,144 +1,203 @@
-.guide-card {
-  padding: var(--space-lg);
+/* Premium Guide Card CSS */
+.premium-guide-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  background: rgba(20, 20, 25, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 24px;
+  text-decoration: none;
+  color: #fff;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  backdrop-filter: blur(20px);
+  height: 100%;
 }
 
-.guide-card__header {
+.premium-guide-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 212, 170, 0.1);
+  border-color: rgba(0, 212, 170, 0.3);
+}
+
+.pgc-header {
   display: flex;
-  gap: var(--space-md);
-  align-items: flex-start;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
-.guide-card__avatar-wrap {
+.pgc-avatar-wrap {
   position: relative;
-  flex-shrink: 0;
 }
 
-.guide-card__avatar {
+.pgc-avatar {
   width: 64px;
   height: 64px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--border-glass-strong);
+  border: 2px solid rgba(255,255,255,0.1);
 }
 
-.guide-card__status {
+.pgc-status-indicator {
   position: absolute;
   bottom: 2px;
   right: 2px;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  border: 2px solid var(--bg-secondary);
+  border: 2px solid #141419;
 }
 
-.guide-card__status.available { background: var(--accent-teal); }
-.guide-card__status.busy { background: var(--accent-amber); }
+.pgc-status--available { background: #00d4aa; box-shadow: 0 0 10px #00d4aa; }
+.pgc-status--busy { background: #f43f5e; box-shadow: 0 0 10px #f43f5e; }
 
-.guide-card__info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.guide-card__name-row {
+.pgc-name-row {
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-bottom: 4px;
 }
 
-.guide-card__name {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.pgc-name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
-.guide-card__location {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
+.pgc-verified-icon { color: var(--accent-teal); }
 
-.guide-card__rating {
+.pgc-location {
   display: flex;
   align-items: center;
   gap: 4px;
   font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-
-.guide-card__rating strong { color: var(--text-primary); }
-
-.guide-card__bio {
-  font-size: 0.83rem;
-  line-height: 1.6;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.guide-card__tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.guide-card__footer {
+.pgc-stats-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
 }
 
-.guide-card__langs {
+.pgc-stat {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-.guide-card__rate-amount {
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--accent-teal);
-}
-
-.guide-card__rate-label {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.guide-card__badges {
-  display: flex;
-  flex-wrap: wrap;
   gap: 4px;
 }
 
-.guide-card__badge-item {
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 2px 8px;
-  background: var(--bg-glass-strong);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--radius-full);
+.pgc-stat-text {
+  font-size: 0.75rem;
   color: var(--text-secondary);
 }
 
-.guide-card__response {
+.pgc-stat-text strong {
+  color: #fff;
+  font-size: 0.9rem;
+  margin-right: 2px;
+}
+
+.pgc-stat-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255,255,255,0.1);
+}
+
+.pgc-icon-teal { color: var(--accent-teal); }
+
+.pgc-bio {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.pgc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.pgc-tag {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.premium-guide-card:hover .pgc-tag {
+  border-color: rgba(0, 212, 170, 0.3);
+  color: var(--text-primary);
+}
+
+.pgc-tag-more {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 4px 6px;
+  font-size: 0.75rem;
+}
+
+.pgc-footer {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.75rem;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 20px;
+  margin-top: auto;
+}
+
+.pgc-price {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.pgc-price-amount {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.pgc-price-per {
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
-.guide-card__response strong {
+.pgc-view-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
   color: var(--accent-teal);
+  border: 1px solid var(--accent-teal);
+  padding: 8px 16px;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.premium-guide-card:hover .pgc-view-btn {
+  background: var(--accent-teal);
+  color: #000;
+  box-shadow: 0 0 20px rgba(0, 212, 170, 0.4);
 }

@@ -1,56 +1,75 @@
 import { Link } from 'react-router-dom';
-import { Star, MapPin, MessageCircle, CheckCircle, Globe } from 'lucide-react';
+import { Star, MapPin, MessageCircle, BadgeCheck, Globe, Clock, ArrowRight } from 'lucide-react';
+import './GuideCard.css';
 
 export default function GuideCard({ guide }) {
   if (!guide) return null;
+  
+  const isAvailable = guide.available;
+
   return (
-    <Link to={`/guide/${guide.id}`} className="guide-card glass-card glass-card-hover" style={{ textDecoration: 'none', color: 'inherit' }}>
-      <div className="guide-card__header">
-        <div className="guide-card__avatar-wrap">
-          <img src={guide.avatar} alt={guide.name} className="guide-card__avatar" />
-          <span className={`guide-card__status ${guide.available ? 'available' : 'busy'}`} title={guide.available ? 'Available' : 'Busy'} />
+    <Link to={`/guide/${guide.id}`} className="premium-guide-card">
+      {/* Header Profile Section */}
+      <div className="pgc-header">
+        <div className="pgc-avatar-wrap">
+          <img src={guide.avatar} alt={guide.name} className="pgc-avatar" loading="lazy" />
+          <div className={`pgc-status-indicator ${isAvailable ? 'pgc-status--available' : 'pgc-status--busy'}`} />
         </div>
-        <div className="guide-card__info">
-          <div className="guide-card__name-row">
-            <h4 className="guide-card__name">{guide.name}</h4>
-            {guide.verified && <CheckCircle size={14} style={{ color: 'var(--accent-teal)', flexShrink: 0 }} />}
+        <div className="pgc-info">
+          <div className="pgc-name-row">
+            <h3 className="pgc-name">{guide.name}</h3>
+            {guide.verified && <BadgeCheck size={16} className="pgc-verified-icon" />}
           </div>
-          <span className="guide-card__location"><MapPin size={11} /> {guide.location}</span>
-          <div className="guide-card__rating">
-            <Star size={12} fill="var(--accent-amber)" stroke="none" />
-            <strong>{guide.rating}</strong>
-            <span className="text-muted">({guide.reviewCount.toLocaleString()} reviews)</span>
+          <div className="pgc-location">
+            <MapPin size={12} /> {guide.location}
           </div>
         </div>
       </div>
 
-      <p className="guide-card__bio">{guide.bio.substring(0, 110)}...</p>
-
-      <div className="guide-card__tags">
-        {guide.specialties.map(s => (
-          <span key={s} className="badge badge-teal" style={{ fontSize: '0.68rem' }}>{s}</span>
-        ))}
-      </div>
-
-      <div className="guide-card__footer">
-        <div className="guide-card__langs">
-          <Globe size={12} />
-          <span>{guide.languages.slice(0, 2).join(', ')}{guide.languages.length > 2 ? ` +${guide.languages.length - 2}` : ''}</span>
+      {/* Stats Row */}
+      <div className="pgc-stats-row">
+        <div className="pgc-stat">
+          <Star size={14} fill="#FFD700" stroke="none" />
+          <div className="pgc-stat-text">
+            <strong>{guide.rating}</strong> <span>({guide.reviewCount})</span>
+          </div>
         </div>
-        <div className="guide-card__rate">
-          <span className="guide-card__rate-amount">${guide.hourlyRate}</span>
-          <span className="guide-card__rate-label">/hr</span>
+        <div className="pgc-stat-divider" />
+        <div className="pgc-stat">
+          <Globe size={14} className="pgc-icon-teal" />
+          <div className="pgc-stat-text">
+            <strong>{guide.languages.length}</strong> <span>Langs</span>
+          </div>
+        </div>
+        <div className="pgc-stat-divider" />
+        <div className="pgc-stat">
+          <Clock size={14} className="pgc-icon-teal" />
+          <div className="pgc-stat-text">
+            <strong>{guide.responseTime}</strong>
+          </div>
         </div>
       </div>
 
-      <div className="guide-card__badges">
-        {guide.badges.map(b => (
-          <span key={b} className="guide-card__badge-item">{b}</span>
+      {/* Bio */}
+      <p className="pgc-bio">{guide.bio}</p>
+
+      {/* Specialties Tags */}
+      <div className="pgc-tags">
+        {guide.specialties.slice(0, 3).map(s => (
+          <span key={s} className="pgc-tag">{s}</span>
         ))}
+        {guide.specialties.length > 3 && <span className="pgc-tag-more">+{guide.specialties.length - 3}</span>}
       </div>
 
-      <div className="guide-card__response">
-        <MessageCircle size={12} /> Response: <strong>{guide.responseTime}</strong>
+      {/* Footer / CTA */}
+      <div className="pgc-footer">
+        <div className="pgc-price">
+          <span className="pgc-price-amount">${guide.hourlyRate}</span>
+          <span className="pgc-price-per">/hr</span>
+        </div>
+        <button className="pgc-view-btn">
+          View Profile <ArrowRight size={14} />
+        </button>
       </div>
     </Link>
   );

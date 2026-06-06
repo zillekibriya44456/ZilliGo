@@ -5,7 +5,7 @@ import { useSettings } from '../context/SettingsContext';
 import { t } from '../utils/translations';
 import {
   Globe, Search, Bell, Menu, X, ChevronDown,
-  User, LayoutDashboard, LogOut, Star, Map, Video, Trophy, MessageSquare, ShoppingBasket
+  User, LogOut, Star, Map, Video, MessageSquare
 } from 'lucide-react';
 import './Navbar.css';
 
@@ -71,13 +71,13 @@ export default function Navbar() {
             <User size={15} /> {t('guides', language)}
           </NavLink>
           <NavLink to="/leaderboard" className={({ isActive }) => `navbar__link ${isActive ? 'active' : ''}`}>
-            <Trophy size={15} /> {t('leaderboard', language)}
+            🏆 {t('leaderboard', language)}
           </NavLink>
           <NavLink to="/live/1" className={({ isActive }) => `navbar__link navbar__link--live ${isActive ? 'active' : ''}`}>
             <span className="live-dot" /> {t('live_now', language)}
           </NavLink>
           <NavLink to="/shop" className={({ isActive }) => `navbar__link ${isActive ? 'active' : ''}`}>
-            <ShoppingBasket size={15} /> Shop
+            🛍️ Shop
           </NavLink>
         </div>
 
@@ -125,7 +125,7 @@ export default function Navbar() {
                     </div>
                     <hr className="navbar__dropdown-divider" />
                     <Link to={getDashboardPath()} className="navbar__dropdown-item" onClick={() => setProfileOpen(false)}>
-                      <LayoutDashboard size={15} /> {t('dashboard', language)}
+                      📊 {t('dashboard', language)}
                     </Link>
                     <Link to="/messages" className="navbar__dropdown-item" onClick={() => setProfileOpen(false)}>
                       <MessageSquare size={15} /> {t('messages', language)}

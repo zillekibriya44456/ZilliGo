@@ -3,6 +3,8 @@ const cors = require('cors');
 const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const tourRoutes = require('./routes/tourRoutes');
@@ -10,9 +12,21 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const guideRoutes = require('./routes/guideRoutes');
+const marketplaceRoutes = require('./routes/marketplaceRoutes');
 
 const app = express();
 const server = http.createServer(app);
+
+// Security Middleware
+app.use(helmet()); // Set security HTTP headers
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+});
+app.use('/api', limiter);
 
 const allowedOrigins = [
   'http://localhost:3001',
@@ -47,6 +61,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/guides', guideRoutes);
+app.use('/api/marketplace', marketplaceRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -1,274 +1,371 @@
 import { useState, useEffect } from 'react';
-import { Link, Navigate } from 'react-router-dom';
-import { Calendar, Star, Heart, Clock, Play, MapPin, Globe, TrendingUp, Award, Bell, ShieldAlert, Sparkles, ArrowRight, Package } from 'lucide-react';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import {
+  Search, MapPin, Star, Clock, Calendar, CheckCircle, XCircle,
+  MessageCircle, Globe, ChevronRight, AlertTriangle, Play,
+  Wallet, CreditCard, RefreshCw, ShieldAlert, Heart, Filter
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/api';
-import { TOURS, getGuideById } from '../data/mockData';
+import { TOURS, GUIDES } from '../data/mockData';
 import TourCard from '../components/TourCard';
+import RatingModal from '../components/RatingModal';
 import VerificationModal from '../components/VerificationModal';
 import './Dashboard.css';
 
-const UPCOMING = [
-  { id: 'b1', tour: TOURS[0], date: 'May 5, 2026', time: '2:00 PM', status: 'confirmed', guide: 'g1' },
-  { id: 'b2', tour: TOURS[3], date: 'May 8, 2026', time: '11:00 AM', status: 'pending', guide: 'g4' },
+/* ── Status badge helper ── */
+const StatusBadge = ({ status }) => {
+  const map = {
+    pending:   { cls: 'badge-amber',  label: '⏳ Pending' },
+    confirmed: { cls: 'badge-teal',   label: '✅ Confirmed' },
+    completed: { cls: 'badge-purple', label: '🏁 Completed' },
+    cancelled: { cls: 'badge-error',  label: '❌ Cancelled' },
+    declined:  { cls: 'badge-error',  label: '🚫 Declined' },
+  };
+  const s = map[status] || { cls: 'badge-amber', label: status };
+  return <span className={`badge ${s.cls}`}>{s.label}</span>;
+};
+
+/* ── Demo booking data (shown when DB is offline) ── */
+const DEMO_BOOKINGS = [
+  { id: 'b1', tourTitle: 'Tokyo Neon Lights Tour', tourLocation: 'Tokyo, Japan', coverImage: TOURS[0]?.coverImage, bookingDate: '2026-06-12', bookingTime: '14:00', status: 'confirmed', totalAmount: 45, guideName: 'Yuki Tanaka', guideAvatar: GUIDES?.[0]?.avatar, tourId: '1' },
+  { id: 'b2', tourTitle: 'Rajasthan Desert Safari', tourLocation: 'Jaipur, India', coverImage: TOURS[3]?.coverImage, bookingDate: '2026-06-18', bookingTime: '10:00', status: 'pending', totalAmount: 35, guideName: 'Priya Sharma', guideAvatar: GUIDES?.[1]?.avatar, tourId: '4' },
+  { id: 'b3', tourTitle: 'Paris Midnight Walk', tourLocation: 'Paris, France', coverImage: TOURS[1]?.coverImage, bookingDate: '2026-05-20', bookingTime: '20:00', status: 'completed', totalAmount: 55, guideName: 'Sophie Dubois', guideAvatar: GUIDES?.[2]?.avatar, tourId: '2', rating: 5 },
 ];
 
-const PAST = [
-  { id: 'p1', tour: TOURS[1], date: 'Apr 18, 2026', rating: 5 },
-  { id: 'p2', tour: TOURS[5], date: 'Apr 10, 2026', rating: 4 },
-  { id: 'p3', tour: TOURS[6], date: 'Mar 29, 2026', rating: 5 },
-];
+const DEMO_WISHLIST = TOURS.filter(t => ['2','5','7'].includes(t.id));
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('upcoming');
-  const [showVerification, setShowVerification] = useState(false);
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('bookings');
   const [bookings, setBookings] = useState([]);
-  const [loadingBookings, setLoadingBookings] = useState(true);
-
-  useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const data = await api.getMyBookings();
-        if (data && Array.isArray(data)) {
-          setBookings(data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch bookings');
-      } finally {
-        setLoadingBookings(false);
-      }
-    };
-    fetchBookings();
-  }, []);
-  
-  const upcomingTours = bookings.length > 0 
-    ? bookings.filter(b => b.status === 'confirmed' || b.status === 'pending')
-    : UPCOMING;
-    
-  const pastTours = bookings.length > 0 
-    ? bookings.filter(b => b.status === 'completed')
-    : PAST;
-
-  const wishlistTours = TOURS.filter(t => ['2', '5', '7'].includes(t.id));
+  const [loading, setLoading] = useState(true);
+  const [showVerification, setShowVerification] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [notifications, setNotifications] = useState([]);
 
   if (!user) return <Navigate to="/auth" />;
   if (user.role === 'guide') return <Navigate to="/guide-dashboard" />;
   if (user.role === 'admin') return <Navigate to="/admin" />;
 
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [bData, nData] = await Promise.all([
+          api.getTravelerBookings().catch(() => null),
+          api.getNotifications().catch(() => []),
+        ]);
+        setBookings(Array.isArray(bData) && bData.length > 0 ? bData : DEMO_BOOKINGS);
+        setNotifications(Array.isArray(nData) ? nData : []);
+      } catch (_) {
+        setBookings(DEMO_BOOKINGS);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const filteredBookings = bookings.filter(b => {
+    const matchesSearch = b.tourTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          b.guideName?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || b.status === filterStatus;
+    return matchesSearch && matchesFilter;
+  });
+
+  const upcoming = bookings.filter(b => ['pending','confirmed'].includes(b.status));
+  const completed = bookings.filter(b => b.status === 'completed');
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
   return (
-    <div className="page-wrapper dashboard-page">
+    <div className="db-page">
       {showVerification && <VerificationModal onClose={() => setShowVerification(false)} />}
-      
-      <div className="dashboard-header">
+      {reviewTarget && (
+        <RatingModal
+          tour={reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onSubmit={async ({ rating, comment }) => {
+            await api.submitReview({ tourId: reviewTarget.tourId, rating, comment }).catch(() => {});
+            setReviewTarget(null);
+          }}
+        />
+      )}
+
+      {/* ── Header ── */}
+      <div className="db-header">
         <div className="container">
-          <div className="dashboard-welcome">
-            <img src={user.avatar} alt={user.name} className="dashboard-avatar" />
+          <div className="db-header-left">
+            <img src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=00F5D4&color=030712`} alt={user.name} className="db-avatar" />
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h1>Welcome back, <span className="gradient-text">{user.name.split(' ')[0]}</span>! 👋</h1>
-                {user.verified && <span className="badge badge-teal" style={{ padding: '4px 8px' }}>Verified</span>}
-              </div>
-              <p>Ready to explore somewhere new today?</p>
+              <h1 className="db-greeting">Welcome back, <span className="db-name">{user.name?.split(' ')[0]}</span> 👋</h1>
+              <p className="db-sub">Ready to explore somewhere amazing today?</p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <Link to="/planner" className="btn btn-secondary" style={{ background: 'rgba(0, 212, 170, 0.1)', color: 'var(--accent-teal)', borderColor: 'rgba(0, 212, 170, 0.3)' }}>
-              <Sparkles size={16} /> AI Trip Planner
+          <div className="db-header-actions">
+            {unreadCount > 0 && (
+              <div className="db-notif-pill">{unreadCount} new notification{unreadCount !== 1 ? 's' : ''}</div>
+            )}
+            <Link to="/guides" className="db-btn-primary">
+              <Search size={15} /> Find a Guide
             </Link>
-            <Link to="/explore" className="btn btn-primary">Browse Tours <Globe size={16} /></Link>
+            <Link to="/explore" className="db-btn-secondary">
+              <Globe size={15} /> Browse Tours
+            </Link>
           </div>
         </div>
       </div>
 
+      {/* ── Verification Banner ── */}
       {!user.verified && (
-        <div className="container" style={{ marginTop: 'var(--space-2xl)' }}>
-          <div className="glass-card" style={{ padding: 'var(--space-lg)', border: '1px solid var(--accent-amber)', background: 'rgba(245, 158, 11, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
+        <div className="container">
+          <div className="db-verify-banner">
+            <ShieldAlert size={20} />
             <div>
-              <h3 style={{ color: 'var(--accent-amber)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ShieldAlert size={18} /> Action Required: Verify your Identity
-              </h3>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                To ensure community safety and allow you to book live tours, please upload a valid government ID.
-              </p>
+              <strong>Verify your identity</strong>
+              <span>Upload a government ID to unlock all features and book tours.</span>
             </div>
-            <button className="btn btn-primary" onClick={() => setShowVerification(true)}>
-              Verify Now
-            </button>
+            <button className="db-btn-amber" onClick={() => setShowVerification(true)}>Verify Now</button>
           </div>
         </div>
       )}
 
-      {/* Stats */}
+      {/* ── Stats Row ── */}
       <div className="container">
-        <div className="dashboard-stats">
+        <div className="db-stats">
           {[
-            { icon: '🎥', label: 'Tours Completed', value: 14 },
-            { icon: '⭐', label: 'Avg Rating Given', value: '4.9' },
-            { icon: '❤️', label: 'Wishlist Items', value: 3 },
-            { icon: '🌍', label: 'Countries Visited', value: 6 },
+            { icon: '🗓️', label: 'Upcoming Tours', value: upcoming.length, accent: 'teal' },
+            { icon: '🏁', label: 'Completed', value: completed.length, accent: 'purple' },
+            { icon: '⭐', label: 'Avg Rating Given', value: completed.filter(b => b.rating).length > 0 ? (completed.reduce((s, b) => s + (b.rating || 0), 0) / completed.filter(b => b.rating).length).toFixed(1) : '—', accent: 'amber' },
+            { icon: '❤️', label: 'Wishlist', value: DEMO_WISHLIST.length, accent: 'rose' },
           ].map(s => (
-            <div key={s.label} className="dashboard-stat glass-card">
-              <span className="dashboard-stat__icon">{s.icon}</span>
-              <span className="dashboard-stat__value">{s.value}</span>
-              <span className="dashboard-stat__label">{s.label}</span>
+            <div key={s.label} className={`db-stat-card db-stat-${s.accent}`}>
+              <span className="db-stat-icon">{s.icon}</span>
+              <span className="db-stat-value">{s.value}</span>
+              <span className="db-stat-label">{s.label}</span>
             </div>
           ))}
         </div>
+      </div>
 
-        {/* AI Recommendations */}
-        <div className="dashboard-ai-section" style={{ marginBottom: 'var(--space-3xl)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-teal)', marginBottom: 'var(--space-lg)' }}>
-            <Sparkles size={20} className="spin-slow" />
-            <h3 style={{ margin: 0 }}>AI-Powered Suggestions for You</h3>
-          </div>
-          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-lg)' }}>
-            {TOURS.filter(t => t.rating > 4.8).slice(0, 3).map(t => (
-              <div key={t.id} className="glass-card" style={{ display: 'flex', gap: '15px', padding: '12px', alignItems: 'center', background: 'rgba(255, 255, 255, 0.03)' }}>
-                <img src={t.coverImage} alt={t.title} style={{ width: 80, height: 80, borderRadius: '12px', objectFit: 'cover' }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--accent-teal)', fontWeight: 600, textTransform: 'uppercase' }}>{t.category}</div>
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem', margin: '4px 0', lineHeight: 1.2 }}>{t.title}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    <MapPin size={12} /> {t.location}
-                  </div>
-                </div>
-                <Link to={`/tour/${t.id}`} className="btn btn-ghost btn-sm" style={{ padding: '8px' }}>
-                  <ArrowRight size={18} />
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="dashboard-tabs">
+      {/* ── Tab Bar ── */}
+      <div className="container">
+        <div className="db-tabs">
           {[
-            { id: 'upcoming', label: 'Upcoming', icon: <Calendar size={15} /> },
-            { id: 'past', label: 'Past Tours', icon: <Clock size={15} /> },
-            { id: 'orders', label: 'My Orders', icon: <Package size={15} /> },
-            { id: 'wishlist', label: 'Wishlist', icon: <Heart size={15} /> },
+            { id: 'bookings', label: 'My Bookings', count: bookings.length },
+            { id: 'upcoming', label: 'Upcoming', count: upcoming.length },
+            { id: 'completed', label: 'Completed', count: completed.length },
+            { id: 'wishlist', label: 'Wishlist', count: DEMO_WISHLIST.length },
+            { id: 'payments', label: 'Payments' },
           ].map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id)}
-              className={`dashboard-tab ${activeTab === t.id ? 'active' : ''}`}>
-              {t.icon} {t.label}
+            <button
+              key={t.id}
+              className={`db-tab ${activeTab === t.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(t.id)}
+            >
+              {t.label}
+              {t.count !== undefined && <span className="db-tab-count">{t.count}</span>}
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Upcoming */}
-        {activeTab === 'upcoming' && (
-          <div className="dashboard-section">
-            {upcomingTours.length === 0 ? (
-              <div className="dashboard-empty">
-                <div>📅</div>
-                <h3>No upcoming tours</h3>
-                <p>Book your next adventure!</p>
-                <Link to="/explore" className="btn btn-primary">Explore Tours</Link>
+      <div className="container db-content">
+        {/* ── Bookings Tab ── */}
+        {activeTab === 'bookings' && (
+          <>
+            <div className="db-filter-row">
+              <div className="db-search-wrap">
+                <Search size={15} />
+                <input
+                  placeholder="Search by tour or guide..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="db-status-filters">
+                {['all','pending','confirmed','completed','cancelled'].map(s => (
+                  <button
+                    key={s}
+                    className={`db-filter-pill ${filterStatus === s ? 'active' : ''}`}
+                    onClick={() => setFilterStatus(s)}
+                  >
+                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="db-loading">
+                <div className="db-spinner" /> Loading your bookings...
+              </div>
+            ) : filteredBookings.length === 0 ? (
+              <div className="db-empty">
+                <span>🌍</span>
+                <h3>No bookings yet</h3>
+                <p>Find an amazing local guide and book your first experience!</p>
+                <Link to="/guides" className="db-btn-primary">Find a Guide</Link>
               </div>
             ) : (
-              <div className="upcoming-list">
-                {upcomingTours.map(b => {
-                  const tour = b.tour || TOURS.find(t => t.id == b.tourId) || TOURS[0];
-                  const guide = getGuideById(b.guideId || 'g1');
-                  return (
-                    <div key={b.id} className="upcoming-item glass-card">
-                      <div className="upcoming-img">
-                        <img src={tour.coverImage} alt={tour.title} />
-                        <span className={`upcoming-status upcoming-status--${b.status}`}>{b.status}</span>
+              <div className="db-bookings-list">
+                {filteredBookings.map(b => (
+                  <div key={b.id} className="db-booking-card">
+                    <img src={b.coverImage || b.tourCoverImage || `https://images.unsplash.com/photo-1488085061387-422e29b40080?w=120`} alt={b.tourTitle} className="db-booking-img" />
+                    <div className="db-booking-info">
+                      <div className="db-booking-title">{b.tourTitle || 'Virtual Tour'}</div>
+                      <div className="db-booking-meta">
+                        <span><MapPin size={12} /> {b.tourLocation || b.location}</span>
+                        <span><Calendar size={12} /> {b.bookingDate}</span>
+                        <span><Clock size={12} /> {b.bookingTime?.slice(0,5)}</span>
                       </div>
-                      <div className="upcoming-info">
-                        <h3>{tour.title}</h3>
-                        <div className="upcoming-meta">
-                          <span><MapPin size={13} /> {tour.location}</span>
-                          <span><Calendar size={13} /> {b.bookingDate || b.date} · {b.bookingTime || b.time}</span>
-                          <span><Clock size={13} /> {tour.duration || 90} min</span>
+                      {b.guideName && (
+                        <div className="db-booking-guide">
+                          <img src={b.guideAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(b.guideName)}&background=8B5CF6&color=fff`} alt={b.guideName} />
+                          <span>Guide: <strong>{b.guideName}</strong></span>
                         </div>
-                        {guide && (
-                          <div className="upcoming-guide">
-                            <img src={guide.avatar} alt={guide.name} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
-                            <span>Guide: <strong>{guide.name}</strong></span>
-                            <span className="badge badge-teal" style={{ fontSize: '0.68rem' }}>★ {guide.rating}</span>
-                          </div>
+                      )}
+                    </div>
+                    <div className="db-booking-right">
+                      <StatusBadge status={b.status} />
+                      <div className="db-booking-amount">${b.totalAmount}</div>
+                      <div className="db-booking-actions">
+                        {b.status === 'confirmed' && (
+                          <Link to={`/live/${b.tourId || '1'}`} className="db-btn-primary btn-sm">
+                            <Play size={13} /> Join
+                          </Link>
                         )}
-                      </div>
-                      <div className="upcoming-actions">
-                        <Link to={`/live/${b.tour.id}`} className="btn btn-primary btn-sm">
-                          <Play size={14} /> Join Now
+                        {b.status === 'completed' && !b.rating && (
+                          <button className="db-btn-secondary btn-sm" onClick={() => setReviewTarget(b)}>
+                            <Star size={13} /> Review
+                          </button>
+                        )}
+                        {b.status === 'completed' && b.rating && (
+                          <span className="db-reviewed">★ {b.rating} Reviewed</span>
+                        )}
+                        <Link to={`/messages`} className="db-btn-ghost btn-sm">
+                          <MessageCircle size={13} /> Chat
                         </Link>
-                        <button className="btn btn-secondary btn-sm">Reschedule</button>
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             )}
+          </>
+        )}
+
+        {/* ── Upcoming Tab ── */}
+        {activeTab === 'upcoming' && (
+          <div className="db-bookings-list">
+            {upcoming.length === 0 ? (
+              <div className="db-empty">
+                <span>📅</span>
+                <h3>No upcoming tours</h3>
+                <p>Book your next adventure!</p>
+                <Link to="/explore" className="db-btn-primary">Browse Tours</Link>
+              </div>
+            ) : upcoming.map(b => (
+              <div key={b.id} className="db-booking-card db-booking-card--upcoming">
+                <img src={b.coverImage || `https://images.unsplash.com/photo-1488085061387-422e29b40080?w=120`} alt={b.tourTitle} className="db-booking-img" />
+                <div className="db-booking-info">
+                  <div className="db-booking-title">{b.tourTitle}</div>
+                  <div className="db-booking-meta">
+                    <span><MapPin size={12} /> {b.tourLocation}</span>
+                    <span><Calendar size={12} /> {b.bookingDate} · {b.bookingTime?.slice(0,5)}</span>
+                  </div>
+                  {b.guideName && (
+                    <div className="db-booking-guide">
+                      <img src={b.guideAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(b.guideName || 'G')}&background=8B5CF6&color=fff`} alt="" />
+                      <span>Guide: <strong>{b.guideName}</strong></span>
+                    </div>
+                  )}
+                </div>
+                <div className="db-booking-right">
+                  <StatusBadge status={b.status} />
+                  {b.status === 'confirmed' && (
+                    <Link to={`/live/${b.tourId || '1'}`} className="db-btn-primary" style={{ marginTop: '12px' }}>
+                      <Play size={14} /> Join Tour
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Past */}
-        {activeTab === 'past' && (
-          <div className="dashboard-section">
-            <div className="past-list">
-              {pastTours.map(p => {
-                const tour = p.tour || TOURS.find(t => t.id == p.tourId) || TOURS[0];
-                return (
-                  <div key={p.id} className="past-item glass-card">
-                    <img src={tour.coverImage} alt={tour.title} className="past-img" />
-                    <div className="past-info">
-                      <h4>{tour.title}</h4>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                        <MapPin size={12} style={{ color: 'var(--text-muted)' }} />
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{tour.location}</span>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>· {p.bookingDate || p.date}</span>
-                      </div>
-                      <div style={{ display: 'flex', gap: '3px', marginTop: '6px' }}>
-                        {Array.from({ length: p.rating || 5 }).map((_, i) => <Star key={i} size={12} fill="var(--accent-amber)" stroke="none" />)}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <Link to={`/tour/${tour.id}`} className="btn btn-secondary btn-sm">Book Again</Link>
-                      <button className="btn btn-ghost btn-sm" onClick={() => alert('Continuous Feedback portal opened. Thank you for helping us improve!')}>Give Feedback</button>
-                    </div>
+        {/* ── Completed Tab ── */}
+        {activeTab === 'completed' && (
+          <div className="db-bookings-list">
+            {completed.length === 0 ? (
+              <div className="db-empty"><span>🏁</span><h3>No completed tours yet</h3><p>Complete your first tour and earn a stamp!</p></div>
+            ) : completed.map(b => (
+              <div key={b.id} className="db-booking-card">
+                <img src={b.coverImage || `https://images.unsplash.com/photo-1488085061387-422e29b40080?w=120`} alt={b.tourTitle} className="db-booking-img" />
+                <div className="db-booking-info">
+                  <div className="db-booking-title">{b.tourTitle}</div>
+                  <div className="db-booking-meta">
+                    <span><MapPin size={12} /> {b.tourLocation}</span>
+                    <span><Calendar size={12} /> {b.bookingDate}</span>
                   </div>
-                );
-              })}
+                  {b.rating && (
+                    <div className="db-stars">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} size={13} fill={i < b.rating ? '#FBBF24' : 'none'} stroke={i < b.rating ? '#FBBF24' : '#64748B'} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="db-booking-right">
+                  <StatusBadge status="completed" />
+                  <div className="db-booking-amount">${b.totalAmount}</div>
+                  {!b.rating ? (
+                    <button className="db-btn-primary btn-sm" onClick={() => setReviewTarget(b)}>
+                      <Star size={13} /> Leave Review
+                    </button>
+                  ) : (
+                    <Link to={`/tour/${b.tourId || '1'}`} className="db-btn-secondary btn-sm">Book Again</Link>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Wishlist Tab ── */}
+        {activeTab === 'wishlist' && (
+          <div className="db-grid">
+            {DEMO_WISHLIST.map(t => <TourCard key={t.id} tour={t} />)}
+          </div>
+        )}
+
+        {/* ── Payments Tab ── */}
+        {activeTab === 'payments' && (
+          <div className="db-payments">
+            <div className="db-wallet-card">
+              <div className="db-wallet-label"><Wallet size={18} /> ZilliGo Wallet</div>
+              <div className="db-wallet-amount">$0.00</div>
+              <p>Funds from cancellations & promos appear here.</p>
+              <button className="db-btn-primary">Top Up Wallet</button>
             </div>
-          </div>
-        )}
-
-        {/* Orders */}
-        {activeTab === 'orders' && (
-          <div className="dashboard-section">
-            <div className="orders-list">
-              {[
-                { id: 'ORD-122', item: 'Handcrafted Sandalwood Box', price: '$45.00', status: 'Shipped', date: 'May 1, 2026', img: 'https://images.unsplash.com/photo-1590642916589-592bca10dfbf?w=100' },
-                { id: 'ORD-109', item: 'Organic Darjeeling Tea (Set of 3)', price: '$28.50', status: 'Delivered', date: 'Apr 25, 2026', img: 'https://images.unsplash.com/photo-1594631252845-29fc45865157?w=100' },
-              ].map(o => (
-                <div key={o.id} className="order-item glass-card" style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '15px', marginBottom: '12px' }}>
-                  <img src={o.img} alt={o.item} style={{ width: 60, height: 60, borderRadius: '8px', objectFit: 'cover' }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{o.id} · {o.date}</div>
-                    <div style={{ fontWeight: 700 }}>{o.item}</div>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--accent-teal)' }}>{o.price}</div>
+            <h3 style={{ marginBottom: '1rem' }}>Transaction History</h3>
+            <div className="db-tx-list">
+              {bookings.filter(b => b.status === 'completed' || b.status === 'confirmed').map(b => (
+                <div key={b.id} className="db-tx-row">
+                  <div className="db-tx-icon"><CreditCard size={20} /></div>
+                  <div className="db-tx-info">
+                    <div>{b.tourTitle}</div>
+                    <div className="db-tx-meta">{b.bookingDate} · Tour Booking</div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span className={`badge ${o.status === 'Shipped' ? 'badge-amber' : 'badge-teal'}`} style={{ fontSize: '0.7rem' }}>{o.status}</span>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      {o.status === 'Shipped' ? 'Tracking: ZG-99812' : 'Receipt #8822'}
-                    </div>
+                  <div className="db-tx-right">
+                    <div className="db-tx-amount">-${b.totalAmount}</div>
+                    <StatusBadge status={b.status} />
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-        )}
-
-        {/* Wishlist */}
-        {activeTab === 'wishlist' && (
-          <div className="dashboard-section">
-            <div className="grid-4">
-              {wishlistTours.map(t => <TourCard key={t.id} tour={t} />)}
             </div>
           </div>
         )}

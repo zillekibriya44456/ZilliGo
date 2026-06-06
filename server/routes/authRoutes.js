@@ -13,6 +13,9 @@ const authController = require('../controllers/authController');
 
 router.post('/register', authController.registerUser);
 router.post('/login', authController.loginUser);
+router.post('/refresh-token', authController.refreshToken);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
 router.get('/profile', protect, authController.getUserProfile);
 router.put('/profile', protect, authController.updateUserProfile);
 

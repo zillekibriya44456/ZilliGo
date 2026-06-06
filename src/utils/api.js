@@ -34,6 +34,30 @@ export const api = {
     headers: getHeaders(),
   }).then(res => res.json()),
 
+  updateProfile: (data) => fetch(`${API_BASE}/auth/profile`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+
+  refreshToken: (data) => fetch(`${API_BASE}/auth/refresh-token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+
+  forgotPassword: (data) => fetch(`${API_BASE}/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+
+  resetPassword: (data) => fetch(`${API_BASE}/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+
   // Tours
   getTours: (filters = '') => fetch(`${API_BASE}/tours?${filters}`).then(res => res.json()),
   getTourById: (id) => fetch(`${API_BASE}/tours/${id}`).then(res => res.json()),
@@ -89,4 +113,38 @@ export const api = {
   }).then(res => res.json()),
 
   getGuides: () => fetch(`${API_BASE}/guides`).then(res => res.json()),
+
+  // ── Marketplace ──
+  getMarketplaceGuides: (params = '') =>
+    fetch(`${API_BASE}/marketplace/guides?${params}`).then(res => res.json()),
+  getMarketplaceGuide: (id) =>
+    fetch(`${API_BASE}/marketplace/guides/${id}`).then(res => res.json()),
+
+  requestBooking: (data) => fetch(`${API_BASE}/marketplace/bookings`, {
+    method: 'POST', headers: getHeaders(), body: JSON.stringify(data),
+  }).then(res => res.json()),
+
+  getTravelerBookings: () =>
+    fetch(`${API_BASE}/marketplace/bookings/traveler`, { headers: getHeaders() }).then(res => res.json()),
+
+  getGuideBookings: () =>
+    fetch(`${API_BASE}/marketplace/bookings/guide`, { headers: getHeaders() }).then(res => res.json()),
+
+  updateBookingStatus: (id, status) => fetch(`${API_BASE}/marketplace/bookings/${id}/status`, {
+    method: 'PATCH', headers: getHeaders(), body: JSON.stringify({ status }),
+  }).then(res => res.json()),
+
+  getGuideStats: () =>
+    fetch(`${API_BASE}/marketplace/guide/stats`, { headers: getHeaders() }).then(res => res.json()),
+
+  submitReview: (data) => fetch(`${API_BASE}/marketplace/reviews`, {
+    method: 'POST', headers: getHeaders(), body: JSON.stringify(data),
+  }).then(res => res.json()),
+
+  getNotifications: () =>
+    fetch(`${API_BASE}/marketplace/notifications`, { headers: getHeaders() }).then(res => res.json()),
+
+  markAllNotificationsRead: () => fetch(`${API_BASE}/marketplace/notifications/read-all`, {
+    method: 'PATCH', headers: getHeaders(),
+  }).then(res => res.json()),
 };

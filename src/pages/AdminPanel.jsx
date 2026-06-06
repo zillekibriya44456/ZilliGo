@@ -312,33 +312,56 @@ export default function AdminPanel() {
 
         {activeTab === 'transactions' && (
           <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
+            
+            {/* Revenue Analytics Headers */}
+            <div className="grid-3" style={{ marginBottom: 'var(--space-2xl)' }}>
+              <div style={{ padding: '15px', background: 'rgba(0, 212, 170, 0.1)', borderRadius: '12px', border: '1px solid var(--accent-teal)' }}>
+                <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Gross Volume (GMV)</div>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', margin: '8px 0' }}>$142,500.00</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--accent-teal)' }}>↑ 22% vs last month</div>
+              </div>
+              <div style={{ padding: '15px', background: 'rgba(128, 90, 213, 0.1)', borderRadius: '12px', border: '1px solid var(--accent-purple)' }}>
+                <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Platform Revenue (15% Cut)</div>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-purple)', margin: '8px 0' }}>$21,375.00</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--accent-teal)' }}>↑ 18% vs last month</div>
+              </div>
+              <div style={{ padding: '15px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '12px', border: '1px solid var(--accent-amber)' }}>
+                <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Guide Payouts</div>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-amber)', margin: '8px 0' }}>$121,125.00</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--accent-amber)' }}>45 Pending Escrow Releases</div>
+              </div>
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
-              <h3>Platform Transactions</h3>
+              <h3>Global Transactions Ledger</h3>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <select className="input btn-sm" style={{ width: '150px' }}>
                   <option>All Time</option>
                   <option>This Month</option>
                   <option>Today</option>
                 </select>
+                <button className="btn btn-secondary btn-sm">Export Ledger</button>
               </div>
             </div>
-            <div className="admin-table-wrap">
+            
+            <div className="admin-table-wrap" style={{ marginBottom: 'var(--space-3xl)' }}>
               <table className="admin-table">
                 <thead>
                   <tr>
                     <th>Date</th>
                     <th>Transaction Details</th>
                     <th>Type</th>
-                    <th>Amount</th>
+                    <th>Total GMV</th>
+                    <th>Platform (15%)</th>
                     <th>Guide Split</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    { date: 'May 02, 10:15 AM', item: 'Ancient Rome Tour', type: 'Booking', amount: '$29.00', split: '$23.20', status: 'success' },
-                    { date: 'May 02, 09:45 AM', item: 'Silk Scarf (Shopping)', type: 'Product', amount: '$45.00', split: '$36.00', status: 'success' },
-                    { date: 'May 02, 08:30 AM', item: 'Tokyo Street Food', type: 'Booking', amount: '$35.00', split: '$28.00', status: 'refunded' },
+                    { date: 'May 02, 10:15 AM', item: 'Ancient Rome Tour', type: 'Booking', amount: '$29.00', platform: '$4.35', split: '$24.65', status: 'success' },
+                    { date: 'May 02, 09:45 AM', item: 'Silk Scarf (Shopping)', type: 'Product', amount: '$45.00', platform: '$6.75', split: '$38.25', status: 'success' },
+                    { date: 'May 02, 08:30 AM', item: 'Tokyo Street Food', type: 'Booking', amount: '$35.00', platform: '$5.25', split: '$29.75', status: 'refunded' },
                   ].map((tx, i) => (
                     <tr key={i}>
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{tx.date}</td>
@@ -348,10 +371,44 @@ export default function AdminPanel() {
                       </td>
                       <td><span className="badge btn-sm" style={{ fontSize: '0.65rem' }}>{tx.type}</span></td>
                       <td style={{ fontWeight: 700 }}>{tx.amount}</td>
+                      <td style={{ color: 'var(--accent-purple)', fontWeight: 600 }}>{tx.platform}</td>
                       <td style={{ color: 'var(--accent-teal)' }}>{tx.split}</td>
                       <td><span className={`badge ${tx.status === 'success' ? 'badge-teal' : 'badge-amber'}`} style={{ fontSize: '0.65rem' }}>{tx.status}</span></td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
+              <h3 style={{ color: 'var(--accent-rose)', display: 'flex', alignItems: 'center', gap: '8px' }}><ShieldAlert size={18} /> Financial Disputes & Chargebacks</h3>
+            </div>
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Dispute ID</th>
+                    <th>User</th>
+                    <th>Reason</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>DSP-9821</td>
+                    <td style={{ fontWeight: 600, fontSize: '0.85rem' }}>john.doe@example.com</td>
+                    <td style={{ fontSize: '0.85rem' }}>Guide did not show up (Claim)</td>
+                    <td style={{ fontWeight: 700, color: 'var(--accent-rose)' }}>$45.00</td>
+                    <td><span className="badge badge-amber" style={{ fontSize: '0.65rem' }}>Requires Evidence</span></td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button className="btn btn-primary btn-sm" style={{ fontSize: '0.7rem', padding: '4px 8px' }}>Refund User</button>
+                        <button className="btn btn-secondary btn-sm" style={{ fontSize: '0.7rem', padding: '4px 8px' }}>Challenge</button>
+                      </div>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>

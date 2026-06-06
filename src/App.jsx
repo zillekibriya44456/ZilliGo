@@ -10,6 +10,7 @@ import LiveRoom from './pages/LiveRoom';
 import GuideDirectory from './pages/GuideDirectory';
 import GuideProfile from './pages/GuideProfile';
 import Auth from './pages/Auth';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import GuideDashboard from './pages/GuideDashboard';
 import AdminPanel from './pages/AdminPanel';
@@ -20,6 +21,11 @@ import TripPlanner from './pages/TripPlanner';
 import Messages from './pages/Messages';
 import Marketplace from './pages/Marketplace';
 import OAuthCallback from './pages/OAuthCallback';
+import CultureOlympics from './pages/CultureOlympics';
+import DigitalPassport from './pages/DigitalPassport';
+import FriendDiscovery from './pages/FriendDiscovery';
+import GlobalMap from './pages/GlobalMap';
+import ExchangeRooms from './pages/ExchangeRooms';
 
 function App() {
   return (
@@ -35,6 +41,7 @@ function App() {
           <Route path="/guides" element={<GuideDirectory />} />
           <Route path="/guide/:id" element={<GuideProfile />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/guide-dashboard" element={<GuideDashboard />} />
           <Route path="/admin" element={<AdminPanel />} />
@@ -43,6 +50,11 @@ function App() {
           <Route path="/planner" element={<TripPlanner />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/shop" element={<Marketplace />} />
+          <Route path="/olympics" element={<CultureOlympics />} />
+          <Route path="/passport" element={<DigitalPassport />} />
+          <Route path="/friends" element={<FriendDiscovery />} />
+          <Route path="/map" element={<GlobalMap />} />
+          <Route path="/exchange" element={<ExchangeRooms />} />
           <Route path="/auth/callback" element={<OAuthCallback />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

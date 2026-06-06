@@ -40,4 +40,57 @@
   padding-bottom: 4px;
 }
 
-.guide-specialty-tabs::-webkit-scrollbar { display: none; }
+/* ── Premium Luxury Overrides ── */
+
+.guide-directory {
+  background: #020617; /* Deep Navy / Rich Black */
+  min-height: 100vh;
+}
+
+.guide-directory-header {
+  background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 6rem 0 3rem;
+}
+
+.guide-dir-search .input-group {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 100px;
+  padding: 4px 16px;
+}
+
+.guide-dir-search .input-group input {
+  background: transparent;
+  color: #fff;
+}
+
+.guide-dir-search select {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  border-radius: 100px;
+  padding: 10px 20px;
+}
+
+.category-btn {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-secondary);
+  border-radius: 100px;
+  padding: 8px 20px;
+  transition: all 0.3s ease;
+}
+
+.category-btn:hover {
+  border-color: rgba(0, 212, 170, 0.4);
+  color: #fff;
+}
+
+.category-btn--active {
+  background: var(--accent-teal);
+  color: #000;
+  border-color: var(--accent-teal);
+  font-weight: 700;
+}

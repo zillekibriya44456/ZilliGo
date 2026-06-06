@@ -186,3 +186,124 @@
   flex-direction: column;
   gap: var(--space-md);
 }
+
+/* ── Premium Luxury Overrides ── */
+
+.explore-page {
+  background: #020617; /* Deep Navy / Rich Black */
+  min-height: 100vh;
+}
+
+.explore-header {
+  background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.explore-section-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+/* Destination Carousel */
+.explore-destinations {
+  padding: 3rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.destinations-scroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 16px;
+  scrollbar-width: none;
+}
+
+.destinations-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.dest-card {
+  min-width: 160px;
+  height: 200px;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.dest-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(0, 212, 170, 0.5);
+}
+
+.dest-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.dest-card:hover .dest-card-img {
+  transform: scale(1.1);
+}
+
+.dest-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 16px;
+}
+
+.dest-card-flag {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+.dest-card-name {
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+/* Horizontal Scroll for Cards */
+.explore-curated {
+  padding: 4rem 0 0;
+}
+
+.horizontal-scroll {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  padding-bottom: 24px;
+  scrollbar-width: none;
+}
+
+.horizontal-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-item {
+  min-width: 320px;
+  width: 320px;
+  flex-shrink: 0;
+}
+
+/* Map override */
+.explore-map-container {
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}

@@ -36,9 +36,9 @@ export function AuthProvider({ children }) {
     initAuth();
   }, [logout]);
 
-  const login = async (email, password) => {
+  const login = async (email, password, rememberMe = false) => {
     try {
-      const data = await api.login({ email, password });
+      const data = await api.login({ email, password, rememberMe });
       if (data.message && data.message !== 'Success') throw new Error(data.message);
       
       setUser(data);
@@ -57,6 +57,21 @@ export function AuthProvider({ children }) {
       setUser(data);
       localStorage.setItem('zillgo_user', JSON.stringify(data));
       return data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const updateProfile = async (updates) => {
+    try {
+      const data = await api.updateProfile(updates);
+      if (data.message && data.message !== 'Success') throw new Error(data.message);
+      const stored = localStorage.getItem('zillgo_user');
+      const currentUser = stored ? JSON.parse(stored) : {};
+      const updatedUser = { ...currentUser, ...data };
+      setUser(updatedUser);
+      localStorage.setItem('zillgo_user', JSON.stringify(updatedUser));
+      return updatedUser;
     } catch (error) {
       throw error;
     }
@@ -95,7 +110,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, loginWithToken, updateUserStatus, getAllUsers }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, loginWithToken, updateUserStatus, getAllUsers, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

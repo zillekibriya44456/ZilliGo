@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Search, Filter, Star, MapPin, Globe, CheckCircle } from 'lucide-react';
 import GuideCard from '../components/GuideCard';
 import { GUIDES } from '../data/mockData';
+import { api } from '../utils/api';
 import './GuideDirectory.css';
 
 export default function GuideDirectory() {
@@ -9,23 +10,46 @@ export default function GuideDirectory() {
   const [specialty, setSpecialty] = useState('all');
   const [availOnly, setAvailOnly] = useState(false);
   const [sort, setSort] = useState('rating');
+  const [apiGuides, setApiGuides] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const specialties = ['all', 'Historical', 'Food & Culture', 'Adventure', 'Art & Culture', 'Nature & Scenic', 'Tech & Innovation', 'Urban Exploration'];
 
-  const filtered = GUIDES
-    .filter(g => {
-      const q = search.toLowerCase();
-      if (q && !g.name.toLowerCase().includes(q) && !g.location.toLowerCase().includes(q) && !g.specialties.some(s => s.toLowerCase().includes(q))) return false;
-      if (specialty !== 'all' && !g.specialties.includes(specialty)) return false;
-      if (availOnly && !g.available) return false;
-      return true;
-    })
-    .sort((a, b) => {
-      if (sort === 'rating') return b.rating - a.rating;
-      if (sort === 'reviews') return b.reviewCount - a.reviewCount;
-      if (sort === 'price') return a.hourlyRate - b.hourlyRate;
-      return b.toursCompleted - a.toursCompleted;
-    });
+  useEffect(() => {
+    const fetchGuides = async () => {
+      setLoading(true);
+      try {
+        const res = await api.getMarketplaceGuides();
+        if (res?.guides?.length > 0) {
+          setApiGuides(res.guides);
+        } else {
+          setApiGuides(GUIDES); // Fallback to mock data if empty
+        }
+      } catch (err) {
+        setApiGuides(GUIDES); // Fallback to mock data on error
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGuides();
+  }, []);
+
+  const filtered = useMemo(() => {
+    return apiGuides
+      .filter(g => {
+        const q = search.toLowerCase();
+        if (q && !g.name?.toLowerCase().includes(q) && !g.location?.toLowerCase().includes(q) && !(g.specialties || []).some(s => s.toLowerCase().includes(q))) return false;
+        if (specialty !== 'all' && !(g.specialties || []).includes(specialty)) return false;
+        if (availOnly && !g.available) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        if (sort === 'rating') return (b.rating || b.avgRating || 0) - (a.rating || a.avgRating || 0);
+        if (sort === 'reviews') return (b.reviewCount || 0) - (a.reviewCount || 0);
+        if (sort === 'price') return (a.hourlyRate || a.startingPrice || 0) - (b.hourlyRate || b.startingPrice || 0);
+        return (b.toursCompleted || b.totalTours || 0) - (a.toursCompleted || a.totalTours || 0);
+      });
+  }, [apiGuides, search, specialty, availOnly, sort]);
 
   return (
     <div className="page-wrapper guide-directory">

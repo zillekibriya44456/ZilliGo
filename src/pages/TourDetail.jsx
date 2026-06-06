@@ -19,9 +19,18 @@ export default function TourDetail() {
   const [wishlist, setWishlist] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
   const [participants, setParticipants] = useState(1);
+  const [bookingType, setBookingType] = useState('instant'); // instant, request, waitlist
   const [showMatching, setShowMatching] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+
+  const availableTimes = ['10:00 AM', '02:00 PM', '06:00 PM'];
+  const capacityStatus = {
+    '10:00 AM': { available: 5, status: 'instant' },
+    '02:00 PM': { available: 0, status: 'waitlist' },
+    '06:00 PM': { available: 2, status: 'request' }
+  };
 
   const similarTours = TOURS.filter(t => t.id !== id && t.category === tour?.category).slice(0, 4);
 
@@ -35,10 +44,37 @@ export default function TourDetail() {
     );
   }
 
-  const handleBook = () => {
+  const handleBook = async () => {
     if (!user) { navigate('/auth'); return; }
     if (tour.type === 'live') {
-      setShowPayment(true);
+      if (!selectedDate || !selectedTime) return alert('Please select a date and time slot.');
+      
+      if (bookingType === 'waitlist') {
+        alert('You have been added to the waitlist! We will notify you if a spot opens up.');
+        return;
+      }
+      
+      try {
+        await api.requestBooking({
+          tourId: tour.id,
+          guideId: guide.id,
+          date: selectedDate,
+          time: selectedTime,
+          participants,
+          bookingType,
+        });
+
+        if (bookingType === 'request') {
+          alert('✅ Booking request sent to the guide. They will review it shortly. You can check the status in your Dashboard.');
+          navigate('/dashboard');
+          return;
+        }
+
+        // For instant booking, proceed to payment
+        setShowPayment(true);
+      } catch (err) {
+        alert('Error creating booking. Please try again later.');
+      }
     } else {
       navigate(`/live/${tour.id}`);
     }
@@ -46,8 +82,7 @@ export default function TourDetail() {
 
   const handlePaymentSuccess = () => {
     setShowPayment(false);
-    setShowMatching(true);
-    startMatching([guide]);
+    navigate('/dashboard');
   };
 
   const total = tour.price * participants;
@@ -180,15 +215,46 @@ export default function TourDetail() {
             <hr className="divider" style={{ margin: '1rem 0' }} />
 
             {tour.type === 'live' && (
-              <div className="td-booking-field">
-                <label>Date & Time</label>
-                <input type="datetime-local" className="input" value={selectedDate}
-                  onChange={e => setSelectedDate(e.target.value)} min={new Date().toISOString().slice(0, 16)} />
-              </div>
+              <>
+                <div className="td-booking-field">
+                  <label>Date</label>
+                  <input type="date" className="input" value={selectedDate}
+                    onChange={e => setSelectedDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
+                </div>
+                {selectedDate && (
+                  <div className="td-booking-field">
+                    <label>Available Time Slots</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px' }}>
+                      {availableTimes.map(time => {
+                        const info = capacityStatus[time];
+                        const isSelected = selectedTime === time;
+                        return (
+                          <button 
+                            key={time}
+                            onClick={() => { setSelectedTime(time); setBookingType(info.status); }}
+                            style={{
+                              padding: '8px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600,
+                              background: isSelected ? 'var(--accent-teal)' : 'rgba(255,255,255,0.05)',
+                              color: isSelected ? '#000' : 'var(--text-primary)',
+                              border: `1px solid ${isSelected ? 'var(--accent-teal)' : 'var(--border-glass)'}`,
+                              cursor: 'pointer', textAlign: 'center', opacity: info.status === 'waitlist' ? 0.6 : 1
+                            }}
+                          >
+                            {time}
+                            <div style={{ fontSize: '0.65rem', fontWeight: 400, marginTop: '2px', color: isSelected ? '#000' : 'var(--text-muted)' }}>
+                              {info.status === 'waitlist' ? 'Waitlist Only' : `${info.available} spots left`}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             <div className="td-booking-field">
-              <label>Participants</label>
+              <label>Guests</label>
               <div className="td-booking-participants">
                 <button onClick={() => setParticipants(p => Math.max(1, p - 1))}>−</button>
                 <span>{participants}</span>
@@ -196,15 +262,23 @@ export default function TourDetail() {
               </div>
             </div>
 
-            <div className="td-booking-total">
-              <span>Total</span>
+            <div className="td-booking-total" style={{ borderTop: '1px solid var(--border-glass-strong)', paddingTop: '1rem', marginTop: '1rem' }}>
+              <span style={{ fontWeight: 600 }}>Total (Taxes included)</span>
               <span className="td-booking-total-amount">${total}</span>
             </div>
 
-            <button className="btn btn-primary" style={{ width: '100%', marginBottom: '0.75rem' }} onClick={handleBook}>
-              {tour.type === 'live' ? '🔴 Book Live Tour' : '▶ Watch Now'}
+            <button 
+              className={`btn ${bookingType === 'waitlist' ? 'btn-secondary' : 'btn-primary'}`} 
+              style={{ width: '100%', marginBottom: '0.75rem', marginTop: '1rem', opacity: (!selectedDate || !selectedTime) && tour.type === 'live' ? 0.5 : 1 }} 
+              onClick={handleBook}
+            >
+              {tour.type !== 'live' ? '▶ Watch Now' : 
+               bookingType === 'waitlist' ? 'Join Waitlist' : 
+               bookingType === 'request' ? 'Request to Book' : 
+               'Instant Book'}
             </button>
             <button className="btn btn-secondary" style={{ width: '100%' }}
+
               onClick={() => setWishlist(!wishlist)}>
               <Heart size={16} fill={wishlist ? 'currentColor' : 'none'} />
               {wishlist ? 'Saved to Wishlist' : 'Save to Wishlist'}

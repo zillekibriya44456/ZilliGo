@@ -146,6 +146,60 @@ export default function Explore() {
         </div>
       </div>
 
+      {/* ── Featured Destinations Carousel ── */}
+      <div className="explore-destinations">
+        <div className="container">
+          <h2 className="explore-section-title">Popular Destinations</h2>
+          <div className="destinations-scroll">
+            {[
+              { name: 'Japan', flag: '🇯🇵', img: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&q=80' },
+              { name: 'Italy', flag: '🇮🇹', img: 'https://images.unsplash.com/photo-1516483638261-f40af5afab79?w=400&q=80' },
+              { name: 'France', flag: '🇫🇷', img: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80' },
+              { name: 'India', flag: '🇮🇳', img: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=400&q=80' },
+              { name: 'Brazil', flag: '🇧🇷', img: 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?w=400&q=80' },
+            ].map(d => (
+              <div key={d.name} className="dest-card" onClick={() => setSelectedCountry(d.name)}>
+                <img src={d.img} alt={d.name} className="dest-card-img" />
+                <div className="dest-card-overlay">
+                  <span className="dest-card-flag">{d.flag}</span>
+                  <span className="dest-card-name">{d.name}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Trending & Live Now Sections ── */}
+      {!search && typeFilter === 'all' && categoryFilter === 'all' && (
+        <div className="explore-curated container">
+          
+          <div className="explore-curated-section">
+            <h2 className="explore-section-title">🔥 Trending Right Now</h2>
+            <div className="horizontal-scroll">
+              {allTours.slice(0, 4).map(t => (
+                <div key={t.id} className="scroll-item">
+                  <TourCard tour={t} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="explore-curated-section" style={{ marginTop: '3rem' }}>
+            <h2 className="explore-section-title">🌍 Live Around The World</h2>
+            <div className="horizontal-scroll">
+              {allTours.filter(t => t.type === 'live').slice(0, 4).map(t => (
+                <div key={t.id} className="scroll-item">
+                  <TourCard tour={t} />
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <h2 className="explore-section-title" style={{ marginTop: '4rem', marginBottom: '-1rem' }}>All Experiences</h2>
+        </div>
+      )}
+
       {/* Advanced Filters Panel */}
       {showFilters && (
         <div className="explore-filters-panel">

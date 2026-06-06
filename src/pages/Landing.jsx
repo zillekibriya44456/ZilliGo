@@ -31,109 +31,109 @@ export default function Landing() {
 
   return (
     <div className="landing">
-      {/* ── Hero ── */}
-      <section className="landing__hero">
-        {/* Background elements */}
-        <div className="hero-bg">
-          <div className="hero-bg__img" />
-          <div className="hero-bg__overlay" />
-          <div className="hero-bg__grid" />
+      {/* ── Minimalist Premium Hero ── */}
+      <section className="landing__hero" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #020617 100%)', position: 'relative', overflow: 'hidden', paddingBottom: 'var(--space-3xl)' }}>
+        {/* Simple Background elements */}
+        <div className="hero-bg" style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(0, 212, 170, 0.1) 0%, transparent 50%)' }} />
+          <div className="hero-bg__grid" style={{ opacity: 0.15, backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         </div>
-        <div className="glow-line glow-teal" style={{ width: 600, height: 600, top: -200, left: -200 }} />
-        <div className="glow-line glow-amber" style={{ width: 400, height: 400, top: '50%', right: -100 }} />
+        <div className="glow-line glow-teal" style={{ width: 600, height: 600, top: -300, left: -200, opacity: 0.3 }} />
+        <div className="glow-line glow-purple" style={{ width: 400, height: 400, top: '40%', right: -100, opacity: 0.2 }} />
 
-        <div className={`container hero-content ${heroLoaded ? 'hero-content--visible' : ''}`}>
-          <div className="hero-content__inner">
-            {/* Label */}
-            <div className="hero-label animate-fade-up" style={{ animationDelay: '0.1s' }}>
-              <span className="badge badge-live">🔴 LIVE</span>
-              <span>47 tours happening right now worldwide</span>
-            </div>
+        <div className={`container hero-content ${heroLoaded ? 'hero-content--visible' : ''}`} style={{ position: 'relative', zIndex: 10 }}>
+          <div className="hero-content__inner" style={{ paddingTop: '15vh' }}>
 
             {/* Heading */}
-            <h1 className="hero-heading animate-fade-up" style={{ animationDelay: '0.2s' }}>
-              {language === 'ar' ? 'استكشف العالم من' : language === 'zh' ? '从家中探索世界' : 'Explore the world from'} <br />
-              <span className="gradient-text">{language === 'ar' ? 'منزلك مباشرة' : language === 'zh' ? '就在你的客厅里' : 'your living room.'}</span>
+            <h1 className="hero-heading animate-fade-up" style={{ animationDelay: '0.2s', fontSize: 'clamp(72px, 8vw, 96px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.04em', margin: '0' }}>
+              Explore the world <br />
+              from your <span style={{ background: 'linear-gradient(135deg, #00d4aa 0%, #0088ff 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', textShadow: '0 0 40px rgba(0, 212, 170, 0.4)' }}>living room.</span>
             </h1>
 
-            <p className="hero-sub animate-fade-up" style={{ animationDelay: '0.3s' }}>
-              {t('hero_subtitle', language) || 'Expert-led live virtual tours that bring the globe to your screen. Interactive, immersive, and 100% live.'}
+            <p className="hero-sub animate-fade-up" style={{ animationDelay: '0.3s', fontSize: 'clamp(24px, 3vw, 28px)', fontWeight: 300, color: 'var(--text-secondary)', maxWidth: '600px', lineHeight: 1.5, marginTop: '1.5rem' }}>
+              Join live immersive tours with passionate local guides in real-time.
             </p>
 
             {/* Search */}
-            <form className="hero-search animate-fade-up" onSubmit={handleSearch} style={{ animationDelay: '0.4s' }}>
-              <div className="input-group hero-search__input">
-                <Search size={18} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+            <form className="hero-search animate-fade-up" onSubmit={handleSearch} style={{ animationDelay: '0.4s', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(24px)', padding: '8px', borderRadius: '100px', marginTop: '3rem', maxWidth: '600px', boxShadow: '0 0 30px rgba(0, 212, 170, 0.15), 0 20px 40px rgba(0,0,0,0.5)', transition: 'box-shadow 0.3s ease' }}>
+              <div className="input-group hero-search__input" style={{ border: 'none', background: 'transparent' }}>
+                <Search size={24} style={{ color: 'var(--text-muted)', flexShrink: 0, marginLeft: '16px' }} />
                 <input 
                   type="text" 
-                  placeholder={t('search_placeholder', language)}
+                  placeholder="Where do you want to go today?"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{ background: 'transparent', color: '#fff', fontSize: '1.2rem', padding: '12px 16px', outline: 'none' }}
                 />
               </div>
-              <button type="submit" className="btn btn-primary hero-search__btn">
-                {t('explore', language)} <ArrowRight size={16} />
+              <button type="submit" className="btn btn-primary hero-search__btn" style={{ borderRadius: '100px', padding: '16px 32px', fontSize: '1.1rem', fontWeight: 600, boxShadow: '0 0 20px rgba(0, 212, 170, 0.4)' }}>
+                Explore Tours
               </button>
             </form>
 
             {/* Popular */}
-            <div className="hero-popular animate-fade-up" style={{ animationDelay: '0.5s' }}>
-              <span>Popular:</span>
-              {['Rome', 'Tokyo', 'Santorini', 'New York', 'Bali'].map(city => (
-                <button key={city} onClick={() => navigate(`/explore?q=${city}`)} className="hero-popular__tag">
+            <div className="hero-popular animate-fade-up" style={{ animationDelay: '0.5s', marginTop: '2rem', color: 'var(--text-muted)' }}>
+              <span style={{ fontSize: '1rem' }}>Popular:</span>
+              {['Rome', 'Tokyo', 'Bali', 'Santorini', 'New York'].map(city => (
+                <button key={city} onClick={() => navigate(`/explore?q=${city}`)} className="hero-popular__tag" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)', padding: '6px 16px', borderRadius: '100px', fontSize: '0.9rem' }}>
                   {city}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Hero Cards */}
-          <div className="hero-cards animate-fade-up" style={{ animationDelay: '0.3s' }}>
-            <div className="hero-card hero-card--main glass-card">
-              <div className="hero-card__img-wrap">
-                <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&q=80" alt="Rome Tour" />
-                <div className="hero-card__live-badge badge badge-live">🔴 LIVE NOW</div>
-                <div className="hero-card__viewers">👁 213 watching</div>
+          {/* Hero Cards - Overlapping */}
+          <div className="hero-cards animate-fade-up" style={{ animationDelay: '0.4s', right: '-20px', top: '10vh', transform: 'scale(1.1)', transformOrigin: 'right center', zIndex: 20 }}>
+            <div className="hero-card hero-card--main glass-card" style={{ background: 'rgba(20, 20, 25, 0.65)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.15)', boxShadow: '0 40px 80px rgba(0,0,0,0.8), 0 0 40px rgba(0, 212, 170, 0.1)', padding: '20px', borderRadius: '28px' }}>
+              <div className="hero-card__img-wrap" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&q=80" alt="Rome Tour" style={{ transform: 'scale(1.02)' }} />
+                <div className="hero-card__live-badge badge badge-rose" style={{ background: 'var(--accent-rose)', color: '#fff', fontSize: '0.8rem', padding: '4px 12px' }}>● LIVE</div>
               </div>
-              <div className="hero-card__body">
-                <p className="hero-card__cat">Historical · Rome, Italy</p>
-                <h4>Ancient Rome Walking Tour</h4>
-                <div className="hero-card__guide">
-                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&q=80" alt="Marco" className="avatar" style={{ width: 28, height: 28 }} />
-                  <span>Marco Rossi</span>
-                  <span className="hero-card__rating"><Star size={11} fill="var(--accent-amber)" stroke="none" /> 4.9</span>
+              <div className="hero-card__body" style={{ marginTop: '20px', padding: '0 8px' }}>
+                <h4 style={{ fontSize: '1.4rem', margin: '0 0 16px 0', fontWeight: 700 }}>Ancient Rome Walking Tour</h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="hero-card__guide" style={{ background: 'transparent', padding: 0 }}>
+                    <div style={{ position: 'relative', display: 'flex' }}>
+                       <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&q=80" alt="Marco" className="avatar" style={{ width: 40, height: 40, border: '2px solid var(--bg-main)' }} />
+                       <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=40&q=80" alt="Sara" className="avatar" style={{ width: 40, height: 40, border: '2px solid var(--bg-main)', marginLeft: '-16px' }} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '20px', textAlign: 'right' }}>
+                    <div>
+                      <div style={{ color: 'var(--accent-teal)', fontWeight: 800, fontSize: '1.25rem' }}>32%</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Guide</div>
+                    </div>
+                    <div>
+                      <div style={{ color: 'var(--accent-teal)', fontWeight: 800, fontSize: '1.25rem' }}>35.8k</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Stats</div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <div className="hero-card hero-card--sm glass-card">
-              <span>📍</span>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Guide Matched!</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Bangalore · 2 min away</div>
-              </div>
-              <span className="badge badge-teal">✓</span>
-            </div>
-
-            <div className="hero-card hero-card--sm hero-card--sm2 glass-card">
-              <div className="hero-card__stars"><Star size={12} fill="var(--accent-amber)" stroke="none" /><Star size={12} fill="var(--accent-amber)" stroke="none" /><Star size={12} fill="var(--accent-amber)" stroke="none" /><Star size={12} fill="var(--accent-amber)" stroke="none" /><Star size={12} fill="var(--accent-amber)" stroke="none" /></div>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '4px 0' }}>"Absolutely mind-blowing experience!"</p>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>— Sarah Chen, NYC</div>
             </div>
           </div>
         </div>
 
-        {/* Stats Bar */}
-        <div className="hero-stats container">
-          {STATS.map((s, i) => (
-            <div key={i} className="hero-stat">
-              <span className="hero-stat__icon">{s.icon}</span>
-              <div>
-                <div className="hero-stat__value">{s.value}</div>
-                <div className="hero-stat__label">{s.label}</div>
+        {/* Ultra-Premium Stats Bar */}
+        <div className="container animate-fade-up" style={{ animationDelay: '0.6s', marginTop: '10vh', position: 'relative', zIndex: 10 }}>
+          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '24px 40px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', backdropFilter: 'blur(20px)' }}>
+            {[
+              { icon: <Users size={24} />, value: '2,400+', label: 'Active Guides' },
+              { icon: <MapPin size={24} />, value: '180+', label: 'Cities' },
+              { icon: <Video size={24} />, value: '89,000+', label: 'Tours Completed' },
+              { icon: <Star size={24} />, value: '340,000+', label: 'Happy Travelers' },
+            ].map((s, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ width: 48, height: 48, borderRadius: '12px', background: 'rgba(0, 212, 170, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-teal)' }}>
+                  {s.icon}
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', lineHeight: 1 }}>{s.value}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>{s.label}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
