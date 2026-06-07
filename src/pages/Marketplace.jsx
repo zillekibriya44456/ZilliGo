@@ -53,7 +53,7 @@ export default function Marketplace() {
             <Tag size={14} />
             <span>Exclusive Global Goods</span>
           </div>
-          <h1>ZillGO <span className="gradient-text">Marketplace</span></h1>
+          <h1>ZilliGO <span className="gradient-text">Marketplace</span></h1>
           <p>Authentic products sourced directly from our local guides around the world.</p>
 
           <div className="marketplace-search" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>

@@ -91,7 +91,7 @@ export default function Navbar() {
           <div className="navbar__logo-icon">
             <Globe size={20} strokeWidth={2.5} />
           </div>
-          <span className="navbar__logo-text">Zill<span>GO</span></span>
+          <span className="navbar__logo-text">Zilli<span>GO</span></span>
         </Link>
 
         {/* Nav Links */}

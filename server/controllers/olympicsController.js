@@ -1,4 +1,4 @@
-const pool = require('../db'); // Assuming db.js exists
+const pool = require('../utils/db');
 
 const olympicsController = {
   // Get live global leaderboard

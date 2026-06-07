@@ -52,7 +52,11 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -65,7 +69,7 @@ app.use('/api/marketplace', marketplaceRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'ZillGO API is running!', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', message: 'ZilliGO API is running!', timestamp: new Date().toISOString() });
 });
 
 // Serve built frontend in production
@@ -78,7 +82,7 @@ if (process.env.NODE_ENV === 'production') {
   });
 } else {
   app.get('/', (req, res) => {
-    res.json({ message: 'ZillGO API is running in development mode. Frontend at http://localhost:3001' });
+    res.json({ message: 'ZilliGO API is running in development mode. Frontend at http://localhost:3001' });
   });
 }
 
@@ -110,6 +114,6 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
-  console.log(`🚀 ZillGO Server running on port ${PORT}`);
+  console.log(`🚀 ZilliGO Server running on port ${PORT}`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
 });

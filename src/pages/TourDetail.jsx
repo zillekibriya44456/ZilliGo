@@ -24,6 +24,7 @@ export default function TourDetail() {
   const [bookingType, setBookingType] = useState('instant'); // instant, request, waitlist
   const [showMatching, setShowMatching] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [createdBooking, setCreatedBooking] = useState(null);
 
   const availableTimes = ['10:00 AM', '02:00 PM', '06:00 PM'];
   const capacityStatus = {
@@ -55,7 +56,7 @@ export default function TourDetail() {
       }
       
       try {
-        await api.requestBooking({
+        const response = await api.requestBooking({
           tourId: tour.id,
           guideId: guide.id,
           date: selectedDate,
@@ -71,6 +72,7 @@ export default function TourDetail() {
         }
 
         // For instant booking, proceed to payment
+        setCreatedBooking(response.booking);
         setShowPayment(true);
       } catch (err) {
         alert('Error creating booking. Please try again later.');
@@ -97,6 +99,7 @@ export default function TourDetail() {
         <PaymentOverlay 
           amount={total} 
           tourId={tour.id}
+          booking={createdBooking}
           onPaymentSuccess={handlePaymentSuccess} 
           onClose={() => setShowPayment(false)} 
         />

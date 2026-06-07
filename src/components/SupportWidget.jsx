@@ -5,7 +5,7 @@ import './SupportWidget.css';
 export default function SupportWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { id: 1, sender: 'bot', text: 'Hi there! I am the ZillGO Support Assistant. How can I help you today?' }
+    { id: 1, sender: 'bot', text: 'Hi there! I am the ZilliGO Support Assistant. How can I help you today?' }
   ]);
   const [input, setInput] = useState('');
 

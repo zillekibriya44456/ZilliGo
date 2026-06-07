@@ -95,7 +95,7 @@ function generateItinerary(prompt) {
     { title: `Day in ${city} — Highlights`, events: [
       { time: '09:00 AM', title: `${emoji} Morning Orientation Walk`, desc: `Start your day with a walk through the most iconic area of ${city}. Orient yourself and discover hidden gems.` },
       { time: '01:00 PM', title: interests.includes('food') ? `Local Food Market` : `Cultural Landmark Visit`, desc: interests.includes('food') ? `Sample authentic local cuisine at a famous market or street food hub.` : `Visit the most significant historical or cultural site in ${city}.` },
-      { time: '04:00 PM', title: `🔴 Live Virtual Tour: ${city} with a Local`, desc: `Connect live with a ZillGO guide who will walk you through ${city}'s hidden gems in real time.`, isLive: true, link: '/live/1' },
+      { time: '04:00 PM', title: `🔴 Live Virtual Tour: ${city} with a Local`, desc: `Connect live with a ZilliGO guide who will walk you through ${city}'s hidden gems in real time.`, isLive: true, link: '/live/1' },
     ]},
   ];
 
@@ -150,7 +150,7 @@ export default function TripPlanner() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ZillGO_Itinerary_${itinerary.city}.json`;
+    a.download = `ZilliGO_Itinerary_${itinerary.city}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };

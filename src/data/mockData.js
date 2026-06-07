@@ -1,6 +1,6 @@
 import { GLOBAL_TOURS } from './globalTours';
 
-// Rich mock data for ZillGO platform
+// Rich mock data for ZilliGO platform
 export const TOURS = [
   ...GLOBAL_TOURS,
   {
@@ -242,7 +242,7 @@ export const TESTIMONIALS = [
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80',
     location: 'San Francisco, USA',
     rating: 5,
-    text: 'ZillGO completely changed how I travel. I explored Tokyo\'s back alleys with Yuki before my actual trip, and it made the real visit 10x more meaningful. Absolutely incredible platform!',
+    text: 'ZilliGO completely changed how I travel. I explored Tokyo\'s back alleys with Yuki before my actual trip, and it made the real visit 10x more meaningful. Absolutely incredible platform!',
     tour: 'Tokyo Street Food Adventure',
   },
   {

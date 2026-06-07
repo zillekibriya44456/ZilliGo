@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: zillgo
+      POSTGRES_DB: zilligo
     ports:
       - "5432:5432"
 
@@ -16,8 +16,8 @@ services:
     ports:
       - "5001:5001"
     environment:
-      DATABASE_URL: postgres://user:password@db:5432/zillgo
-      JWT_SECRET: your_super_secret_jwt_key_zillgo_2026
+      DATABASE_URL: postgres://user:password@db:5432/zilligo
+      JWT_SECRET: your_super_secret_jwt_key_zilligo_2026
       PORT: 5001
     depends_on:
       - db

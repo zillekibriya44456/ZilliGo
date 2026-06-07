@@ -2,7 +2,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 const getHeaders = () => {
   try {
-    const stored = localStorage.getItem('zillgo_user');
+    const stored = localStorage.getItem('zilligo_user');
     const user = stored ? JSON.parse(stored) : null;
     return {
       'Content-Type': 'application/json',
@@ -96,6 +96,13 @@ export const api = {
     headers: getHeaders(),
     body: JSON.stringify(data),
   }).then(res => res.json()),
+
+  confirmPayment: (data) => fetch(`${API_BASE}/payments/confirm`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+
 
   // Admin
   getAdminStats: () => fetch(`${API_BASE}/admin/stats`, {

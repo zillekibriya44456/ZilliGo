@@ -1,4 +1,4 @@
--- ZillGO PostgreSQL Schema
+-- ZilliGO PostgreSQL Schema
 
 -- Users Table
 CREATE TABLE users (

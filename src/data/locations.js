@@ -1,5 +1,5 @@
 /**
- * Complete Global Hierarchical Location Data for ZillGO
+ * Complete Global Hierarchical Location Data for ZilliGO
  * Contains data for 190+ countries with State and City drill-down.
  */
 

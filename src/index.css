@@ -1,5 +1,5 @@
 /* ============================================================
-   ZillGO Design System — Global Styles
+   ZilliGO Design System — Global Styles
    ============================================================ */
 
 /* ── Google Fonts are loaded in index.html ── */
@@ -140,10 +140,22 @@ img, video {
 
 /* ── Layout ── */
 .container {
-  width: 100%;
-  max-width: 1280px;
+  width: 94%;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 0 var(--space-xl);
+}
+
+@media (min-width: 1440px) {
+  .container {
+    max-width: 1700px;
+  }
+}
+
+@media (min-width: 1800px) {
+  .container {
+    max-width: 1800px;
+  }
 }
 
 .section {
@@ -538,7 +550,12 @@ img, video {
 }
 
 /* ── Responsive ── */
-@media (max-width: 1024px) {
+@media (min-width: 1280px) {
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 1279px) {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
   .container { padding: 0 var(--space-lg); }

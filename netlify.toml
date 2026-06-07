@@ -1,4 +1,4 @@
-# Netlify Deployment Configuration for ZillGO Frontend
+# Netlify Deployment Configuration for ZilliGO Frontend
 [build]
   publish = "dist"
   command = "npm run build"

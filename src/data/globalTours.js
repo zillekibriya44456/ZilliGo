@@ -1,5 +1,5 @@
 /**
- * Full Global Tour Database for ZillGO
+ * Full Global Tour Database for ZilliGO
  * Expanded with deep hierarchical data for India and other major regions.
  * Updated with High-Resolution Real Imagery.
  */

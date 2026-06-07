@@ -23,7 +23,7 @@ export default function RatingModal({ tourName, guideName, onClose }) {
         <div className="glass-card rating-modal rating-modal--success slide-up">
           <div className="success-icon">✓</div>
           <h2>Thank you!</h2>
-          <p>Your feedback helps <strong>{guideName}</strong> and the ZillGO community.</p>
+          <p>Your feedback helps <strong>{guideName}</strong> and the ZilliGO community.</p>
         </div>
       </div>
     );

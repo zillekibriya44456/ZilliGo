@@ -23,7 +23,7 @@ try {
 // Global In-Memory Mock DB state to handle signup/login & booking workflows when Postgres is offline
 const mockDB = {
   users: [
-    { id: 1, name: 'Admin User', email: 'admin@zillgo.com', password_hash: '$2b$10$ePWfm/5O/6glEPGRZWh1WuRxNG.P0WFegWqxs25a1p0tmm7QD7STq', role: 'admin', verified: true, avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80', bio: 'Main administrator of ZilliGo.', location: 'San Francisco, CA' },
+    { id: 1, name: 'Admin User', email: 'admin@zilligo.com', password_hash: '$2b$10$ePWfm/5O/6glEPGRZWh1WuRxNG.P0WFegWqxs25a1p0tmm7QD7STq', role: 'admin', verified: true, avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80', bio: 'Main administrator of ZilliGo.', location: 'San Francisco, CA' },
     { id: 2, name: 'Alex Johnson', email: 'alex@example.com', password_hash: '$2b$10$ePWfm/5O/6glEPGRZWh1WuRxNG.P0WFegWqxs25a1p0tmm7QD7STq', role: 'traveler', verified: true, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80', bio: 'Adventure traveler & tech geek.', location: 'New York, NY' },
     { id: 3, name: 'Yuki Tanaka', email: 'yuki@example.com', password_hash: '$2b$10$ePWfm/5O/6glEPGRZWh1WuRxNG.P0WFegWqxs25a1p0tmm7QD7STq', role: 'guide', verified: true, avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80', bio: 'Tokyo nightlife & food guide. 5+ years experience.', location: 'Tokyo, Japan', hourly_rate: 45 },
     { id: 4, name: 'Priya Sharma', email: 'priya@example.com', password_hash: '$2b$10$ePWfm/5O/6glEPGRZWh1WuRxNG.P0WFegWqxs25a1p0tmm7QD7STq', role: 'guide', verified: true, avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&q=80', bio: 'Indian culture, heritage, and safari specialist.', location: 'Jaipur, India', hourly_rate: 35 },
@@ -46,6 +46,10 @@ const mockDB = {
   notifications: [
     { id: 1, user_id: 2, type: 'booking', title: 'Tour Confirmed!', message: 'Your booking for Tokyo Neon Lights Tour has been accepted.', reference_id: '1', is_read: false, created_at: new Date() }
   ],
+  payments: [],
+  transactions: [],
+  commissions: [],
+  refunds: [],
 };
 
 const runMockQuery = (text, params) => {
@@ -152,6 +156,22 @@ const runMockQuery = (text, params) => {
     return { rows: tours };
   }
 
+  // 9a. SELECT * FROM tours WHERE id = $1
+  if (norm.includes('FROM tours WHERE id = $1') || norm.includes('FROM tours WHERE id=$1')) {
+    let rawId = params[0];
+    let idNum = parseInt(rawId);
+    
+    if (isNaN(idNum)) {
+      if (rawId === 'original-1') idNum = 1;
+      else if (rawId === 'original-2') idNum = 3;
+      else if (rawId.includes('india-0')) idNum = 4;
+      else idNum = 1;
+    }
+
+    const tour = mockDB.tours.find(t => t.id === idNum);
+    return { rows: tour ? [tour] : [] };
+  }
+
   // 10. Reviews for guide profile
   if (norm.includes('FROM reviews r JOIN users u')) {
     const guideId = Number(params[0]);
@@ -190,19 +210,125 @@ const runMockQuery = (text, params) => {
   // 12. INSERT INTO bookings
   if (norm.startsWith('INSERT INTO bookings')) {
     const id = mockDB.bookings.length + 1;
+    let userId = params[0];
+    let tourId = Number(params[1]);
+    let date = params[2];
+    let time = params[3];
+    let total_amount = params[4];
+    let status = 'pending';
+    
+    if (params.length >= 6) {
+      total_amount = params[4];
+      status = params[5];
+    }
+    
     const newBooking = {
       id,
-      user_id: params[0],
-      tour_id: Number(params[1]),
-      booking_date: params[2],
-      booking_time: params[3],
-      participants: params[4] || 1,
-      total_amount: params[5],
-      status: params[6] || 'pending',
+      user_id: userId,
+      tour_id: tourId,
+      booking_date: date,
+      booking_time: time,
+      participants: 1,
+      total_amount: parseFloat(total_amount) || 45.00,
+      status: status || 'pending',
       created_at: new Date()
     };
     mockDB.bookings.push(newBooking);
     return { rows: [newBooking] };
+  }
+
+  // 12a. SELECT * FROM bookings WHERE id = $1
+  if (norm.includes('FROM bookings WHERE id = $1')) {
+    const id = Number(params[0]);
+    const booking = mockDB.bookings.find(b => b.id === id);
+    return { rows: booking ? [booking] : [] };
+  }
+
+  // 12b. INSERT INTO payments
+  if (norm.startsWith('INSERT INTO payments')) {
+    const id = mockDB.payments.length + 1;
+    const payment = {
+      id,
+      user_id: params[0],
+      provider: params[1],
+      provider_id: params[2],
+      amount: parseFloat(params[3]) || 45.00,
+      currency: params[4] || 'USD',
+      status: params[5] || 'pending',
+      payment_type: params[6] || 'tour_booking',
+      reference_id: params[7],
+      created_at: new Date()
+    };
+    mockDB.payments.push(payment);
+    return { rows: [payment] };
+  }
+
+  // 12c. SELECT * FROM payments WHERE provider_id = $1 OR provider_id = $2
+  if (norm.includes('FROM payments WHERE provider_id = $1 OR provider_id = $2') || norm.includes('FROM payments WHERE provider_id = $1')) {
+    const p1 = params[0];
+    const p2 = params[1] || p1;
+    const payment = mockDB.payments.find(p => p.provider_id === p1 || p.provider_id === p2);
+    return { rows: payment ? [payment] : [] };
+  }
+
+  // 12d. UPDATE payments SET status
+  if (norm.startsWith('UPDATE payments SET status')) {
+    let status = 'pending';
+    let provider_id = null;
+    let id = null;
+
+    if (norm.includes("status = 'succeeded'")) {
+      status = 'succeeded';
+      provider_id = params[0];
+      id = Number(params[1]);
+    } else if (norm.includes("status = 'failed'")) {
+      status = 'failed';
+      id = Number(params[0]);
+    } else if (norm.includes("status = $1")) {
+      status = params[0];
+      id = Number(params[1]);
+    } else {
+      status = params[0];
+      id = Number(params[1]);
+    }
+
+    const payment = mockDB.payments.find(p => p.id === id || p.provider_id === id || p.provider_id === provider_id);
+    if (payment) {
+      payment.status = status;
+      if (provider_id) payment.provider_id = provider_id;
+      return { rows: [payment] };
+    }
+    return { rows: [] };
+  }
+
+  // 12e. INSERT INTO transactions
+  if (norm.startsWith('INSERT INTO transactions')) {
+    const transaction = {
+      id: mockDB.transactions.length + 1,
+      wallet_id: params[0],
+      payment_id: params[1],
+      amount: parseFloat(params[2]) || 0,
+      type: params[3],
+      status: params[4],
+      description: params[5],
+      created_at: new Date()
+    };
+    mockDB.transactions.push(transaction);
+    return { rows: [transaction] };
+  }
+
+  // 12f. INSERT INTO commissions
+  if (norm.startsWith('INSERT INTO commissions')) {
+    const commission = {
+      id: mockDB.commissions.length + 1,
+      payment_id: params[0],
+      total_amount: parseFloat(params[1]) || 0,
+      platform_fee: parseFloat(params[2]) || 0,
+      guide_amount: parseFloat(params[3]) || 0,
+      created_at: new Date()
+    };
+    mockDB.commissions.push(commission);
+    return { rows: [commission] };
   }
 
   // 13. SELECT b.*, t.title AS tour_title (Traveler Bookings)

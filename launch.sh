@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 ZillGO One-Click Launcher"
+echo "🚀 ZilliGO One-Click Launcher"
 echo "---------------------------"
 
 # 1. Kill any existing processes on ports 3001 and 5001
@@ -21,7 +21,7 @@ npm run dev &
 FRONTEND_PID=$!
 
 echo "---------------------------"
-echo "✅ ZillGO is now running!"
+echo "✅ ZilliGO is now running!"
 echo "🔗 Website: http://localhost:3001"
 echo "🛠️ Backend: http://localhost:5001"
 echo "---------------------------"

@@ -1,11 +1,11 @@
-# ZillGO — Global Virtual & Live Tour Platform
+# ZilliGO — Global Virtual & Live Tour Platform
 
-![ZillGO](https://img.shields.io/badge/ZillGO-Live%20Tours-6C63FF?style=for-the-badge)
+![ZilliGO](https://img.shields.io/badge/ZilliGO-Live%20Tours-6C63FF?style=for-the-badge)
 ![Node.js](https://img.shields.io/badge/Node.js-v20+-339933?style=for-the-badge&logo=node.js)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Ready-336791?style=for-the-badge&logo=postgresql)
 
-ZillGO is a full-stack platform that connects travelers with local guides for immersive live virtual tours worldwide.
+ZilliGO is a full-stack platform that connects travelers with local guides for immersive live virtual tours worldwide.
 
 ## 🌐 Live Demo
 
@@ -30,8 +30,8 @@ ZillGO is a full-stack platform that connects travelers with local guides for im
 
 \`\`\`bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/zillgo.git
-cd zillgo
+git clone https://github.com/YOUR_USERNAME/zilligo.git
+cd zilligo
 
 # 2. Install all dependencies
 npm install
@@ -81,4 +81,4 @@ Start command: `NODE_ENV=production node server/index.js`
 
 ## 📄 License
 
-MIT © 2026 ZillGO
+MIT © 2026 ZilliGO

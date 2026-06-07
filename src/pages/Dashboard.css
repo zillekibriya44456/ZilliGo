@@ -159,6 +159,13 @@
   margin: 1.75rem 0;
 }
 
+@media (min-width: 1600px) {
+  .db-stats {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+  }
+}
+
 .db-stat-card {
   display: flex;
   flex-direction: column;
@@ -506,9 +513,22 @@
 
 /* ── Container ── */
 .container {
-  max-width: 1200px;
+  width: 94%;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 0 1.5rem;
+}
+
+@media (min-width: 1440px) {
+  .container {
+    max-width: 1700px;
+  }
+}
+
+@media (min-width: 1800px) {
+  .container {
+    max-width: 1800px;
+  }
 }
 
 /* ═══════════════

@@ -27,6 +27,27 @@ import FriendDiscovery from './pages/FriendDiscovery';
 import GlobalMap from './pages/GlobalMap';
 import ExchangeRooms from './pages/ExchangeRooms';
 
+// Company Pages
+import About from './pages/About';
+import Careers from './pages/Careers';
+import Press from './pages/Press';
+import Blog from './pages/Blog';
+import Sustainability from './pages/Sustainability';
+import HelpCenter from './pages/HelpCenter';
+import Safety from './pages/Safety';
+import Contact from './pages/Contact';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+
+// Legal & Trust Pages
+import Cookies from './pages/Cookies';
+import CommunityGuidelines from './pages/CommunityGuidelines';
+import DMCA from './pages/DMCA';
+import Disclaimer from './pages/Disclaimer';
+import TrustSafety from './pages/TrustSafety';
+import Accessibility from './pages/Accessibility';
+import AccountDeletion from './pages/AccountDeletion';
+
 function App() {
   return (
     <Router>
@@ -56,6 +77,28 @@ function App() {
           <Route path="/map" element={<GlobalMap />} />
           <Route path="/exchange" element={<ExchangeRooms />} />
           <Route path="/auth/callback" element={<OAuthCallback />} />
+
+          {/* Company Routes */}
+          <Route path="/about" element={<About />} />
+          <Route path="/careers" element={<Careers />} />
+          <Route path="/press" element={<Press />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/sustainability" element={<Sustainability />} />
+          <Route path="/help" element={<HelpCenter />} />
+          <Route path="/safety" element={<Safety />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+
+          {/* Legal & Trust Routes */}
+          <Route path="/cookies" element={<Cookies />} />
+          <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+          <Route path="/dmca" element={<DMCA />} />
+          <Route path="/disclaimer" element={<Disclaimer />} />
+          <Route path="/trust-safety" element={<TrustSafety />} />
+          <Route path="/accessibility" element={<Accessibility />} />
+          <Route path="/account-deletion" element={<AccountDeletion />} />
+
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
         <Footer />

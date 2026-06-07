@@ -122,14 +122,20 @@
 /* About */
 .gp-about {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 1fr 360px;
   gap: var(--space-2xl);
   align-items: start;
 }
 
+@media (min-width: 1600px) {
+  .gp-about {
+    grid-template-columns: 1fr 400px;
+  }
+}
+
 .gp-book-rate { display: flex; align-items: baseline; }
 
-@media (max-width: 1024px) {
+@media (max-width: 1100px) {
   .gp-about { grid-template-columns: 1fr; }
   .gp-hero-actions { width: 100%; flex-direction: row; align-items: center; }
 }

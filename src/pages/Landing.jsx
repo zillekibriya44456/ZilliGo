@@ -17,119 +17,321 @@ export default function Landing() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [heroLoaded, setHeroLoaded] = useState(false);
 
+  // Auto-rotating search placeholder
+  const SEARCH_PLACEHOLDERS = ['Tokyo', 'Rome', 'Paris', 'Dubai', 'Jaipur', 'New York'];
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
+
+  // Auto-rotating AI translations
+  const TRANSLATIONS = [
+    { lang: 'English', text: '“Welcome to Tokyo, let me show you the neon lights!”' },
+    { lang: 'Hindi', text: '“टोक्यो में आपका स्वागत है, मैं आपको नियॉन लाइट दिखाता हूँ!”' },
+    { lang: 'Arabic', text: '“مرحباً بكم في طوكيو، دعوني أريكم أضواء النيون!”' },
+    { lang: 'Spanish', text: '“¡Bienvenido a Tokio, déjame mostrarte las luces de neón!”' },
+    { lang: 'French', text: '“Bienvenue à Tokyo, laissez-moi vous montrer les néons !”' }
+  ];
+  const [translationIdx, setTranslationIdx] = useState(0);
+
   useEffect(() => {
     setTimeout(() => setHeroLoaded(true), 100);
+
+    const placeholderInterval = setInterval(() => {
+      setPlaceholderIdx(prev => (prev + 1) % SEARCH_PLACEHOLDERS.length);
+    }, 3000);
+
+    const translationInterval = setInterval(() => {
+      setTranslationIdx(prev => (prev + 1) % TRANSLATIONS.length);
+    }, 4000);
+
+    return () => {
+      clearInterval(placeholderInterval);
+      clearInterval(translationInterval);
+    };
   }, []);
 
   const featuredTours = TOURS.filter(t => t.featured).slice(0, 4);
-  const liveTours = TOURS.filter(t => t.type === 'live').slice(0, 3);
+  const liveTours = TOURS.filter(t => t.type === 'live').slice(0, 4);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    navigate(`/explore?q=${encodeURIComponent(searchQuery)}`);
+    navigate(`/explore?q=${encodeURIComponent(searchQuery || SEARCH_PLACEHOLDERS[placeholderIdx])}`);
   };
 
   return (
     <div className="landing">
-      {/* ── Minimalist Premium Hero ── */}
-      <section className="landing__hero" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #020617 100%)', position: 'relative', overflow: 'hidden', paddingBottom: 'var(--space-3xl)' }}>
-        {/* Simple Background elements */}
-        <div className="hero-bg" style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(0, 212, 170, 0.1) 0%, transparent 50%)' }} />
-          <div className="hero-bg__grid" style={{ opacity: 0.15, backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      {/* ── Award-Winning Cyber-Luxury Hero ── */}
+      <section className="landing__hero">
+        
+        {/* Animated Background Map & Grid */}
+        <div className="hero-bg">
+          <div className="hero-bg__gradient-overlay" />
+          <div className="hero-bg__grid-glow" />
+          
+          {/* Animated Holographic World Map */}
+          <svg className="holographic-map" viewBox="0 0 1000 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="routeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#00F5D4" stopOpacity="0.8" />
+                <stop offset="50%" stopColor="#00D9FF" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.8" />
+              </linearGradient>
+            </defs>
+            
+            {/* Pulsing City Nodes */}
+            <circle cx="150" cy="180" r="5" fill="#00D9FF" filter="drop-shadow(0 0 8px #00D9FF)" />
+            <text x="140" y="165" fill="#F8FAFC" fontSize="10" fontFamily="Inter, sans-serif" fontWeight="600" opacity="0.8">New York</text>
+            
+            <circle cx="480" cy="150" r="5" fill="#00F5D4" filter="drop-shadow(0 0 8px #00F5D4)" />
+            <text x="470" y="135" fill="#F8FAFC" fontSize="10" fontFamily="Inter, sans-serif" fontWeight="600" opacity="0.8">Paris</text>
+            
+            <circle cx="580" cy="220" r="5" fill="#8B5CF6" filter="drop-shadow(0 0 8px #8B5CF6)" />
+            <text x="570" y="205" fill="#F8FAFC" fontSize="10" fontFamily="Inter, sans-serif" fontWeight="600" opacity="0.8">Dubai</text>
+            
+            <circle cx="680" cy="210" r="5" fill="#00F5D4" filter="drop-shadow(0 0 8px #00F5D4)" />
+            <text x="670" y="195" fill="#F8FAFC" fontSize="10" fontFamily="Inter, sans-serif" fontWeight="600" opacity="0.8">Jaipur</text>
+            
+            <circle cx="850" cy="160" r="5" fill="#00D9FF" filter="drop-shadow(0 0 8px #00D9FF)" />
+            <text x="840" y="145" fill="#F8FAFC" fontSize="10" fontFamily="Inter, sans-serif" fontWeight="600" opacity="0.8">Tokyo</text>
+            
+            <circle cx="820" cy="340" r="5" fill="#8B5CF6" filter="drop-shadow(0 0 8px #8B5CF6)" />
+            <text x="810" y="325" fill="#F8FAFC" fontSize="10" fontFamily="Inter, sans-serif" fontWeight="600" opacity="0.8">Sydney</text>
+
+            {/* Pulsing Light Routes */}
+            <path d="M 150 180 Q 315 120 480 150" className="map-route" />
+            <path d="M 480 150 Q 530 185 580 220" className="map-route" />
+            <path d="M 580 220 Q 630 215 680 210" className="map-route" />
+            <path d="M 680 210 Q 765 185 850 160" className="map-route" />
+            <path d="M 850 160 Q 835 250 820 340" className="map-route" />
+            <path d="M 820 340 Q 485 370 150 180" className="map-route" />
+          </svg>
         </div>
-        <div className="glow-line glow-teal" style={{ width: 600, height: 600, top: -300, left: -200, opacity: 0.3 }} />
-        <div className="glow-line glow-purple" style={{ width: 400, height: 400, top: '40%', right: -100, opacity: 0.2 }} />
 
-        <div className={`container hero-content ${heroLoaded ? 'hero-content--visible' : ''}`} style={{ position: 'relative', zIndex: 10 }}>
-          <div className="hero-content__inner" style={{ paddingTop: '15vh' }}>
+        <div className={`container hero-content ${heroLoaded ? 'hero-content--visible' : ''}`}>
+          <div className="hero-content__inner">
+            
+            {/* Floating Indicators */}
+            <div className="live-presence-tags">
+              <div className="presence-tag">
+                <span className="dot-live" />
+                <span>1,200 LIVE TOURS NOW</span>
+              </div>
+              <div className="presence-tag">
+                <Globe size={13} color="#00F5D4" />
+                <span>180+ CITIES</span>
+              </div>
+              <div className="presence-tag">
+                <Users size={13} color="#8B5CF6" />
+                <span>340,000+ EXPLORERS</span>
+              </div>
+            </div>
 
-            {/* Heading */}
-            <h1 className="hero-heading animate-fade-up" style={{ animationDelay: '0.2s', fontSize: 'clamp(72px, 8vw, 96px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.04em', margin: '0' }}>
-              Explore the world <br />
-              from your <span style={{ background: 'linear-gradient(135deg, #00d4aa 0%, #0088ff 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', textShadow: '0 0 40px rgba(0, 212, 170, 0.4)' }}>living room.</span>
+            {/* Headline */}
+            <h1 className="hero-heading animate-fade-up">
+              Explore The World <br />
+              From Your <span className="hero-heading__gradient">Living Room.</span>
             </h1>
 
-            <p className="hero-sub animate-fade-up" style={{ animationDelay: '0.3s', fontSize: 'clamp(24px, 3vw, 28px)', fontWeight: 300, color: 'var(--text-secondary)', maxWidth: '600px', lineHeight: 1.5, marginTop: '1.5rem' }}>
-              Join live immersive tours with passionate local guides in real-time.
+            {/* Subheadline */}
+            <p className="hero-sub animate-fade-up">
+              Experience cities, cultures, food, history, festivals, and local life through immersive real-time virtual tours hosted by passionate local guides around the world.
             </p>
 
-            {/* Search */}
-            <form className="hero-search animate-fade-up" onSubmit={handleSearch} style={{ animationDelay: '0.4s', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(24px)', padding: '8px', borderRadius: '100px', marginTop: '3rem', maxWidth: '600px', boxShadow: '0 0 30px rgba(0, 212, 170, 0.15), 0 20px 40px rgba(0,0,0,0.5)', transition: 'box-shadow 0.3s ease' }}>
-              <div className="input-group hero-search__input" style={{ border: 'none', background: 'transparent' }}>
-                <Search size={24} style={{ color: 'var(--text-muted)', flexShrink: 0, marginLeft: '16px' }} />
+            {/* Cyber Search Bar */}
+            <form className="hero-search-wrapper animate-fade-up" onSubmit={handleSearch}>
+              <div className="search-input-group">
+                <Search size={22} className="search-icon-glow" />
                 <input 
                   type="text" 
-                  placeholder="Where do you want to go today?"
+                  placeholder={`Where do you want to go today? Try "${SEARCH_PLACEHOLDERS[placeholderIdx]}"`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{ background: 'transparent', color: '#fff', fontSize: '1.2rem', padding: '12px 16px', outline: 'none' }}
+                  className="search-field-custom"
                 />
               </div>
-              <button type="submit" className="btn btn-primary hero-search__btn" style={{ borderRadius: '100px', padding: '16px 32px', fontSize: '1.1rem', fontWeight: 600, boxShadow: '0 0 20px rgba(0, 212, 170, 0.4)' }}>
-                Explore Tours
+              <button type="submit" className="btn btn-primary btn-search-glow">
+                Search
               </button>
             </form>
 
-            {/* Popular */}
-            <div className="hero-popular animate-fade-up" style={{ animationDelay: '0.5s', marginTop: '2rem', color: 'var(--text-muted)' }}>
-              <span style={{ fontSize: '1rem' }}>Popular:</span>
-              {['Rome', 'Tokyo', 'Bali', 'Santorini', 'New York'].map(city => (
-                <button key={city} onClick={() => navigate(`/explore?q=${city}`)} className="hero-popular__tag" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)', padding: '6px 16px', borderRadius: '100px', fontSize: '0.9rem' }}>
+            {/* Quick Travel Links */}
+            <div className="hero-popular-cities animate-fade-up">
+              <span>Worldwide exploration hubs:</span>
+              {['Tokyo', 'Rome', 'Paris', 'Dubai', 'Jaipur', 'New York'].map(city => (
+                <button key={city} onClick={() => navigate(`/explore?q=${city}`)} className="popular-tag-btn">
                   {city}
                 </button>
               ))}
             </div>
+
+            {/* Primary / Secondary CTA Buttons */}
+            <div className="hero-action-buttons animate-fade-up">
+              <button onClick={() => navigate('/explore')} className="btn btn-primary btn-glow-teal btn-lg">
+                Explore Live Tours
+              </button>
+              <button onClick={() => navigate('/become-guide')} className="btn btn-secondary btn-glow-purple btn-lg">
+                Become A Guide
+              </button>
+            </div>
           </div>
 
-          {/* Hero Cards - Overlapping */}
-          <div className="hero-cards animate-fade-up" style={{ animationDelay: '0.4s', right: '-20px', top: '10vh', transform: 'scale(1.1)', transformOrigin: 'right center', zIndex: 20 }}>
-            <div className="hero-card hero-card--main glass-card" style={{ background: 'rgba(20, 20, 25, 0.65)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.15)', boxShadow: '0 40px 80px rgba(0,0,0,0.8), 0 0 40px rgba(0, 212, 170, 0.1)', padding: '20px', borderRadius: '28px' }}>
-              <div className="hero-card__img-wrap" style={{ borderRadius: '20px', overflow: 'hidden' }}>
-                <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&q=80" alt="Rome Tour" style={{ transform: 'scale(1.02)' }} />
-                <div className="hero-card__live-badge badge badge-rose" style={{ background: 'var(--accent-rose)', color: '#fff', fontSize: '0.8rem', padding: '4px 12px' }}>● LIVE</div>
+          {/* RIGHT SIDE: Cyber-Luxury Portal Deck & Widgets */}
+          <div className="portal-deck-wrapper animate-fade-up">
+            
+            {/* Center: AR / XR Smart Glasses Traveler */}
+            <div className="avatar-scene-container">
+              <div className="ar-avatar-circle">
+                <img 
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80" 
+                  alt="Immersive AR Traveler" 
+                />
+                <div className="hologram-effect-overlay" />
+                <div className="ar-glasses-glow" />
               </div>
-              <div className="hero-card__body" style={{ marginTop: '20px', padding: '0 8px' }}>
-                <h4 style={{ fontSize: '1.4rem', margin: '0 0 16px 0', fontWeight: 700 }}>Ancient Rome Walking Tour</h4>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div className="hero-card__guide" style={{ background: 'transparent', padding: 0 }}>
-                    <div style={{ position: 'relative', display: 'flex' }}>
-                       <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&q=80" alt="Marco" className="avatar" style={{ width: 40, height: 40, border: '2px solid var(--bg-main)' }} />
-                       <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=40&q=80" alt="Sara" className="avatar" style={{ width: 40, height: 40, border: '2px solid var(--bg-main)', marginLeft: '-16px' }} />
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '20px', textAlign: 'right' }}>
-                    <div>
-                      <div style={{ color: 'var(--accent-teal)', fontWeight: 800, fontSize: '1.25rem' }}>32%</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Guide</div>
-                    </div>
-                    <div>
-                      <div style={{ color: 'var(--accent-teal)', fontWeight: 800, fontSize: '1.25rem' }}>35.8k</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Stats</div>
-                    </div>
-                  </div>
+            </div>
+
+            {/* Live Portal 1: Tokyo Night Streets */}
+            <div className="hologram-portal-floating portal-p1" onClick={() => navigate('/explore?q=Tokyo')}>
+              <div className="portal-media-frame">
+                <img src="https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?w=300&q=80" alt="Tokyo" />
+                <div className="portal-badge-live">LIVE</div>
+                <div className="portal-title-overlay">
+                  <h5>Tokyo Streets</h5>
+                  <p>Keiko • 420 watching</p>
                 </div>
               </div>
             </div>
+
+            {/* Live Portal 2: Rome Colosseum */}
+            <div className="hologram-portal-floating portal-p2" onClick={() => navigate('/explore?q=Rome')}>
+              <div className="portal-media-frame">
+                <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=300&q=80" alt="Rome" />
+                <div className="portal-badge-live">LIVE</div>
+                <div className="portal-title-overlay">
+                  <h5>Rome Sunset</h5>
+                  <p>Marco • 580 watching</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Portal 3: Kerala Backwaters */}
+            <div className="hologram-portal-floating portal-p3" onClick={() => navigate('/explore?q=Kerala')}>
+              <div className="portal-media-frame">
+                <img src="https://images.unsplash.com/photo-1593693397690-362cb9666fc2?w=300&q=80" alt="Kerala" />
+                <div className="portal-badge-live">LIVE</div>
+                <div className="portal-title-overlay">
+                  <h5>Kerala Palms</h5>
+                  <p>Anjali • 310 watching</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Portal 4: Rajasthan Desert */}
+            <div className="hologram-portal-floating portal-p4" onClick={() => navigate('/explore?q=Jaipur')}>
+              <div className="portal-media-frame">
+                <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=300&q=80" alt="Rajasthan" />
+                <div className="portal-badge-live">LIVE</div>
+                <div className="portal-title-overlay">
+                  <h5>Desert Caravan</h5>
+                  <p>Rajesh • 185 watching</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Portal 5: Paris Eiffel Tower */}
+            <div className="hologram-portal-floating portal-p5" onClick={() => navigate('/explore?q=Paris')}>
+              <div className="portal-media-frame">
+                <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&q=80" alt="Paris" />
+                <div className="portal-badge-live">LIVE</div>
+                <div className="portal-title-overlay">
+                  <h5>Paris Night Lights</h5>
+                  <p>Sophie • 290 watching</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Portal 6: New York Times Square */}
+            <div className="hologram-portal-floating portal-p6" onClick={() => navigate('/explore?q=New%20York')}>
+              <div className="portal-media-frame">
+                <img src="https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=300&q=80" alt="New York" />
+                <div className="portal-badge-live">LIVE</div>
+                <div className="portal-title-overlay">
+                  <h5>Times Square</h5>
+                  <p>John • 450 watching</p>
+                </div>
+              </div>
+            </div>
+
+            {/* AI Language Companion Widget */}
+            <div className="ai-translator-widget">
+              <div className="translator-title">
+                <span className="dot-live" />
+                <span>AI Live Translation</span>
+              </div>
+              <div className="translator-original">
+                {TRANSLATIONS[translationIdx].text}
+              </div>
+              <div className="translator-divider" />
+              <div className="translator-waves-container">
+                <div className="soundwave-bar" />
+                <div className="soundwave-bar" />
+                <div className="soundwave-bar" />
+                <div className="soundwave-bar" />
+                <div className="soundwave-bar" />
+                <div className="soundwave-bar" />
+                <span className="translator-output-language">
+                  🗣 {TRANSLATIONS[translationIdx].lang}
+                </span>
+              </div>
+            </div>
+
+            {/* Virtual Digital Passport */}
+            <div className="digital-passport-widget">
+              <div className="passport-header-glow">Digital Travel Passport</div>
+              <div className="passport-stamps-deck">
+                <div className="passport-stamp-item">🇯🇵 JP • Visited</div>
+                <div className="passport-stamp-item">🇮🇹 IT • Visited</div>
+                <div className="passport-stamp-item">🇮🇳 IN • Visited</div>
+                <div className="passport-stamp-item">🇫🇷 FR • Visited</div>
+                <div className="passport-stamp-item">🇧🇷 BR • Stamp</div>
+              </div>
+            </div>
+
+            {/* Floating Live Tour Showcase Widget */}
+            <div className="live-showcase-floating-card">
+              <div className="showcase-header">
+                <span className="showcase-red-badge">🔴 LIVE NOW</span>
+                <span className="showcase-watching">1,245 Watching</span>
+              </div>
+              <div className="showcase-body">
+                <h6>Ancient Rome Tour</h6>
+                <div className="showcase-guide-line">
+                  <span>Marco Rossi</span>
+                  <span style={{ color: '#FFD166' }}>★★★★★ 4.9</span>
+                </div>
+                <div className="showcase-ai-indicator">
+                  ⚡ AI Real-Time Translation Enabled
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        {/* Ultra-Premium Stats Bar */}
-        <div className="container animate-fade-up" style={{ animationDelay: '0.6s', marginTop: '10vh', position: 'relative', zIndex: 10 }}>
-          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '24px 40px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', backdropFilter: 'blur(20px)' }}>
+        {/* Global Activity Counter Bar */}
+        <div className="container animate-fade-up" style={{ position: 'relative', zIndex: 12, marginTop: '5vh' }}>
+          <div className="stats-bar-glow-card">
             {[
-              { icon: <Users size={24} />, value: '2,400+', label: 'Active Guides' },
-              { icon: <MapPin size={24} />, value: '180+', label: 'Cities' },
-              { icon: <Video size={24} />, value: '89,000+', label: 'Tours Completed' },
-              { icon: <Star size={24} />, value: '340,000+', label: 'Happy Travelers' },
-            ].map((s, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{ width: 48, height: 48, borderRadius: '12px', background: 'rgba(0, 212, 170, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-teal)' }}>
-                  {s.icon}
+              { label: '🔴 LIVE TOURS NOW', value: '1,200+' },
+              { label: '🌍 WORLDWIDE CITIES', value: '180+' },
+              { label: '🗣 AI LANGUAGES', value: '100+' },
+              { label: '👥 HAPPY EXPLORERS', value: '340,000+' },
+              { label: '🎙 VERIFIED GUIDES', value: '2,400+' }
+            ].map((stat, idx) => (
+              <div key={idx} style={{ textAlign: 'center', flex: 1, minWidth: '130px' }}>
+                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#00F5D4', filter: 'drop-shadow(0 0 5px rgba(0, 245, 212, 0.4))' }}>
+                  {stat.value}
                 </div>
-                <div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', lineHeight: 1 }}>{s.value}</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>{s.label}</div>
+                <div style={{ fontSize: '0.72rem', color: 'rgba(248, 250, 252, 0.65)', fontWeight: 700, letterSpacing: '0.05em', marginTop: '4px' }}>
+                  {stat.label}
                 </div>
               </div>
             ))}
@@ -148,7 +350,7 @@ export default function Landing() {
             </div>
             <Link to="/explore?type=live" className="btn btn-secondary">See All Live <ArrowRight size={15} /></Link>
           </div>
-          <div className="grid-3">
+          <div className="grid-4">
             {liveTours.map(t => <TourCard key={t.id} tour={t} />)}
           </div>
         </div>
@@ -196,7 +398,7 @@ export default function Landing() {
         <div className="container">
           <div className="text-center" style={{ marginBottom: 'var(--space-3xl)' }}>
             <div className="section-label" style={{ justifyContent: 'center' }}>Simple Process</div>
-            <h2>How ZillGO Works</h2>
+            <h2>How ZilliGO Works</h2>
             <p>From booking to live tour in minutes — powered by our smart guide matching engine</p>
           </div>
           <div className="how-steps">
@@ -311,7 +513,7 @@ export default function Landing() {
           <div className="guide-cta__inner glass-card">
             <div className="glow-line glow-purple" style={{ width: 500, height: 500, top: -200, right: -200 }} />
             <div className="guide-cta__content">
-              <div className="section-label">💰 Earn with ZillGO</div>
+              <div className="section-label">💰 Earn with ZilliGO</div>
               <h2>Share Your City with the World</h2>
               <p>Join 2,400+ guides earning an average of $2,800/month by sharing their local expertise through live virtual tours.</p>
               <div className="guide-cta__perks">

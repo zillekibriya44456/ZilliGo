@@ -94,7 +94,7 @@ export default function OAuthCallback() {
             </div>
             <h3 style={{ marginBottom: '0.5rem' }}>Login Successful! 🎉</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-              Welcome to ZillGO! Redirecting you to your dashboard...
+              Welcome to ZilliGO! Redirecting you to your dashboard...
             </p>
           </>
         )}

@@ -135,7 +135,7 @@ export default function VerificationModal({ onClose }) {
               <CheckCircle size={64} style={{ color: 'var(--accent-teal)' }} />
             </div>
             <h2>Verification Approved!</h2>
-            <p style={{ color: 'var(--text-secondary)' }}>You are now a Verified ZillGO User. Your Trust Score has been initialized.</p>
+            <p style={{ color: 'var(--text-secondary)' }}>You are now a Verified ZilliGO User. Your Trust Score has been initialized.</p>
           </div>
         )}
       </div>

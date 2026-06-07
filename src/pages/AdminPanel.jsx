@@ -67,20 +67,20 @@ export default function AdminPanel() {
 
   // Export users as CSV
   const handleExport = () => {
-    const rows = systemUsers.length > 0 ? systemUsers : [{ id: 1, name: 'Admin', email: 'admin@zillgo.com', role: 'admin' }];
+    const rows = systemUsers.length > 0 ? systemUsers : [{ id: 1, name: 'Admin', email: 'admin@zilligo.com', role: 'admin' }];
     const csv = ['ID,Name,Email,Role,Verified,Suspended', ...rows.map(u => `${u.id},"${u.name}",${u.email},${u.role},${u.verified},${u.suspended}`)].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ZillGO_Users_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `ZilliGO_Users_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   // Generate report summary
   const handleReport = () => {
-    const report = `ZillGO Platform Report\n========================\nGenerated: ${new Date().toLocaleString()}\n\nUsers: ${stats.users || stats.totalUsers || 0}\nTours: ${stats.tours || stats.totalGuides || 0}\nBookings: ${stats.bookings || 0}\nRevenue: $${stats.revenue || stats.monthlyRevenue || 0}\n\nExport this report from the admin panel for detailed analytics.`;
+    const report = `ZilliGO Platform Report\n========================\nGenerated: ${new Date().toLocaleString()}\n\nUsers: ${stats.users || stats.totalUsers || 0}\nTours: ${stats.tours || stats.totalGuides || 0}\nBookings: ${stats.bookings || 0}\nRevenue: $${stats.revenue || stats.monthlyRevenue || 0}\n\nExport this report from the admin panel for detailed analytics.`;
     alert(report);
   };
 

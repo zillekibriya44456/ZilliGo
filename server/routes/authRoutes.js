@@ -204,7 +204,7 @@ router.get('/github/callback', async (req, res) => {
 
     // Get user profile
     const profileRes = await fetch('https://api.github.com/user', {
-      headers: { Authorization: `Bearer ${tokenData.access_token}`, 'User-Agent': 'ZillGO-App' },
+      headers: { Authorization: `Bearer ${tokenData.access_token}`, 'User-Agent': 'ZilliGO-App' },
     });
     const profile = await profileRes.json();
 
@@ -212,11 +212,11 @@ router.get('/github/callback', async (req, res) => {
     let email = profile.email;
     if (!email) {
       const emailsRes = await fetch('https://api.github.com/user/emails', {
-        headers: { Authorization: `Bearer ${tokenData.access_token}`, 'User-Agent': 'ZillGO-App' },
+        headers: { Authorization: `Bearer ${tokenData.access_token}`, 'User-Agent': 'ZilliGO-App' },
       });
       const emails = await emailsRes.json();
       const primary = Array.isArray(emails) ? emails.find(e => e.primary && e.verified) : null;
-      email = primary?.email || `github_${profile.id}@zillgo.local`;
+      email = primary?.email || `github_${profile.id}@zilligo.local`;
     }
 
     const user = await findOrCreateOAuthUser({

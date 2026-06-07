@@ -20,7 +20,7 @@ const seed = async () => {
     // Create Admin
     await pool.query(
       'INSERT INTO users (name, email, password_hash, role, verified, avatar) VALUES ($1, $2, $3, $4, $5, $6)',
-      ['Admin User', 'admin@zillgo.com', passwordHash, 'admin', true, 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80']
+      ['Admin User', 'admin@zilligo.com', passwordHash, 'admin', true, 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80']
     );
 
     // Create Guides

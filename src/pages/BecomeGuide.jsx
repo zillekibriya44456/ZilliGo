@@ -35,7 +35,7 @@ export default function BecomeGuide() {
     setError('');
 
     try {
-      const token = user ? JSON.parse(localStorage.getItem('zillgo_user') || '{}')?.token : null;
+      const token = user ? JSON.parse(localStorage.getItem('zilligo_user') || '{}')?.token : null;
 
       const response = await fetch(`${API_BASE}/guides/apply`, {
         method: 'POST',
@@ -48,7 +48,7 @@ export default function BecomeGuide() {
           location: form.location,
           languages: form.languages,
           specialties: form.specialties,
-          email: user?.email || 'guest@zillgo.com',
+          email: user?.email || 'guest@zilligo.com',
           name: user?.name || 'Guest Applicant',
         }),
       });
@@ -215,7 +215,7 @@ export default function BecomeGuide() {
                 </div>
                 <h2>Application Submitted! 🎉</h2>
                 <p style={{ color: 'var(--text-secondary)', maxWidth: 380, lineHeight: 1.6 }}>
-                  Thank you for applying to be a ZillGO guide! Our team will review your profile and ID within <strong>24–48 hours</strong>. You'll receive an email confirmation shortly.
+                  Thank you for applying to be a ZilliGO guide! Our team will review your profile and ID within <strong>24–48 hours</strong>. You'll receive an email confirmation shortly.
                 </p>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '1rem' }}>
                   {[{ icon: '📧', text: 'Confirmation email sent' }, { icon: '🔍', text: 'Review within 48hrs' }, { icon: '✅', text: 'Get verified badge' }].map(s => (

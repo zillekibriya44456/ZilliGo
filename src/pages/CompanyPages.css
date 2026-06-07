@@ -1,0 +1,338 @@
+/* Shared styles for Company, Careers, Press, Blog, Support, Safety, Contact, Privacy and Terms */
+.company-page {
+  padding-top: calc(var(--navbar-height) + 2rem);
+  padding-bottom: 5rem;
+  color: var(--text-secondary);
+}
+
+.company-hero {
+  text-align: center;
+  padding: 4rem 1rem;
+  position: relative;
+  background: radial-gradient(circle at center, rgba(45, 212, 191, 0.1) 0%, transparent 60%);
+  margin-bottom: 3rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-glass);
+}
+
+.company-hero h1 {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.company-hero p {
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.company-section {
+  margin-bottom: 4rem;
+}
+
+.company-section h2 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.company-section h2::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 3px;
+  background: var(--accent-teal);
+  margin-top: 8px;
+  border-radius: 2px;
+}
+
+.company-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+.company-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.company-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.company-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent-teal);
+  box-shadow: 0 10px 30px -10px rgba(45, 212, 191, 0.1);
+}
+
+.company-card h3 {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.company-card p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.company-list {
+  list-style: none;
+  padding: 0;
+}
+
+.company-list li {
+  position: relative;
+  padding-left: 24px;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.company-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--accent-teal);
+  font-weight: bold;
+}
+
+.text-content {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.text-content p {
+  margin-bottom: 1.5rem;
+}
+
+/* Specific page fixes */
+.press-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--grad-teal);
+  color: #060b16;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  margin-top: 1rem;
+  transition: all 0.2s;
+}
+
+.press-download-btn:hover {
+  box-shadow: var(--shadow-teal);
+  transform: translateY(-2px);
+}
+
+.job-roles-section {
+  background: rgba(255, 255, 255, 0.01);
+  padding: 3rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-glass);
+}
+
+.job-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-glass);
+  padding: 1.5rem 0;
+}
+
+.job-card:last-child {
+  border-bottom: none;
+}
+
+.job-info h3 {
+  font-size: 1.15rem;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.job-info span {
+  font-size: 0.8rem;
+  color: var(--accent-teal);
+}
+
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.blog-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-item-img {
+  height: 200px;
+  width: 100%;
+  object-fit: cover;
+}
+
+.blog-item-content {
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.blog-item-tag {
+  font-size: 0.75rem;
+  color: var(--accent-teal);
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.blog-item-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.blog-item-excerpt {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.blog-item-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.support-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.accordion-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.accordion-header {
+  padding: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.accordion-body {
+  padding: 0 1.25rem 1.25rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.contact-form-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  padding: 3rem;
+  border-radius: var(--radius-lg);
+}
+
+.contact-info-block {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.contact-info-item {
+  display: flex;
+  gap: 1rem;
+}
+
+.contact-info-item h4 {
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.contact-info-item p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.legal-text {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.legal-text h2 {
+  font-size: 1.4rem;
+  color: var(--text-primary);
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.legal-text p {
+  margin-bottom: 1rem;
+}
+
+.legal-text ul {
+  padding-left: 20px;
+  margin-bottom: 1.5rem;
+}
+
+.legal-text li {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 900px) {
+  .company-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .company-grid-3, .blog-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .company-grid-3, .blog-grid {
+    grid-template-columns: 1fr;
+  }
+  .company-hero h1 {
+    font-size: 2.25rem;
+  }
+}

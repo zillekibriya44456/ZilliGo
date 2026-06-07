@@ -1,4 +1,4 @@
-const pool = require('../db'); // Assuming db.js exists
+const pool = require('../utils/db');
 
 /**
  * AI Compatibility Engine API

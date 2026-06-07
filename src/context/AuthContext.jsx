@@ -9,12 +9,12 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     setUser(null);
-    localStorage.removeItem('zillgo_user');
+    localStorage.removeItem('zilligo_user');
   }, []);
 
   useEffect(() => {
     const initAuth = async () => {
-      const stored = localStorage.getItem('zillgo_user');
+      const stored = localStorage.getItem('zilligo_user');
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
       if (data.message && data.message !== 'Success') throw new Error(data.message);
       
       setUser(data);
-      localStorage.setItem('zillgo_user', JSON.stringify(data));
+      localStorage.setItem('zilligo_user', JSON.stringify(data));
       return data;
     } catch (error) {
       throw error;
@@ -55,7 +55,7 @@ export function AuthProvider({ children }) {
       if (data.message && data.message !== 'Success') throw new Error(data.message);
 
       setUser(data);
-      localStorage.setItem('zillgo_user', JSON.stringify(data));
+      localStorage.setItem('zilligo_user', JSON.stringify(data));
       return data;
     } catch (error) {
       throw error;
@@ -66,11 +66,11 @@ export function AuthProvider({ children }) {
     try {
       const data = await api.updateProfile(updates);
       if (data.message && data.message !== 'Success') throw new Error(data.message);
-      const stored = localStorage.getItem('zillgo_user');
+      const stored = localStorage.getItem('zilligo_user');
       const currentUser = stored ? JSON.parse(stored) : {};
       const updatedUser = { ...currentUser, ...data };
       setUser(updatedUser);
-      localStorage.setItem('zillgo_user', JSON.stringify(updatedUser));
+      localStorage.setItem('zilligo_user', JSON.stringify(updatedUser));
       return updatedUser;
     } catch (error) {
       throw error;
@@ -83,7 +83,7 @@ export function AuthProvider({ children }) {
    */
   const loginWithToken = (userData) => {
     setUser(userData);
-    localStorage.setItem('zillgo_user', JSON.stringify(userData));
+    localStorage.setItem('zilligo_user', JSON.stringify(userData));
   };
 
   const updateUserStatus = useCallback(async (userId, updates) => {

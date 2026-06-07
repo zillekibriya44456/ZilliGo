@@ -4,12 +4,27 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/api';
 import './PaymentOverlay.css';
 
-export default function PaymentOverlay({ amount, onPaymentSuccess, onClose, tourId }) {
+export default function PaymentOverlay({ amount, onPaymentSuccess, onClose, tourId, booking }) {
   const { user } = useAuth();
   const [method, setMethod] = useState('card'); // card, upi, paypal, razorpay
   const [step, setStep] = useState('input'); // input, processing, success
   const [cardName, setCardName] = useState('');
   const [error, setError] = useState('');
+
+  const triggerConfirmPayment = async (paymentMethod, transactionId) => {
+    try {
+      if (booking?.id) {
+        await api.confirmPayment({
+          bookingId: booking.id,
+          paymentMethod,
+          amount,
+          transactionId: transactionId || `TXN_${Date.now()}`
+        });
+      }
+    } catch (err) {
+      console.error('Error confirming payment:', err);
+    }
+  };
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
@@ -26,25 +41,28 @@ export default function PaymentOverlay({ amount, onPaymentSuccess, onClose, tour
     setError('');
 
     try {
+      if (!booking?.id) {
+        throw new Error('No active booking found for checkout.');
+      }
+
       const isScriptLoaded = await loadRazorpayScript();
       if (!isScriptLoaded) {
         throw new Error('Razorpay SDK failed to load. Are you offline?');
       }
 
-      // Convert USD to INR (e.g. 1 USD = 83 INR for demonstration)
-      const inrAmount = amount * 83;
-
       const order = await api.createRazorpayOrder({
-        amount: inrAmount,
-        currency: 'INR',
-        type: 'tour_booking',
-        referenceId: tourId || '1'
+        bookingId: booking.id
       });
 
       if (!order || !order.id) {
-        // Fallback to mock behavior if keys are placeholders or offline
-        console.warn('Using fallback mock payment handler.');
-        setTimeout(() => {
+        // Safe check for production vs development/demo modes
+        if (import.meta.env.PROD || import.meta.env.MODE === 'production') {
+          throw new Error('Unable to initialize payment gateway.');
+        }
+        
+        console.warn('Razorpay order creation returned placeholder response. Triggering development mock fallback.');
+        setTimeout(async () => {
+          await triggerConfirmPayment('razorpay', `MOCK_${Date.now()}`);
           setStep('success');
           setTimeout(() => {
             onPaymentSuccess();
@@ -75,17 +93,17 @@ export default function PaymentOverlay({ amount, onPaymentSuccess, onClose, tour
                 onPaymentSuccess();
               }, 1500);
             } else {
-              setError('Payment verification failed.');
+              setError('Payment verification failed: signature invalid.');
               setStep('input');
             }
           } catch (err) {
-            setError('Error verifying payment.');
+            setError('Error verifying payment on backend.');
             setStep('input');
           }
         },
         prefill: {
           name: user?.name || 'Guest User',
-          email: user?.email || 'guest@zillgo.com',
+          email: user?.email || 'guest@zilligo.com',
         },
         theme: {
           color: '#00F5D4',
@@ -100,8 +118,15 @@ export default function PaymentOverlay({ amount, onPaymentSuccess, onClose, tour
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (err) {
-      console.warn('Fallback mock payment handler triggered.', err);
-      setTimeout(() => {
+      if (import.meta.env.PROD || import.meta.env.MODE === 'production') {
+        setError(err.message || 'Payment initiation failed.');
+        setStep('input');
+        return;
+      }
+
+      console.warn('Fallback mock payment handler triggered due to error:', err);
+      setTimeout(async () => {
+        await triggerConfirmPayment('razorpay', `MOCK_${Date.now()}`);
         setStep('success');
         setTimeout(() => {
           onPaymentSuccess();
@@ -117,7 +142,8 @@ export default function PaymentOverlay({ amount, onPaymentSuccess, onClose, tour
       return;
     }
     setStep('processing');
-    setTimeout(() => {
+    setTimeout(async () => {
+      await triggerConfirmPayment(method, `CARD_${Date.now()}`);
       setStep('success');
       setTimeout(() => {
         onPaymentSuccess();
@@ -131,7 +157,7 @@ export default function PaymentOverlay({ amount, onPaymentSuccess, onClose, tour
         <div className="payment-header">
           <div className="payment-header-title">
             <h3>Secure Checkout</h3>
-            <p>ZillGO Payment Protection Active</p>
+            <p>ZilliGO Payment Protection Active</p>
           </div>
           <button className="payment-close" onClick={onClose}><X size={18} /></button>
         </div>
@@ -193,7 +219,7 @@ export default function PaymentOverlay({ amount, onPaymentSuccess, onClose, tour
               {method === 'upi' && (
                 <div className="upi-content">
                   <div className="upi-qr-placeholder">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ZillGO-Payment" alt="UPI QR" />
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ZilliGO-Payment" alt="UPI QR" />
                     <p>Scan with Google Pay, PhonePe, or Paytm</p>
                   </div>
                   <div className="divider">OR ENTER VPA</div>
@@ -242,7 +268,7 @@ export default function PaymentOverlay({ amount, onPaymentSuccess, onClose, tour
             <div className="spinner" />
             <p>Authorizing through {method.toUpperCase()}...</p>
             <div className="payment-trust">
-              <Shield size={16} /> Payment Protected by ZillGO
+              <Shield size={16} /> Payment Protected by ZilliGO
             </div>
           </div>
         )}
