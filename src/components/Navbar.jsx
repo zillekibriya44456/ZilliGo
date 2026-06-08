@@ -193,6 +193,11 @@ export default function Navbar() {
                     <Link to={getDashboardPath()} className="navbar__dropdown-item" onClick={() => setProfileOpen(false)}>
                       📊 {t('dashboard', language)}
                     </Link>
+                    {user.role === 'admin' && (
+                      <Link to="/admin" className="navbar__dropdown-item" onClick={() => setProfileOpen(false)}>
+                        🛡️ Admin Panel
+                      </Link>
+                    )}
                     <Link to="/messages" className="navbar__dropdown-item" onClick={() => setProfileOpen(false)}>
                       <MessageSquare size={15} /> {t('messages', language)}
                       <span className="badge badge-rose" style={{ marginLeft: 'auto', padding: '1px 5px', fontSize: '0.65rem' }}>2</span>
