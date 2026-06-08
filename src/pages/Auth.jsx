@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, User, ChevronRight, CheckCircle, AlertCircle, ArrowLeft, Upload } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE } from '../utils/config';
 import './Auth.css';
 
 /* ─── Inline SVG brand icons (no lucide-react dependency) ─── */
@@ -44,8 +45,6 @@ const COUNTRIES = [
   'Sri Lanka','Sweden','Switzerland','Thailand','Turkey','UAE','UK','USA','Ukraine','Vietnam',
 ];
 
-const API_BASE = '/api/auth';
-
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -80,7 +79,7 @@ export default function Auth() {
 
   /* ── Social Login (redirects to backend) ── */
   const handleSocialLogin = (provider) => {
-    window.location.href = `${API_BASE}/${provider}`;
+    window.location.href = `${API_BASE}/auth/${provider}`;
   };
 
   /* ── Email Signup ── */
