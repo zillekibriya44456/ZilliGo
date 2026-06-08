@@ -57,6 +57,23 @@ const mockDB = {
   transactions: [],
   commissions: [],
   refunds: [],
+  support_tickets: [
+    { id: 1, user_id: 2, title: 'Audio cuts out during Japan live tour', category: 'Technical', priority: 'high', status: 'open', description: 'When the guide enters the shrines, the video runs fine but the audio completely drops.', reply: null, created_at: new Date() },
+    { id: 2, user_id: 2, title: 'Incorrect billing amount', category: 'Booking', priority: 'medium', status: 'resolved', description: 'I was charged twice for the Paris walk.', reply: 'We have processed a refund for the duplicate transaction.', created_at: new Date() },
+  ],
+  content_reports: [
+    { id: 1, reporter_id: 2, reported_user_id: 3, content_type: 'review', content_id: 1, reason: 'Guide used inappropriate words during live session', status: 'open', created_at: new Date() },
+  ],
+  admin_audit_logs: [
+    { id: 1, admin_id: 1, action: 'VERIFY_USER', details: 'Verified guide Yuki Tanaka', ip_address: '127.0.0.1', created_at: new Date() },
+    { id: 2, admin_id: 1, action: 'UPDATE_SETTINGS', details: 'Updated platform commission to 20%', ip_address: '127.0.0.1', created_at: new Date() },
+  ],
+  system_settings: [
+    { key: 'platform_name', value: 'ZilliGo' },
+    { key: 'commission_rate', value: '20' },
+    { key: 'maintenance_mode', value: 'false' },
+    { key: 'require_guide_verification', value: 'true' },
+  ]
 };
 
 const runMockQuery = (text, params) => {
@@ -452,6 +469,72 @@ const runMockQuery = (text, params) => {
     const userId = Number(params[0]);
     mockDB.notifications.forEach(n => { if (n.user_id === userId) n.is_read = true; });
     return { rows: [] };
+  }
+
+  // 19. Support Tickets
+  if (norm.includes('FROM support_tickets')) {
+    return { rows: mockDB.support_tickets };
+  }
+  if (norm.startsWith('INSERT INTO support_tickets')) {
+    const ticket = { id: mockDB.support_tickets.length + 1, user_id: params[0], title: params[1], category: params[2], priority: params[3], status: 'open', description: params[4], reply: null, created_at: new Date() };
+    mockDB.support_tickets.push(ticket);
+    return { rows: [ticket] };
+  }
+  if (norm.startsWith('UPDATE support_tickets SET')) {
+    const status = params[0];
+    const reply = params[1];
+    const id = Number(params[2]);
+    const ticket = mockDB.support_tickets.find(t => t.id === id);
+    if (ticket) {
+      ticket.status = status;
+      ticket.reply = reply;
+      return { rows: [ticket] };
+    }
+  }
+
+  // 20. Content Reports
+  if (norm.includes('FROM content_reports')) {
+    return { rows: mockDB.content_reports };
+  }
+  if (norm.startsWith('INSERT INTO content_reports')) {
+    const rep = { id: mockDB.content_reports.length + 1, reporter_id: params[0], reported_user_id: params[1], content_type: params[2], content_id: params[3], reason: params[4], status: 'open', created_at: new Date() };
+    mockDB.content_reports.push(rep);
+    return { rows: [rep] };
+  }
+  if (norm.startsWith('UPDATE content_reports SET')) {
+    const status = params[0];
+    const id = Number(params[1]);
+    const rep = mockDB.content_reports.find(r => r.id === id);
+    if (rep) {
+      rep.status = status;
+      return { rows: [rep] };
+    }
+  }
+
+  // 21. Audit Logs
+  if (norm.includes('FROM admin_audit_logs')) {
+    return { rows: mockDB.admin_audit_logs };
+  }
+  if (norm.startsWith('INSERT INTO admin_audit_logs')) {
+    const log = { id: mockDB.admin_audit_logs.length + 1, admin_id: params[0], action: params[1], details: params[2], ip_address: params[3], created_at: new Date() };
+    mockDB.admin_audit_logs.push(log);
+    return { rows: [log] };
+  }
+
+  // 22. System Settings
+  if (norm.includes('FROM system_settings')) {
+    return { rows: mockDB.system_settings };
+  }
+  if (norm.startsWith('UPDATE system_settings SET') || norm.startsWith('INSERT INTO system_settings')) {
+    const key = params[0];
+    const val = params[1];
+    const setting = mockDB.system_settings.find(s => s.key === key);
+    if (setting) {
+      setting.value = val;
+    } else {
+      mockDB.system_settings.push({ key, value: val });
+    }
+    return { rows: [{ key, value: val }] };
   }
 
   // Fallbacks

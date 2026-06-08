@@ -410,3 +410,51 @@ CREATE TABLE user_achievements (
     unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, achievement_name)
 );
+
+-- ====================================================================
+2026 ADMIN ECOSYSTEM ADDITIONS
+-- ====================================================================
+
+-- Support Tickets Table
+CREATE TABLE support_tickets (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    category VARCHAR(50) DEFAULT 'General', -- Technical, Booking, Guide, Account, Safety
+    priority VARCHAR(20) DEFAULT 'medium', -- low, medium, high, urgent
+    status VARCHAR(20) DEFAULT 'open', -- open, in_progress, resolved, closed
+    description TEXT NOT NULL,
+    reply TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Content Reports / Moderation Table
+CREATE TABLE content_reports (
+    id SERIAL PRIMARY KEY,
+    reporter_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    reported_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    content_type VARCHAR(50) NOT NULL, -- tour, review, message, user
+    content_id INTEGER,
+    reason TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'open', -- open, pending, resolved, dismissed
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Admin Audit Logs Table
+CREATE TABLE admin_audit_logs (
+    id SERIAL PRIMARY KEY,
+    admin_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    action VARCHAR(100) NOT NULL,
+    details TEXT,
+    ip_address VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- System Settings Table
+CREATE TABLE system_settings (
+    key VARCHAR(100) PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+

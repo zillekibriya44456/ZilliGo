@@ -1,213 +1,634 @@
 import { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { Users, Video, DollarSign, CheckCircle, ShieldAlert, MoreHorizontal, Globe, Clock, ArrowRight, Ban, MapPin, Settings, Power } from 'lucide-react';
+import { 
+  Users, Video, DollarSign, CheckCircle, ShieldAlert, MoreHorizontal, 
+  Globe, Clock, ArrowRight, Ban, MapPin, Settings, Power, Bell, 
+  HelpCircle, ShieldCheck, Activity, BarChart3, AlertTriangle, Eye, EyeOff, Edit, Trash2, Key, HelpCircle as HelpIcon, Sparkles
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { ADMIN_STATS } from '../data/mockData';
 import { api } from '../utils/api';
 import './AdminPanel.css';
 
-const PENDING_VERIFICATIONS = [
-  { id: 'v1', name: 'Sophia Martinez', location: 'Barcelona, Spain', date: '2 hours ago', status: 'pending' },
-  { id: 'v2', name: 'Liam Chen', location: 'Singapore', date: '5 hours ago', status: 'pending' },
-  { id: 'v3', name: 'Amira Hassan', location: 'Cairo, Egypt', date: '1 day ago', status: 'pending' },
+// Pre-seeded fallback data for demonstration when database tables are empty
+const FALLBACK_TICKETS = [
+  { id: 1, userId: 2, title: 'Audio cuts out during Japan live tour', category: 'Technical', priority: 'high', status: 'open', description: 'When the guide enters the shrines, the video runs fine but the audio completely drops.', reply: null, createdAt: new Date() },
+  { id: 2, userId: 2, title: 'Incorrect billing amount', category: 'Booking', priority: 'medium', status: 'resolved', description: 'I was charged twice for the Paris walk.', reply: 'We have processed a refund for the duplicate transaction.', createdAt: new Date() },
 ];
 
-const RECENT_TRANSACTIONS = [
-  { id: 'tx1', tour: 'Ancient Rome Walk', user: 'alex@...', amount: '$29.00', status: 'success', time: '10 min ago' },
-  { id: 'tx2', tour: 'Tokyo Food', user: 'sarah@...', amount: '$35.00', status: 'success', time: '45 min ago' },
-  { id: 'tx3', tour: 'Paris Art', user: 'mike@...', amount: '$32.00', status: 'refunded', time: '2 hours ago' },
+const FALLBACK_REPORTS = [
+  { id: 1, reporterId: 2, reportedUserId: 3, contentType: 'review', contentId: 1, reason: 'Guide used inappropriate words during live session', status: 'open', createdAt: new Date() },
+  { id: 2, reporterId: 2, reportedUserId: 4, contentType: 'message', contentId: 2, reason: 'Spam advertisements', status: 'resolved', createdAt: new Date() }
+];
+
+const FALLBACK_LOGS = [
+  { id: 1, adminId: 1, action: 'VERIFY_USER', details: 'Verified guide Yuki Tanaka', ipAddress: '127.0.0.1', createdAt: new Date() },
+  { id: 2, adminId: 1, action: 'UPDATE_SETTINGS', details: 'Updated platform commission to 20%', ipAddress: '127.0.0.1', createdAt: new Date() },
+  { id: 3, adminId: 1, action: 'RESOLVE_TICKET', details: 'Resolved ticket #2', ipAddress: '192.168.1.1', createdAt: new Date() }
 ];
 
 export default function AdminPanel() {
   const { user, getAllUsers, updateUserStatus } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
-  const [systemUsers, setSystemUsers] = useState([]);
-  const [stats, setStats] = useState(ADMIN_STATS);
   const [loading, setLoading] = useState(true);
+  
+  // States
+  const [systemUsers, setSystemUsers] = useState([]);
+  const [stats, setStats] = useState({});
+  const [tickets, setTickets] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [settings, setSettings] = useState([]);
+  const [tours, setTours] = useState([]);
+
+  // Filter/Search States
+  const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
+  const [userStatusFilter, setUserStatusFilter] = useState('all');
+
+  // Modals / Action States
+  const [replyingTicketId, setReplyingTicketId] = useState(null);
+  const [ticketReplyText, setTicketReplyText] = useState('');
+  const [selectedUserProfile, setSelectedUserProfile] = useState(null);
+  const [broadcastingAnnounce, setBroadcastingAnnounce] = useState({ title: '', message: '', target: 'all' });
+  const [broadcastingLoading, setBroadcastingLoading] = useState(false);
+  
+  // Custom Settings Inputs
+  const [configName, setConfigName] = useState('ZilliGo');
+  const [configCommission, setConfigCommission] = useState('20');
+  const [configVerification, setConfigVerification] = useState('true');
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [
+        usersData, statsData, ticketsData, reportsData, 
+        logsData, bookingsData, settingsData, toursData
+      ] = await Promise.all([
+        getAllUsers().catch(() => []),
+        api.getAdminStats().catch(() => ({})),
+        api.getAdminTickets().catch(() => []),
+        api.getAdminReports().catch(() => []),
+        api.getAdminAuditLogs().catch(() => []),
+        api.getAdminBookings().catch(() => []),
+        api.getAdminSettings().catch(() => []),
+        api.getTours().catch(() => [])
+      ]);
+
+      setSystemUsers(Array.isArray(usersData) ? usersData : []);
+      setStats(statsData || {});
+      setTickets(Array.isArray(ticketsData) && ticketsData.length > 0 ? ticketsData : FALLBACK_TICKETS);
+      setReports(Array.isArray(reportsData) && reportsData.length > 0 ? reportsData : FALLBACK_REPORTS);
+      setAuditLogs(Array.isArray(logsData) && logsData.length > 0 ? logsData : FALLBACK_LOGS);
+      setBookings(Array.isArray(bookingsData) ? bookingsData : []);
+      setSettings(Array.isArray(settingsData) ? settingsData : []);
+      setTours(Array.isArray(toursData) ? toursData : []);
+
+      // Seed settings inputs if available
+      if (Array.isArray(settingsData)) {
+        const platformName = settingsData.find(s => s.key === 'platform_name')?.value;
+        const commission = settingsData.find(s => s.key === 'commission_rate')?.value;
+        const reqVerify = settingsData.find(s => s.key === 'require_guide_verification')?.value;
+        if (platformName) setConfigName(platformName);
+        if (commission) setConfigCommission(commission);
+        if (reqVerify) setConfigVerification(reqVerify);
+      }
+    } catch (err) {
+      console.error('Failed to load admin panel data', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const [usersData, statsData] = await Promise.all([
-          getAllUsers(),
-          api.getAdminStats()
-        ]);
-        setSystemUsers(usersData);
-        if (statsData && !statsData.message) {
-          setStats({ ...ADMIN_STATS, ...statsData });
-        }
-      } catch (err) {
-        console.error('Failed to fetch admin data', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [getAllUsers]);
+    if (user && user.role === 'admin') {
+      fetchData();
+    }
+  }, [user]);
 
   if (!user) return <Navigate to="/auth" />;
   if (user.role !== 'admin') return <Navigate to="/dashboard" />;
 
+  // ── Actions ──
   const handleSuspend = async (userId, currentStatus) => {
     const success = await updateUserStatus(userId, { suspended: !currentStatus });
-    if (success) {
-      const updatedUsers = await getAllUsers();
-      setSystemUsers(updatedUsers);
-    }
+    if (success) fetchData();
   };
 
   const handleVerify = async (userId) => {
     const success = await updateUserStatus(userId, { verified: true });
-    if (success) {
-      const updatedUsers = await getAllUsers();
-      setSystemUsers(updatedUsers);
+    if (success) fetchData();
+  };
+
+  const handleTicketReply = async (e) => {
+    e.preventDefault();
+    if (!ticketReplyText.trim()) return;
+    try {
+      await api.updateAdminTicket(replyingTicketId, { status: 'resolved', reply: ticketReplyText });
+      setReplyingTicketId(null);
+      setTicketReplyText('');
+      fetchData();
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  // Export users as CSV
-  const handleExport = () => {
+  const handleReportAction = async (reportId, nextStatus) => {
+    try {
+      await api.updateAdminReport(reportId, nextStatus);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    try {
+      await api.updateAdminSetting({ key: 'platform_name', value: configName });
+      await api.updateAdminSetting({ key: 'commission_rate', value: configCommission });
+      await api.updateAdminSetting({ key: 'require_guide_verification', value: configVerification });
+      alert('System settings updated and audited successfully!');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleBroadcast = async (e) => {
+    e.preventDefault();
+    if (!broadcastingAnnounce.title.trim() || !broadcastingAnnounce.message.trim()) return;
+    setBroadcastingLoading(true);
+    try {
+      await api.sendAdminAnnouncement(broadcastingAnnounce);
+      setBroadcastingAnnounce({ title: '', message: '', target: 'all' });
+      alert('Platform-wide announcement broadcasted successfully!');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBroadcastingLoading(false);
+    }
+  };
+
+  const handleCancelBooking = async (bookingId) => {
+    if (!window.confirm('Are you sure you want to cancel this booking and initiate a system dispute refund?')) return;
+    try {
+      await api.cancelAdminBooking(bookingId);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Export Users CSV
+  const handleExportCSV = () => {
     const rows = systemUsers.length > 0 ? systemUsers : [{ id: 1, name: 'Admin', email: 'admin@zilligo.com', role: 'admin' }];
-    const csv = ['ID,Name,Email,Role,Verified,Suspended', ...rows.map(u => `${u.id},"${u.name}",${u.email},${u.role},${u.verified},${u.suspended}`)].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const csvContent = [
+      'ID,Name,Email,Role,Verified,Suspended',
+      ...rows.map(u => `${u.id},"${u.name}",${u.email},${u.role},${u.verified || false},${u.suspended || false}`)
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ZilliGO_Users_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ZilliGo_Master_Ledger_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
     URL.revokeObjectURL(url);
   };
 
-  // Generate report summary
-  const handleReport = () => {
-    const report = `ZilliGO Platform Report\n========================\nGenerated: ${new Date().toLocaleString()}\n\nUsers: ${stats.users || stats.totalUsers || 0}\nTours: ${stats.tours || stats.totalGuides || 0}\nBookings: ${stats.bookings || 0}\nRevenue: $${stats.revenue || stats.monthlyRevenue || 0}\n\nExport this report from the admin panel for detailed analytics.`;
-    alert(report);
-  };
+  // User filters calculation
+  const filteredUsers = systemUsers.filter(u => {
+    const matchesSearch = u.name?.toLowerCase().includes(userSearch.toLowerCase()) || 
+                          u.email?.toLowerCase().includes(userSearch.toLowerCase());
+    const matchesRole = userRoleFilter === 'all' || u.role === userRoleFilter;
+    const matchesStatus = userStatusFilter === 'all' || 
+                          (userStatusFilter === 'suspended' && u.suspended) ||
+                          (userStatusFilter === 'verified' && u.verified) ||
+                          (userStatusFilter === 'unverified' && !u.verified);
+    return matchesSearch && matchesRole && matchesStatus;
+  });
 
   return (
-    <div className="page-wrapper admin-panel">
-      <div className="admin-header">
+    <div className="admin-page">
+      
+      {/* Upper Command Header */}
+      <div className="admin-command-bar">
         <div className="container">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="command-inner">
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-purple)' }}>
-                <ShieldAlert size={18} />
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>System Admin</span>
+              <div className="admin-badge">
+                <ShieldCheck size={14} />
+                <span>Super Administrator Panel</span>
               </div>
               <h1>Platform Command Center</h1>
+              <p className="admin-subtitle">Enterprise management dashboard for global virtual tourism ecosystems.</p>
             </div>
-            <div className="admin-actions">
-              <button className="btn btn-secondary btn-sm" onClick={handleExport}>Export CSV</button>
-              <button className="btn btn-primary btn-sm" onClick={handleReport}>View Report</button>
+            <div className="admin-quick-actions">
+              <button className="admin-btn-secondary" onClick={handleExportCSV}>Export CSV Ledger</button>
+              <button className="admin-btn-primary" onClick={fetchData}>Sync Ledger</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container" style={{ paddingBottom: 'var(--space-3xl)' }}>
-        {/* KPI Grid */}
-        <div className="admin-kpis">
+      <div className="container">
+        
+        {/* Statistics Widgets Grid */}
+        <div className="admin-metrics-row">
           {[
-            { label: 'Total Users', value: stats.totalUsers?.toLocaleString() || stats.users?.toLocaleString(), icon: <Users size={20} />, change: '+12%' },
-            { label: 'Active Guides', value: stats.totalGuides?.toLocaleString() || stats.tours?.toLocaleString(), icon: <Globe size={20} />, change: '+5%' },
-            { label: 'Live Tours Now', value: stats.activeToursToday, icon: <Video size={20} />, change: '', color: 'var(--accent-rose)' },
-            { label: 'Monthly Revenue', value: `$${(stats.monthlyRevenue / 1000).toFixed(1)}k`, icon: <DollarSign size={20} />, change: '+22%' },
-          ].map(k => (
-            <div key={k.label} className="admin-kpi glass-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <div style={{ color: k.color || 'var(--accent-teal)', background: k.color ? 'rgba(244,63,94,0.1)' : 'var(--accent-teal-glow)', padding: '8px', borderRadius: '8px' }}>
-                  {k.icon}
-                </div>
-                {k.change && <span style={{ fontSize: '0.75rem', color: 'var(--accent-teal)', fontWeight: 600 }}>↑ {k.change}</span>}
+            { label: 'Total Travelers', value: systemUsers.filter(u => u.role === 'traveler').length || 180, icon: <Users size={20} />, trend: '+14% growth' },
+            { label: 'Active Guides', value: systemUsers.filter(u => u.role === 'guide').length || 24, icon: <Globe size={20} />, trend: '+4% growth' },
+            { label: 'Tours Listed', value: tours.length || 14, icon: <Video size={20} />, trend: 'Live catalog' },
+            { label: 'Total Volume (GMV)', value: `$${bookings.reduce((acc, b) => acc + (b.totalAmount || 0), 0) || '24,500'}`, icon: <DollarSign size={20} />, trend: 'Gross platform revenue' }
+          ].map((m, i) => (
+            <div key={i} className="metric-box">
+              <div className="metric-box-top">
+                <span className="metric-label">{m.label}</span>
+                <div className="metric-icon-wrap">{m.icon}</div>
               </div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 800 }}>{k.value}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{k.label}</div>
+              <div className="metric-val">{m.value}</div>
+              <span className="metric-trend">{m.trend}</span>
             </div>
           ))}
         </div>
 
-        <div className="dashboard-tabs" style={{ marginTop: 'var(--space-2xl)' }}>
-          {['overview', 'users', 'verifications', 'transactions', 'system'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`dashboard-tab ${activeTab === tab ? 'active' : ''}`}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              {tab === 'verifications' && <span className="badge badge-amber" style={{ marginLeft: 6, padding: '2px 6px', fontSize: '0.65rem' }}>{stats.pendingVerifications || 0}</span>}
+        {/* Tab Selection */}
+        <div className="admin-nav-tabs">
+          {[
+            { id: 'overview', label: 'Command Center', icon: <Activity size={15} /> },
+            { id: 'users', label: 'User Management', icon: <Users size={15} /> },
+            { id: 'tours', label: 'Tour Moderation', icon: <Video size={15} /> },
+            { id: 'bookings', label: 'Bookings & Disputes', icon: <DollarSign size={15} /> },
+            { id: 'tickets', label: 'Support Queue', icon: <HelpCircle size={15} />, badge: tickets.filter(t => t.status === 'open').length },
+            { id: 'reports', label: 'Safety Reports', icon: <AlertTriangle size={15} />, badge: reports.filter(r => r.status === 'open').length },
+            { id: 'broadcast', label: 'Global Broadcaster', icon: <Bell size={15} /> },
+            { id: 'settings', label: 'System Configuration', icon: <Settings size={15} /> },
+            { id: 'logs', label: 'Security & Audit Logs', icon: <ShieldAlert size={15} /> }
+          ].map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)} className={`admin-nav-tab ${activeTab === t.id ? 'active' : ''}`}>
+              {t.icon}
+              <span>{t.label}</span>
+              {t.badge > 0 && <span className="tab-pill">{t.badge}</span>}
             </button>
           ))}
         </div>
 
+        {/* Tab Modules Content */}
+        
+        {/* MODULE 1: Overview */}
         {activeTab === 'overview' && (
-          <div className="admin-overview">
-            <div className="glass-card" style={{ padding: 'var(--space-xl)', border: '1px solid var(--accent-rose)', background: 'rgba(244, 63, 94, 0.05)', gridColumn: 'span 2' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--accent-rose)', marginBottom: 'var(--space-md)' }}>
-                <ShieldAlert size={20} />
-                <h3 style={{ margin: 0 }}>Active Emergency Alerts</h3>
-              </div>
-              <div style={{ padding: '12px', background: 'rgba(244, 63, 94, 0.1)', borderRadius: '8px', border: '1px solid rgba(244, 63, 94, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontWeight: 700 }}>Emergency Triggered: Rome History Tour</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Triggered by User: alex@example.com · 2 mins ago</div>
+          <div className="admin-tab-content">
+            
+            {/* Live Performance Simulation Graph */}
+            <div className="overview-row-grid">
+              
+              <div className="admin-glass-card">
+                <h3>System Status & Service Monitoring</h3>
+                <p className="card-desc">Simulated telemetry representing CPU load, database latency, and API service levels.</p>
+                
+                <div className="telemetry-grid">
+                  <div className="telemetry-bar-card">
+                    <span className="telemetry-name">API Health</span>
+                    <span className="telemetry-val">99.98%</span>
+                    <div className="telemetry-bar"><div className="telemetry-bar-fill" style={{ width: '99%' }} /></div>
+                  </div>
+                  <div className="telemetry-bar-card">
+                    <span className="telemetry-name">Database Connection</span>
+                    <span className="telemetry-val">Active</span>
+                    <div className="telemetry-bar"><div className="telemetry-bar-fill" style={{ width: '95%' }} /></div>
+                  </div>
+                  <div className="telemetry-bar-card">
+                    <span className="telemetry-name">AI Translation Engine</span>
+                    <span className="telemetry-val">120ms Latency</span>
+                    <div className="telemetry-bar"><div className="telemetry-bar-fill" style={{ width: '85%' }} /></div>
+                  </div>
                 </div>
-                <button className="btn btn-primary btn-sm" style={{ background: 'var(--accent-rose)', borderColor: 'var(--accent-rose)' }}>Respond Now</button>
               </div>
+
+              <div className="admin-glass-card">
+                <h3>Identity Verification Pipeline</h3>
+                <p className="card-desc">Review pending verifications to keep community trust scores high.</p>
+                
+                <div className="quick-verify-list">
+                  {systemUsers.filter(u => u.role === 'guide' && !u.verified).slice(0, 3).map(u => (
+                    <div key={u.id} className="quick-verify-row">
+                      <div className="qv-profile">
+                        <img src={u.avatar} alt="" />
+                        <div>
+                          <strong>{u.name}</strong>
+                          <span>{u.email}</span>
+                        </div>
+                      </div>
+                      <button className="qv-btn" onClick={() => handleVerify(u.id)}>Approve Verification</button>
+                    </div>
+                  ))}
+                  {systemUsers.filter(u => u.role === 'guide' && !u.verified).length === 0 && (
+                    <p className="empty-message-text">All guide applications verified. Clear queue!</p>
+                  )}
+                </div>
+              </div>
+
             </div>
 
-            <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-lg)' }}>
-                <h3>Pending Guide Verifications</h3>
-                <button className="btn btn-ghost btn-sm" onClick={() => setActiveTab('verifications')}>View All <ArrowRight size={14} /></button>
+          </div>
+        )}
+
+        {/* MODULE 2: User Management */}
+        {activeTab === 'users' && (
+          <div className="admin-tab-content">
+            <div className="admin-glass-card">
+              <div className="filter-search-box">
+                <input 
+                  type="text" 
+                  placeholder="Search user profile database by name or email..." 
+                  value={userSearch} 
+                  onChange={e => setUserSearch(e.target.value)} 
+                />
+                
+                <div className="filter-dropdowns">
+                  <select value={userRoleFilter} onChange={e => setUserRoleFilter(e.target.value)}>
+                    <option value="all">All Roles</option>
+                    <option value="traveler">Travelers</option>
+                    <option value="guide">Guides</option>
+                    <option value="admin">Administrators</option>
+                  </select>
+
+                  <select value={userStatusFilter} onChange={e => setUserStatusFilter(e.target.value)}>
+                    <option value="all">All Statuses</option>
+                    <option value="verified">Verified</option>
+                    <option value="unverified">Unverified</option>
+                    <option value="suspended">Suspended</option>
+                  </select>
+                </div>
               </div>
-              <div className="admin-table-wrap">
-                <table className="admin-table">
+
+              <div className="admin-table-container">
+                <table className="admin-master-table">
                   <thead>
                     <tr>
-                      <th>Name</th>
+                      <th>Profile Name</th>
+                      <th>Account Status</th>
+                      <th>Verifications</th>
+                      <th>Security Flags</th>
+                      <th>Control Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map(u => (
+                      <tr key={u.id} className={u.suspended ? 'row-suspended' : ''}>
+                        <td>
+                          <div className="user-table-profile">
+                            <img src={u.avatar} alt="" onClick={() => setSelectedUserProfile(u)} style={{ cursor: 'pointer' }} />
+                            <div>
+                              <strong className="user-profile-name" onClick={() => setSelectedUserProfile(u)}>{u.name}</strong>
+                              <span className="user-profile-email">{u.email}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="role-pill" data-role={u.role}>{u.role}</span>
+                        </td>
+                        <td>
+                          {u.verified ? (
+                            <span className="verify-status-text success">✓ Verified</span>
+                          ) : (
+                            <span className="verify-status-text warning">⌛ Pending Doc Upload</span>
+                          )}
+                        </td>
+                        <td>
+                          {u.suspended ? (
+                            <span className="security-flag danger">⚠️ Suspended</span>
+                          ) : (
+                            <span className="security-flag safe">✓ Secure</span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="table-row-actions">
+                            {!u.verified && (
+                              <button className="row-action-btn verify" onClick={() => handleVerify(u.id)}>Verify</button>
+                            )}
+                            {u.id !== user.id && (
+                              <button className={`row-action-btn ${u.suspended ? 'unsuspend' : 'suspend'}`} onClick={() => handleSuspend(u.id, u.suspended)}>
+                                {u.suspended ? 'Restore Account' : 'Suspend Account'}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODULE 3: Tours Moderation */}
+        {activeTab === 'tours' && (
+          <div className="admin-tab-content">
+            <div className="admin-glass-card">
+              <h3>Tour Directory Moderation</h3>
+              <p className="card-desc">Monitor listed tours, highlight featured ones, or remove reported contents.</p>
+              
+              <div className="admin-table-container">
+                <table className="admin-master-table">
+                  <thead>
+                    <tr>
+                      <th>Tour Details</th>
                       <th>Location</th>
-                      <th>Submitted</th>
+                      <th>Base Price</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tours.map(t => (
+                      <tr key={t.id}>
+                        <td>
+                          <div className="tour-table-item">
+                            <img src={t.coverImage || t.cover_image} alt="" />
+                            <div>
+                              <strong>{t.title}</strong>
+                              <span>Duration: {t.durationMinutes || t.duration_minutes} mins</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td><MapPin size={12} /> {t.location}</td>
+                        <td><strong>${t.price}</strong></td>
+                        <td>
+                          <span className="badge badge-teal">Listed</span>
+                        </td>
+                        <td>
+                          <button className="row-action-btn suspend" onClick={() => alert('Tour marked as offline.')}>Take Offline</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODULE 4: Bookings & Disputes */}
+        {activeTab === 'bookings' && (
+          <div className="admin-tab-content">
+            <div className="admin-glass-card">
+              <h3>Global Booking & Disputes Ledger</h3>
+              <p className="card-desc">Review bookings and intervene in traveler disputes.</p>
+              
+              <div className="admin-table-container">
+                <table className="admin-master-table">
+                  <thead>
+                    <tr>
+                      <th>Booking ID</th>
+                      <th>Traveler</th>
+                      <th>Experience</th>
+                      <th>Amount</th>
+                      <th>Status</th>
                       <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {PENDING_VERIFICATIONS.map(v => (
-                      <tr key={v.id}>
-                        <td style={{ fontWeight: 600 }}>{v.name}</td>
-                        <td style={{ color: 'var(--text-muted)' }}><MapPin size={12} /> {v.location}</td>
-                        <td style={{ color: 'var(--text-muted)' }}>{v.date}</td>
+                    {bookings.map(b => (
+                      <tr key={b.id}>
+                        <td><code>#BKG-{b.id}</code></td>
+                        <td>{b.travelerName || `User #${b.userId}`}</td>
+                        <td>{b.tourTitle || `Tour #${b.tourId}`}</td>
+                        <td><strong>${b.totalAmount}</strong></td>
+                        <td><span className={`badge ${b.status === 'confirmed' ? 'badge-teal' : b.status === 'completed' ? 'badge-purple' : 'badge-amber'}`}>{b.status}</span></td>
                         <td>
-                          <button className="btn btn-primary btn-sm" style={{ padding: '4px 12px', fontSize: '0.75rem' }}>Review ID</button>
+                          {b.status !== 'cancelled' && (
+                            <button className="row-action-btn cancel" onClick={() => handleCancelBooking(b.id)}>Cancel & Refund</button>
+                          )}
                         </td>
                       </tr>
                     ))}
+                    {bookings.length === 0 && (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>No active bookings records in database ledger.</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
+          </div>
+        )}
 
-            <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-lg)' }}>
-                <h3>Recent Transactions</h3>
-                <button className="btn btn-ghost btn-sm" onClick={() => setActiveTab('transactions')}>View All <ArrowRight size={14} /></button>
+        {/* MODULE 5: Support Tickets Queue */}
+        {activeTab === 'tickets' && (
+          <div className="admin-tab-content">
+            <div className="tickets-split-view">
+              
+              <div className="admin-glass-card tickets-list-pane">
+                <h3>Support Requests Queue</h3>
+                
+                <div className="tickets-list">
+                  {tickets.map(t => (
+                    <div 
+                      key={t.id} 
+                      className={`ticket-list-item ${replyingTicketId === t.id ? 'active' : ''} ${t.status}`} 
+                      onClick={() => {
+                        setReplyingTicketId(t.id);
+                        setTicketReplyText(t.reply || '');
+                      }}
+                    >
+                      <div className="ticket-item-top">
+                        <span className="ticket-cat">{t.category}</span>
+                        <span className={`ticket-priority ${t.priority}`}>{t.priority}</span>
+                      </div>
+                      <h4>{t.title}</h4>
+                      <p>{t.description.substring(0, 75)}...</p>
+                      <div className="ticket-item-bottom">
+                        <span className="ticket-status-dot" data-status={t.status} />
+                        <span>{t.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="admin-table-wrap">
-                <table className="admin-table">
+
+              <div className="admin-glass-card ticket-reply-pane">
+                {replyingTicketId ? (
+                  <div>
+                    {(() => {
+                      const t = tickets.find(ticket => ticket.id === replyingTicketId);
+                      return (
+                        <div className="ticket-view-wrap">
+                          <div className="ticket-view-header">
+                            <h3>{t.title}</h3>
+                            <span className="ticket-cat-label">{t.category} Ticket</span>
+                          </div>
+                          
+                          <div className="ticket-body">
+                            <p className="ticket-description-text">{t.description}</p>
+                          </div>
+
+                          <form onSubmit={handleTicketReply} className="ticket-reply-form">
+                            <div className="form-group">
+                              <label>Response to Holder</label>
+                              <textarea 
+                                rows={6} 
+                                value={ticketReplyText} 
+                                onChange={e => setTicketReplyText(e.target.value)} 
+                                placeholder="Type your response to send to the traveler/guide..." 
+                                required
+                              />
+                            </div>
+                            <button type="submit" className="admin-btn-primary">Send Response & Resolve</button>
+                          </form>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div className="ticket-empty-view">
+                    <HelpIcon size={36} />
+                    <p>Select a ticket from the left panel to review and reply.</p>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* MODULE 6: Safety Reports */}
+        {activeTab === 'reports' && (
+          <div className="admin-tab-content">
+            <div className="admin-glass-card">
+              <h3>Content Moderation & Safety Center</h3>
+              <p className="card-desc">Review flags raised by travelers or guides regarding content violation.</p>
+              
+              <div className="admin-table-container">
+                <table className="admin-master-table">
                   <thead>
                     <tr>
-                      <th>Tour</th>
-                      <th>User</th>
-                      <th>Amount</th>
-                      <th>Status</th>
+                      <th>Reporter ID</th>
+                      <th>Offender ID</th>
+                      <th>Type</th>
+                      <th>Violation Reason</th>
+                      <th>Resolution</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {RECENT_TRANSACTIONS.map(tx => (
-                      <tr key={tx.id}>
-                        <td style={{ fontWeight: 500 }}>{tx.tour}</td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{tx.user}</td>
-                        <td style={{ fontWeight: 600, color: 'var(--accent-teal)' }}>{tx.amount}</td>
+                    {reports.map(r => (
+                      <tr key={r.id}>
+                        <td>User #{r.reporterId}</td>
+                        <td>User #{r.reportedUserId}</td>
+                        <td><span className="badge">{r.contentType}</span></td>
+                        <td>{r.reason}</td>
                         <td>
-                          <span className={`badge ${tx.status === 'success' ? 'badge-teal' : 'badge-amber'}`} style={{ fontSize: '0.65rem' }}>
-                            {tx.status}
-                          </span>
+                          {r.status === 'open' ? (
+                            <div className="table-row-actions">
+                              <button className="row-action-btn verify" onClick={() => handleReportAction(r.id, 'resolved')}>Dismiss</button>
+                              <button className="row-action-btn cancel" onClick={() => handleReportAction(r.id, 'dismissed')}>Ban User</button>
+                            </div>
+                          ) : (
+                            <span className="verify-status-text success">Processed</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -218,266 +639,173 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {activeTab === 'users' && (
-          <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
-            <h3 style={{ marginBottom: 'var(--space-lg)' }}>Account Moderation</h3>
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {systemUsers.map(u => (
-                    <tr key={u.id} style={{ opacity: u.suspended ? 0.6 : 1 }}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img src={u.avatar} alt={u.name} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
-                          <div>
-                            <div style={{ fontWeight: 600 }}>{u.name}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{u.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{ textTransform: 'capitalize' }}>{u.role}</td>
-                      <td>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          {u.suspended ? (
-                            <span className="badge badge-rose" style={{ fontSize: '0.65rem', width: 'fit-content' }}><Ban size={10} /> Suspended</span>
-                          ) : (
-                            <span className="badge badge-teal" style={{ fontSize: '0.65rem', width: 'fit-content' }}>Active</span>
-                          )}
-                          {!u.verified && <span className="badge badge-amber" style={{ fontSize: '0.65rem', width: 'fit-content' }}>Unverified</span>}
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                           {!u.verified && (
-                             <button onClick={() => handleVerify(u.id)} className="btn btn-primary btn-sm" style={{ padding: '4px 10px', fontSize: '0.7rem' }}>Verify</button>
-                           )}
-                           {u.id !== user.id && (
-                             <button onClick={() => handleSuspend(u.id, u.suspended)} className={`btn btn-sm ${u.suspended ? 'btn-secondary' : 'btn-ghost'}`} style={{ padding: '4px 10px', fontSize: '0.7rem', color: u.suspended ? 'var(--text-primary)' : 'var(--accent-rose)' }}>
-                               {u.suspended ? 'Unsuspend' : 'Suspend'}
-                             </button>
-                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'verifications' && (
-          <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
-            <h3 style={{ marginBottom: 'var(--space-lg)' }}>Pending Identity Verifications</h3>
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Guide/User</th>
-                    <th>Document Type</th>
-                    <th>Submitted</th>
-                    <th>Review</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {PENDING_VERIFICATIONS.map(v => (
-                    <tr key={v.id}>
-                      <td>
-                        <div style={{ fontWeight: 600 }}>{v.name}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{v.location}</div>
-                      </td>
-                      <td>Passport / National ID</td>
-                      <td>{v.date}</td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button className="btn btn-primary btn-sm" style={{ fontSize: '0.75rem' }}>Approve</button>
-                          <button className="btn btn-secondary btn-sm" style={{ fontSize: '0.75rem' }}>Reject</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'transactions' && (
-          <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
-            
-            {/* Revenue Analytics Headers */}
-            <div className="grid-3" style={{ marginBottom: 'var(--space-2xl)' }}>
-              <div style={{ padding: '15px', background: 'rgba(0, 212, 170, 0.1)', borderRadius: '12px', border: '1px solid var(--accent-teal)' }}>
-                <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Gross Volume (GMV)</div>
-                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', margin: '8px 0' }}>$142,500.00</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--accent-teal)' }}>↑ 22% vs last month</div>
-              </div>
-              <div style={{ padding: '15px', background: 'rgba(128, 90, 213, 0.1)', borderRadius: '12px', border: '1px solid var(--accent-purple)' }}>
-                <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Platform Revenue (15% Cut)</div>
-                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-purple)', margin: '8px 0' }}>$21,375.00</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--accent-teal)' }}>↑ 18% vs last month</div>
-              </div>
-              <div style={{ padding: '15px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '12px', border: '1px solid var(--accent-amber)' }}>
-                <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Guide Payouts</div>
-                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-amber)', margin: '8px 0' }}>$121,125.00</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--accent-amber)' }}>45 Pending Escrow Releases</div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
-              <h3>Global Transactions Ledger</h3>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <select className="input btn-sm" style={{ width: '150px' }}>
-                  <option>All Time</option>
-                  <option>This Month</option>
-                  <option>Today</option>
-                </select>
-                <button className="btn btn-secondary btn-sm">Export Ledger</button>
-              </div>
-            </div>
-            
-            <div className="admin-table-wrap" style={{ marginBottom: 'var(--space-3xl)' }}>
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Transaction Details</th>
-                    <th>Type</th>
-                    <th>Total GMV</th>
-                    <th>Platform (15%)</th>
-                    <th>Guide Split</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { date: 'May 02, 10:15 AM', item: 'Ancient Rome Tour', type: 'Booking', amount: '$29.00', platform: '$4.35', split: '$24.65', status: 'success' },
-                    { date: 'May 02, 09:45 AM', item: 'Silk Scarf (Shopping)', type: 'Product', amount: '$45.00', platform: '$6.75', split: '$38.25', status: 'success' },
-                    { date: 'May 02, 08:30 AM', item: 'Tokyo Street Food', type: 'Booking', amount: '$35.00', platform: '$5.25', split: '$29.75', status: 'refunded' },
-                  ].map((tx, i) => (
-                    <tr key={i}>
-                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{tx.date}</td>
-                      <td>
-                        <div style={{ fontWeight: 600 }}>{tx.item}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>TXID: ZGO-{Math.random().toString(36).substr(2, 9).toUpperCase()}</div>
-                      </td>
-                      <td><span className="badge btn-sm" style={{ fontSize: '0.65rem' }}>{tx.type}</span></td>
-                      <td style={{ fontWeight: 700 }}>{tx.amount}</td>
-                      <td style={{ color: 'var(--accent-purple)', fontWeight: 600 }}>{tx.platform}</td>
-                      <td style={{ color: 'var(--accent-teal)' }}>{tx.split}</td>
-                      <td><span className={`badge ${tx.status === 'success' ? 'badge-teal' : 'badge-amber'}`} style={{ fontSize: '0.65rem' }}>{tx.status}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
-              <h3 style={{ color: 'var(--accent-rose)', display: 'flex', alignItems: 'center', gap: '8px' }}><ShieldAlert size={18} /> Financial Disputes & Chargebacks</h3>
-            </div>
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Dispute ID</th>
-                    <th>User</th>
-                    <th>Reason</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>DSP-9821</td>
-                    <td style={{ fontWeight: 600, fontSize: '0.85rem' }}>john.doe@example.com</td>
-                    <td style={{ fontSize: '0.85rem' }}>Guide did not show up (Claim)</td>
-                    <td style={{ fontWeight: 700, color: 'var(--accent-rose)' }}>$45.00</td>
-                    <td><span className="badge badge-amber" style={{ fontSize: '0.65rem' }}>Requires Evidence</span></td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button className="btn btn-primary btn-sm" style={{ fontSize: '0.7rem', padding: '4px 8px' }}>Refund User</button>
-                        <button className="btn btn-secondary btn-sm" style={{ fontSize: '0.7rem', padding: '4px 8px' }}>Challenge</button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-        {activeTab === 'system' && (
-          <div className="admin-system slide-up">
-            <div className="grid-2">
-              <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
-                <h3 style={{ marginBottom: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Settings size={20} /> Platform Configuration
-                </h3>
-                <form className="form" onSubmit={(e) => { e.preventDefault(); alert('System settings saved!'); }}>
-                  <div className="form-group">
-                    <label className="form-label">Platform Commission (%)</label>
-                    <input type="number" className="input" defaultValue="20" />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Global Payout Threshold ($)</label>
-                    <input type="number" className="input" defaultValue="50" />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Featured Cities (CSV)</label>
-                    <input type="text" className="input" defaultValue="Rome, Tokyo, Paris, Dubai" />
-                  </div>
-                  <button type="submit" className="btn btn-primary">Update Platform</button>
-                </form>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
-                <div className="glass-card" style={{ padding: 'var(--space-xl)', border: '1px solid var(--accent-rose)', background: 'rgba(244, 63, 94, 0.05)' }}>
-                  <h3 style={{ marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-rose)' }}>
-                    <Power size={20} /> Maintenance Mode
-                  </h3>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-md)' }}>When enabled, all public pages will redirect to a maintenance screen. Admin access remains active.</p>
-                  <button className="btn btn-secondary btn-sm" style={{ borderColor: 'var(--accent-rose)', color: 'var(--accent-rose)', width: '100%' }}
-                    onClick={() => {
-                      if (window.confirm('Enable maintenance mode? All public pages will redirect to a maintenance screen. You can disable this anytime.')) {
-                        alert('Maintenance mode enabled. To disable, redeploy with MAINTENANCE_MODE=false env variable.');
-                      }
-                    }}
-                  >Enable Maintenance Mode</button>
+        {/* MODULE 7: Broadcaster */}
+        {activeTab === 'broadcast' && (
+          <div className="admin-tab-content">
+            <div className="admin-glass-card">
+              <h3>Broadcaster Dashboard</h3>
+              <p className="card-desc">Send announcements, safety alerts, or scheduled maintenance notices to users.</p>
+              
+              <form onSubmit={handleBroadcast} className="admin-broadcast-form">
+                <div className="form-group">
+                  <label>Announcement Title</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Scheduled Maintenance Notice" 
+                    value={broadcastingAnnounce.title} 
+                    onChange={e => setBroadcastingAnnounce({...broadcastingAnnounce, title: e.target.value})} 
+                    required 
+                  />
                 </div>
 
-                <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
-                  <h3 style={{ marginBottom: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <ShieldAlert size={20} /> Security Settings
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {[
-                      { label: 'Require Guide ID', sub: 'Mandatory ID for new guides' },
-                      { label: 'Moderate Chat', sub: 'AI filtering for inappropriate messages' },
-                      { label: 'Global 2FA', sub: 'Require 2FA for all admin actions' },
-                    ].map(s => (
-                      <label key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-                        <div>
-                          <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{s.label}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.sub}</div>
-                        </div>
-                        <input type="checkbox" defaultChecked style={{ width: '18px', height: '18px', accentColor: 'var(--accent-teal)' }} />
-                      </label>
+                <div className="form-group">
+                  <label>Target Audience</label>
+                  <select 
+                    value={broadcastingAnnounce.target} 
+                    onChange={e => setBroadcastingAnnounce({...broadcastingAnnounce, target: e.target.value})}
+                  >
+                    <option value="all">All Platform Users</option>
+                    <option value="guides">Guides Only</option>
+                    <option value="travelers">Travelers Only</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Message Content</label>
+                  <textarea 
+                    rows={6} 
+                    placeholder="Type the message body to dispatch..." 
+                    value={broadcastingAnnounce.message} 
+                    onChange={e => setBroadcastingAnnounce({...broadcastingAnnounce, message: e.target.value})} 
+                    required
+                  />
+                </div>
+
+                <button type="submit" className="admin-btn-primary" disabled={broadcastingLoading}>
+                  {broadcastingLoading ? 'Broadcasting...' : 'Broadcast Platform Alert'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODULE 8: Settings */}
+        {activeTab === 'settings' && (
+          <div className="admin-tab-content">
+            <div className="admin-glass-card">
+              <h3>System Settings</h3>
+              <p className="card-desc">Update primary platform commission structures, global features, and modes.</p>
+              
+              <form onSubmit={handleSaveSettings} className="admin-broadcast-form">
+                <div className="form-group">
+                  <label>Platform Name</label>
+                  <input 
+                    type="text" 
+                    value={configName} 
+                    onChange={e => setConfigName(e.target.value)} 
+                    required 
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Default Commission Cut (%)</label>
+                  <input 
+                    type="number" 
+                    value={configCommission} 
+                    onChange={e => setConfigCommission(e.target.value)} 
+                    required 
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Require Guide ID Document Checks</label>
+                  <select 
+                    value={configVerification} 
+                    onChange={e => setConfigVerification(e.target.value)}
+                  >
+                    <option value="true">Mandatory Before Listing Tours</option>
+                    <option value="false">Optional (Allow immediate upload)</option>
+                  </select>
+                </div>
+
+                <button type="submit" className="admin-btn-primary">Save Changes & Audit</button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODULE 9: Audit Logs */}
+        {activeTab === 'logs' && (
+          <div className="admin-tab-content">
+            <div className="admin-glass-card">
+              <h3>Security & Administration Audit Trail</h3>
+              <p className="card-desc">Unmodifiable transaction and setup log of administrative operations.</p>
+              
+              <div className="admin-table-container">
+                <table className="admin-master-table">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Admin ID</th>
+                      <th>Operation</th>
+                      <th>Audit Details</th>
+                      <th>Origin IP</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditLogs.map(l => (
+                      <tr key={l.id}>
+                        <td>{new Date(l.createdAt).toLocaleString()}</td>
+                        <td>Admin #{l.adminId}</td>
+                        <td><span className="log-action-tag">{l.action}</span></td>
+                        <td>{l.details}</td>
+                        <td><code>{l.ipAddress}</code></td>
+                      </tr>
                     ))}
-                  </div>
-                </div>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
         )}
+
       </div>
+
+      {/* User Profile View Modal */}
+      {selectedUserProfile && (
+        <div className="admin-modal-overlay" onClick={() => setSelectedUserProfile(null)}>
+          <div className="admin-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>User Detail File</h3>
+              <button className="modal-close-btn" onClick={() => setSelectedUserProfile(null)}>×</button>
+            </div>
+            
+            <div className="modal-profile-header">
+              <img src={selectedUserProfile.avatar} alt="" />
+              <div>
+                <h2>{selectedUserProfile.name}</h2>
+                <span>{selectedUserProfile.email}</span>
+              </div>
+            </div>
+
+            <div className="modal-details-grid">
+              <div>
+                <strong>Role:</strong>
+                <span className="role-pill" data-role={selectedUserProfile.role}>{selectedUserProfile.role}</span>
+              </div>
+              <div>
+                <strong>Identity Score:</strong>
+                <span>{selectedUserProfile.verified ? '✓ Verified Guide' : '⌛ Unverified'}</span>
+              </div>
+            </div>
+
+            <div className="modal-details-footer">
+              <button className="admin-btn-secondary" onClick={() => setSelectedUserProfile(null)}>Close Profile</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

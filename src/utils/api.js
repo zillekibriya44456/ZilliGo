@@ -124,6 +124,55 @@ export const api = {
     body: JSON.stringify({ suspended }),
   }).then(res => res.json()),
 
+  getAdminTickets: () => fetch(`${API_BASE}/admin/tickets`, {
+    headers: getHeaders(),
+  }).then(res => res.json()),
+
+  updateAdminTicket: (id, data) => fetch(`${API_BASE}/admin/tickets/${id}`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+
+  getAdminReports: () => fetch(`${API_BASE}/admin/reports`, {
+    headers: getHeaders(),
+  }).then(res => res.json()),
+
+  updateAdminReport: (id, status) => fetch(`${API_BASE}/admin/reports/${id}`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify({ status }),
+  }).then(res => res.json()),
+
+  getAdminSettings: () => fetch(`${API_BASE}/admin/settings`, {
+    headers: getHeaders(),
+  }).then(res => res.json()),
+
+  updateAdminSetting: (data) => fetch(`${API_BASE}/admin/settings`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+
+  getAdminAuditLogs: () => fetch(`${API_BASE}/admin/audit-logs`, {
+    headers: getHeaders(),
+  }).then(res => res.json()),
+
+  getAdminBookings: () => fetch(`${API_BASE}/admin/bookings`, {
+    headers: getHeaders(),
+  }).then(res => res.json()),
+
+  cancelAdminBooking: (id) => fetch(`${API_BASE}/admin/bookings/${id}/cancel`, {
+    method: 'PUT',
+    headers: getHeaders(),
+  }).then(res => res.json()),
+
+  sendAdminAnnouncement: (data) => fetch(`${API_BASE}/admin/announcement`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+
   // Guide Applications
   submitGuideApplication: (data) => fetch(`${API_BASE}/guides/apply`, {
     method: 'POST',
