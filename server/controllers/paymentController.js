@@ -1,4 +1,13 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+let stripe = null;
+try {
+  if (process.env.STRIPE_SECRET_KEY) {
+    stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  } else {
+    console.warn('⚠️ Stripe Secret Key is missing. Stripe checkout will be disabled.');
+  }
+} catch (err) {
+  console.error('⚠️ Failed to initialize Stripe:', err.message);
+}
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const db = require('../utils/db');
@@ -95,6 +104,9 @@ const fulfillBookingRecord = async (orderId, paymentId, amountPaidUsd, userId) =
 // @route   POST /api/payments/stripe/create-checkout
 exports.createStripeCheckout = async (req, res) => {
   const { tourId, amount, tourTitle, type } = req.body;
+  if (!stripe) {
+    return res.status(400).json({ message: 'Stripe is not configured on this server.' });
+  }
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -276,6 +288,10 @@ exports.handleWebhook = async (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
 
+  if (!stripe) {
+    return res.status(400).send('Stripe is not configured on this server.');
+  }
+
   try {
     event = stripe.webhooks.constructEvent(
       req.rawBody ? req.rawBody : req.body,
@@ -341,6 +357,9 @@ exports.refundPayment = async (req, res) => {
       });
     } else if (payment.provider === 'stripe') {
       // Stripe refund
+      if (!stripe) {
+        return res.status(400).json({ message: 'Stripe is not configured on this server.' });
+      }
       await stripe.refunds.create({
         payment_intent: payment.provider_id,
         reason: 'requested_by_customer'
@@ -409,4 +428,10 @@ exports.confirmPayment = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error confirming payment', error: error.message });
   }
+};
+
+// @desc    Create PayPal Order (Placeholder)
+// @route   POST /api/payments/paypal/create-order
+exports.createPaypalOrder = async (req, res) => {
+  res.status(501).json({ message: 'PayPal integration is not fully configured on this server.' });
 };
