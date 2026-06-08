@@ -59,7 +59,7 @@ export default function Explore() {
         t.title.toLowerCase().includes(q) ||
         t.location.toLowerCase().includes(q) ||
         t.category.toLowerCase().includes(q) ||
-        t.tags.some(tag => tag.toLowerCase().includes(q))
+        (t.tags || []).some(tag => tag.toLowerCase().includes(q))
       );
     }
     if (typeFilter !== 'all') result = result.filter(t => t.type === typeFilter);

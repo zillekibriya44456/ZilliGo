@@ -21,7 +21,16 @@ export default function TourCard({ tour, featured = false }) {
   if (!tour) return null;
 
   const isLive = tour.type === 'live';
-  const spotsLeft = tour.maxParticipants - tour.currentParticipants;
+  
+  // Safe parsing for database values vs mock values
+  const ratingVal = tour.rating !== undefined && tour.rating !== null ? parseFloat(tour.rating) : 0.0;
+  const reviewCountVal = tour.reviewCount !== undefined && tour.reviewCount !== null ? parseInt(tour.reviewCount, 10) : 0;
+  const maxParticipantsVal = tour.maxParticipants !== undefined && tour.maxParticipants !== null ? parseInt(tour.maxParticipants, 10) : 20;
+  const currentParticipantsVal = tour.currentParticipants !== undefined && tour.currentParticipants !== null ? parseInt(tour.currentParticipants, 10) : 0;
+  const spotsLeft = maxParticipantsVal - currentParticipantsVal;
+  const durationVal = tour.duration || tour.durationMinutes || 0;
+  const coverImg = tour.coverImage || tour.cover_image || "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80";
+
   const flag = getFlag(tour.location);
 
   return (
@@ -29,7 +38,7 @@ export default function TourCard({ tour, featured = false }) {
       
       {/* ── Image Section (16:9) ── */}
       <div className="ptc-image-wrap">
-        <img src={tour.coverImage} alt={tour.title} className="ptc-image" loading="lazy" />
+        <img src={coverImg} alt={tour.title} className="ptc-image" loading="lazy" />
         <div className="ptc-image-overlay" />
         
         {/* Top Badges */}
@@ -78,14 +87,14 @@ export default function TourCard({ tour, featured = false }) {
         {/* Rating */}
         <div className="ptc-rating">
           <Star size={14} fill="#FFD700" stroke="#FFD700" /> 
-          <span className="ptc-rating-score">{tour.rating.toFixed(1)}</span>
-          <span className="ptc-rating-count">({tour.reviewCount.toLocaleString()} Reviews)</span>
+          <span className="ptc-rating-score">{ratingVal.toFixed(1)}</span>
+          <span className="ptc-rating-count">({reviewCountVal.toLocaleString()} Reviews)</span>
         </div>
 
         {/* Tour Details Grid */}
         <div className="ptc-details-grid">
           <div className="ptc-detail-item">
-            <Clock size={14} className="detail-icon" /> {tour.duration} Minutes
+            <Clock size={14} className="detail-icon" /> {durationVal} Minutes
           </div>
           <div className="ptc-detail-item">
             <Users size={14} className="detail-icon" /> {spotsLeft > 0 ? `${spotsLeft} Spots Left` : 'Full'}
