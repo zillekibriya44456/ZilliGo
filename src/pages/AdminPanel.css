@@ -784,3 +784,97 @@
     gap: 1.25rem;
   }
 }
+
+/* ── Admin Gate Gateway Card ── */
+.admin-gate-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, #0F172A 0%, #030712 100%);
+  padding: 2rem;
+  color: #F8FAFC;
+}
+
+.admin-gate-card {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  padding: 3rem 2.5rem;
+  border-radius: 24px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.admin-gate-icon-wrap {
+  background: rgba(0, 245, 212, 0.08);
+  border: 1px solid rgba(0, 245, 212, 0.2);
+  color: #00F5D4;
+  padding: 1rem;
+  border-radius: 20px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-gate-card h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 850;
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+
+.admin-gate-desc {
+  color: #94A3B8;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0 0 2rem;
+}
+
+.gate-credentials-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.25rem;
+  width: 100%;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.gate-credentials-box span {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #64748B;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.gate-credentials-box code {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: #00F5D4;
+  display: block;
+}
+
+.gate-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.gate-action-buttons button {
+  width: 100%;
+}
+
