@@ -10,7 +10,8 @@ const protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
 
       // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const JWT_SECRET = process.env.JWT_SECRET || 'zilligo_super_secure_jwt_secret_key_2026';
+      const decoded = jwt.verify(token, JWT_SECRET);
 
       // Get user from token
       const result = await db.query('SELECT id, name, email, role FROM users WHERE id = $1', [decoded.id]);

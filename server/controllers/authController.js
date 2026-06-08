@@ -4,8 +4,9 @@ const crypto = require('crypto');
 const db = require('../utils/db');
 const { toCamel } = require('../utils/camelCase');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'zilligo_super_secure_jwt_secret_key_2026';
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '15m' }); // Short lived access token
+  return jwt.sign({ id }, JWT_SECRET, { expiresIn: '15m' }); // Short lived access token
 };
 
 const generateRefreshToken = () => {

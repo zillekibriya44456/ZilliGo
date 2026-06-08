@@ -25,7 +25,8 @@ router.put('/profile', protect, authController.updateUserProfile);
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3001';
 
-const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+const JWT_SECRET = process.env.JWT_SECRET || 'zilligo_super_secure_jwt_secret_key_2026';
+const generateToken = (id) => jwt.sign({ id }, JWT_SECRET, { expiresIn: '30d' });
 
 /**
  * Find or create a user from OAuth profile data.
