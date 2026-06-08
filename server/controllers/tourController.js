@@ -37,7 +37,11 @@ exports.getTours = async (req, res) => {
 // @route   GET /api/tours/:id
 exports.getTourById = async (req, res) => {
   try {
-    const result = await db.query('SELECT * FROM tours WHERE id = $1', [req.params.id]);
+    const numericId = parseInt(req.params.id, 10);
+    if (isNaN(numericId)) {
+      return res.status(404).json({ message: 'Tour not found' });
+    }
+    const result = await db.query('SELECT * FROM tours WHERE id = $1', [numericId]);
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Tour not found' });
     }

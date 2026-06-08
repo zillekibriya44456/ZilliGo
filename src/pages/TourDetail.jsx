@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Star, Clock, Users, Globe, MapPin, Play, CheckCircle, Share2, Heart, Calendar, Shield, Award, ChevronRight } from 'lucide-react';
 import { getTourById, getGuideById, TOURS } from '../data/mockData';
@@ -7,6 +7,7 @@ import { useBooking } from '../context/BookingContext';
 import MatchingOverlay from '../components/MatchingOverlay';
 import PaymentOverlay from '../components/PaymentOverlay';
 import TourCard from '../components/TourCard';
+import { api } from '../utils/api';
 import './TourDetail.css';
 
 export default function TourDetail() {
@@ -14,8 +15,11 @@ export default function TourDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { startMatching, matchingState } = useBooking();
-  const tour = getTourById(id);
-  const guide = tour ? getGuideById(tour.guide) : null;
+
+  const [tour, setTour] = useState(null);
+  const [guide, setGuide] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   const [wishlist, setWishlist] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
@@ -33,7 +37,51 @@ export default function TourDetail() {
     '06:00 PM': { available: 2, status: 'request' }
   };
 
+  useEffect(() => {
+    const fetchTourAndGuide = async () => {
+      setLoading(true);
+      try {
+        // First try to load from mockData
+        const mockT = getTourById(id);
+        if (mockT) {
+          setTour(mockT);
+          const mockG = getGuideById(mockT.guide);
+          setGuide(mockG);
+          setLoading(false);
+          return;
+        }
+
+        // If not found in mockData, fetch from database API
+        const data = await api.getTourById(id);
+        if (data && !data.message) {
+          setTour(data);
+          // If guideId exists, fetch guide profile
+          const guideId = data.guideId || data.guide_id;
+          if (guideId) {
+            const guideData = await api.getMarketplaceGuide(guideId);
+            if (guideData && guideData.guide) {
+              setGuide(guideData.guide);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching tour detail:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTourAndGuide();
+  }, [id]);
+
   const similarTours = TOURS.filter(t => t.id !== id && t.category === tour?.category).slice(0, 4);
+
+  if (loading) {
+    return (
+      <div className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+        <div style={{ fontSize: '1.25rem', color: 'var(--text-muted)' }}>Loading tour details...</div>
+      </div>
+    );
+  }
 
   if (!tour || !guide) {
     return (
@@ -44,6 +92,16 @@ export default function TourDetail() {
       </div>
     );
   }
+
+  // Safe parsing of fields
+  const ratingVal = tour.rating !== undefined && tour.rating !== null ? parseFloat(tour.rating) : 0.0;
+  const reviewCountVal = tour.reviewCount !== undefined && tour.reviewCount !== null ? parseInt(tour.reviewCount, 10) : 0;
+  const maxParticipantsVal = tour.maxParticipants !== undefined && tour.maxParticipants !== null ? parseInt(tour.maxParticipants, 10) : 20;
+  const currentParticipantsVal = tour.currentParticipants !== undefined && tour.currentParticipants !== null ? parseInt(tour.currentParticipants, 10) : 0;
+  const spotsLeft = maxParticipantsVal - currentParticipantsVal;
+  const durationVal = tour.duration || tour.durationMinutes || 0;
+  const coverImg = tour.coverImage || tour.cover_image || "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80";
+  const tagsVal = tour.tags || ['Travel', 'Sightseeing'];
 
   const handleBook = async () => {
     if (!user) { navigate('/auth'); return; }
@@ -64,6 +122,10 @@ export default function TourDetail() {
           participants,
           bookingType,
         });
+
+        if (response.error || response.message?.toLowerCase().includes('error')) {
+          throw new Error(response.message || 'Error creating booking');
+        }
 
         if (bookingType === 'request') {
           alert('✅ Booking request sent to the guide. They will review it shortly. You can check the status in your Dashboard.');
@@ -107,7 +169,7 @@ export default function TourDetail() {
 
       {/* Hero */}
       <div className="td-hero">
-        <img src={tour.coverImage} alt={tour.title} className="td-hero__img" />
+        <img src={coverImg} alt={tour.title} className="td-hero__img" />
         <div className="td-hero__overlay" />
         <div className="container td-hero__content">
           <div className="td-breadcrumb">
@@ -124,10 +186,10 @@ export default function TourDetail() {
           <h1 className="td-hero__title">{tour.title}</h1>
           <div className="td-hero__meta">
             <span><MapPin size={15} /> {tour.location}</span>
-            <span><Star size={15} fill="var(--accent-amber)" stroke="none" /> {tour.rating} ({tour.reviewCount.toLocaleString()} reviews)</span>
-            <span><Clock size={15} /> {tour.duration} min</span>
+            <span><Star size={15} fill="var(--accent-amber)" stroke="none" /> {ratingVal.toFixed(1)} ({reviewCountVal.toLocaleString()} reviews)</span>
+            <span><Clock size={15} /> {durationVal} min</span>
             <span><Globe size={15} /> {tour.language}</span>
-            {tour.type === 'live' && <span><Users size={15} /> {tour.maxParticipants - tour.currentParticipants} spots left</span>}
+            {tour.type === 'live' && <span><Users size={15} /> {spotsLeft} spots left</span>}
           </div>
         </div>
       </div>
@@ -140,7 +202,7 @@ export default function TourDetail() {
             <h2>About This Tour</h2>
             <p className="td-description">{tour.description}</p>
             <div className="td-tags">
-              {tour.tags.map(tag => <span key={tag} className="badge badge-teal">{tag}</span>)}
+              {tagsVal.map(tag => <span key={tag} className="badge badge-teal">{tag}</span>)}
             </div>
           </section>
 
@@ -178,17 +240,17 @@ export default function TourDetail() {
                   </div>
                   <div className="td-guide__rating">
                     <Star size={14} fill="var(--accent-amber)" stroke="none" />
-                    {guide.rating} · {guide.reviewCount} reviews · {guide.toursCompleted.toLocaleString()} tours done
+                    {parseFloat(guide.rating || guide.avgRating || 0).toFixed(1)} · {guide.reviewCount || 0} reviews · {parseInt(guide.toursCompleted || guide.totalTours || 0, 10).toLocaleString()} tours done
                   </div>
                   <div className="td-guide__location"><MapPin size={13} /> {guide.location}</div>
                 </div>
               </div>
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>{guide.bio}</p>
               <div className="td-guide__badges">
-                {guide.badges.map(b => <span key={b} className="guide-card__badge-item">{b}</span>)}
+                {(guide.badges || ['Local Expert']).map(b => <span key={b} className="guide-card__badge-item">{b}</span>)}
               </div>
               <div className="td-guide__langs">
-                <Globe size={14} /> Speaks: {guide.languages.join(', ')}
+                <Globe size={14} /> Speaks: {(guide.languages || ['English']).join(', ')}
               </div>
             </Link>
           </section>
@@ -213,8 +275,8 @@ export default function TourDetail() {
             </div>
             <div className="td-booking-rating">
               <Star size={14} fill="var(--accent-amber)" stroke="none" />
-              <strong>{tour.rating}</strong>
-              <span>· {tour.reviewCount.toLocaleString()} reviews</span>
+              <strong>{ratingVal.toFixed(1)}</strong>
+              <span>· {reviewCountVal.toLocaleString()} reviews</span>
             </div>
             <hr className="divider" style={{ margin: '1rem 0' }} />
 
@@ -262,7 +324,7 @@ export default function TourDetail() {
               <div className="td-booking-participants">
                 <button onClick={() => setParticipants(p => Math.max(1, p - 1))}>−</button>
                 <span>{participants}</span>
-                <button onClick={() => setParticipants(p => Math.min(tour.maxParticipants, p + 1))}>+</button>
+                <button onClick={() => setParticipants(p => Math.min(maxParticipantsVal, p + 1))}>+</button>
               </div>
             </div>
 
