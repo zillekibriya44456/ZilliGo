@@ -56,8 +56,23 @@ exports.loginUser = async (req, res) => {
   const { email, password, rememberMe } = req.body;
 
   try {
-    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-    const user = result.rows[0];
+    let result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    let user = result.rows[0];
+
+    // Auto-seed default admin if database is connected but hasn't been seeded yet
+    if (!user && email === 'admin@zilligo.com') {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash('password123', salt);
+      try {
+        const insertRes = await db.query(
+          "INSERT INTO users (name, email, password_hash, role, verified, avatar) VALUES ($1, $2, $3, 'admin', true, $4) RETURNING *",
+          ['Admin User', 'admin@zilligo.com', hashedPassword, 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80']
+        );
+        user = insertRes.rows[0];
+      } catch (err) {
+        console.error('Failed to auto-seed admin user:', err);
+      }
+    }
 
     if (user && (await bcrypt.compare(password, user.password_hash))) {
       if (user.suspended) {
