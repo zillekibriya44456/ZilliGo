@@ -24,6 +24,8 @@ CREATE TABLE live_streams (
     title VARCHAR(255) NOT NULL,
     location VARCHAR(255),
     viewer_count INTEGER DEFAULT 0,
+    language VARCHAR(100),
+    duration_minutes INTEGER,
     cover_image VARCHAR(255),
     is_seed_data BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

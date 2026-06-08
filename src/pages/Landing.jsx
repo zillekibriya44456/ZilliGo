@@ -64,23 +64,20 @@ export default function Landing() {
     : TOURS.filter(t => t.type === 'live').slice(0, 4);
   const dbStats = dynamicData.stats;
 
-  // Merge real database live streams with aesthetic fallback pads up to 6 slots
-  const fallbackLiveStreams = [
-    { id: 'f1', title: 'Tokyo Streets', guideName: 'Keiko', viewerCount: 420, coverImage: 'https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?w=300&q=80', location: 'Tokyo' },
-    { id: 'f2', title: 'Rome Sunset', guideName: 'Marco', viewerCount: 580, coverImage: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=300&q=80', location: 'Rome' },
-    { id: 'f3', title: 'Kerala Palms', guideName: 'Anjali', viewerCount: 310, coverImage: 'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?w=300&q=80', location: 'Kerala' },
-    { id: 'f4', title: 'Desert Caravan', guideName: 'Rajesh', viewerCount: 185, coverImage: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=300&q=80', location: 'Jaipur' },
-    { id: 'f5', title: 'Paris Night Lights', guideName: 'Sophie', viewerCount: 290, coverImage: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&q=80', location: 'Paris' },
-    { id: 'f6', title: 'Times Square', guideName: 'John', viewerCount: 450, coverImage: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=300&q=80', location: 'New York' }
-  ];
-
+  // Real database live streams driving the portal deck
   const dbLiveStreams = dynamicData.liveStreams.map(l => ({
-    id: l.id, title: l.title, guideName: l.guideName || l.guide_name, 
-    viewerCount: l.viewerCount || l.viewer_count, coverImage: l.coverImage || l.cover_image, location: l.location
+    id: l.id, 
+    title: l.title, 
+    guideName: l.guideName || l.guide_name, 
+    viewerCount: l.viewerCount || l.viewer_count, 
+    coverImage: l.coverImage || l.cover_image, 
+    location: l.location,
+    language: l.language,
+    durationMinutes: l.durationMinutes || l.duration_minutes
   }));
 
-  const fullLivePortals = [...dbLiveStreams, ...fallbackLiveStreams].slice(0, 6);
-  const showcasePortal = fullLivePortals[0];
+  const fullLivePortals = dbLiveStreams.slice(0, 6);
+  const showcasePortal = fullLivePortals.length > 0 ? fullLivePortals[0] : null;
   const dbActivities = dynamicData.activities.slice(0, 5);
 
   const handleSearch = (e) => {
@@ -225,7 +222,7 @@ export default function Landing() {
               <div 
                 key={stream.id || idx} 
                 className={`hologram-portal-floating portal-p${idx + 1}`} 
-                onClick={() => navigate(stream.id.toString().startsWith('f') ? `/explore?q=${stream.location}` : `/tour/${stream.id}`)}
+                onClick={() => navigate(`/tour/${stream.id}`)}
               >
                 <div className="portal-media-frame">
                   <img src={stream.coverImage} alt={stream.title} />
@@ -277,22 +274,24 @@ export default function Landing() {
             </div>
 
             {/* Floating Live Tour Showcase Widget */}
-            <div className="live-showcase-floating-card" onClick={() => navigate(showcasePortal.id.toString().startsWith('f') ? `/explore?q=${showcasePortal.location}` : `/tour/${showcasePortal.id}`)} style={{ cursor: 'pointer' }}>
-              <div className="showcase-header">
-                <span className="showcase-red-badge">🔴 LIVE NOW</span>
-                <span className="showcase-watching">{showcasePortal.viewerCount} Watching</span>
-              </div>
-              <div className="showcase-body">
-                <h6 style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{showcasePortal.title}</h6>
-                <div className="showcase-guide-line">
-                  <span>{showcasePortal.guideName}</span>
-                  <span style={{ color: '#FFD166' }}>★★★★★ 4.9</span>
+            {showcasePortal && (
+              <div className="live-showcase-floating-card" onClick={() => navigate(`/tour/${showcasePortal.id}`)} style={{ cursor: 'pointer' }}>
+                <div className="showcase-header">
+                  <span className="showcase-red-badge">🔴 LIVE NOW</span>
+                  <span className="showcase-watching">{showcasePortal.viewerCount} Watching</span>
                 </div>
-                <div className="showcase-ai-indicator">
-                  ⚡ AI Real-Time Translation Enabled
+                <div className="showcase-body">
+                  <h6 style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{showcasePortal.title}</h6>
+                  <div className="showcase-guide-line">
+                    <span>{showcasePortal.guideName}</span>
+                    <span style={{ color: '#FFD166' }}>★★★★★ 4.9</span>
+                  </div>
+                  <div className="showcase-ai-indicator">
+                    ⚡ {showcasePortal.language || 'AI Real-Time Translation Enabled'}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
           </div>
         </div>
