@@ -144,8 +144,10 @@ export default function Dashboard() {
           ].map(s => (
             <div key={s.label} className={`db-stat-card db-stat-${s.accent}`}>
               <span className="db-stat-icon">{s.icon}</span>
-              <span className="db-stat-value">{s.value}</span>
-              <span className="db-stat-label">{s.label}</span>
+              <div className="db-stat-info-block">
+                <span className="db-stat-value">{s.value}</span>
+                <span className="db-stat-label">{s.label}</span>
+              </div>
             </div>
           ))}
         </div>
