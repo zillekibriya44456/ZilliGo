@@ -5,7 +5,15 @@ import './GuideCard.css';
 export default function GuideCard({ guide }) {
   if (!guide) return null;
   
-  const isAvailable = guide.available;
+  const isAvailable = guide.available !== undefined ? guide.available : true;
+  
+  // Safe fallbacks for database records vs mock data records
+  const ratingVal = guide.rating !== undefined && guide.rating !== null ? parseFloat(guide.rating) : parseFloat(guide.avgRating || 0);
+  const reviewCountVal = guide.reviewCount || 0;
+  const languagesVal = guide.languages || ['English'];
+  const responseTimeVal = guide.responseTime || '1 hr';
+  const specialtiesVal = guide.specialties || ['Culture', 'Sightseeing'];
+  const hourlyRateVal = guide.hourlyRate || guide.startingPrice || 25;
 
   return (
     <Link to={`/guide/${guide.id}`} className="premium-guide-card">
@@ -31,21 +39,21 @@ export default function GuideCard({ guide }) {
         <div className="pgc-stat">
           <Star size={14} fill="#FFD700" stroke="none" />
           <div className="pgc-stat-text">
-            <strong>{guide.rating}</strong> <span>({guide.reviewCount})</span>
+            <strong>{ratingVal.toFixed(1)}</strong> <span>({reviewCountVal})</span>
           </div>
         </div>
         <div className="pgc-stat-divider" />
         <div className="pgc-stat">
           <Globe size={14} className="pgc-icon-teal" />
           <div className="pgc-stat-text">
-            <strong>{guide.languages.length}</strong> <span>Langs</span>
+            <strong>{languagesVal.length}</strong> <span>Langs</span>
           </div>
         </div>
         <div className="pgc-stat-divider" />
         <div className="pgc-stat">
           <Clock size={14} className="pgc-icon-teal" />
           <div className="pgc-stat-text">
-            <strong>{guide.responseTime}</strong>
+            <strong>{responseTimeVal}</strong>
           </div>
         </div>
       </div>
@@ -55,16 +63,16 @@ export default function GuideCard({ guide }) {
 
       {/* Specialties Tags */}
       <div className="pgc-tags">
-        {guide.specialties.slice(0, 3).map(s => (
+        {specialtiesVal.slice(0, 3).map(s => (
           <span key={s} className="pgc-tag">{s}</span>
         ))}
-        {guide.specialties.length > 3 && <span className="pgc-tag-more">+{guide.specialties.length - 3}</span>}
+        {specialtiesVal.length > 3 && <span className="pgc-tag-more">+{specialtiesVal.length - 3}</span>}
       </div>
 
       {/* Footer / CTA */}
       <div className="pgc-footer">
         <div className="pgc-price">
-          <span className="pgc-price-amount">${guide.hourlyRate}</span>
+          <span className="pgc-price-amount">${hourlyRateVal}</span>
           <span className="pgc-price-per">/hr</span>
         </div>
         <button className="pgc-view-btn">
