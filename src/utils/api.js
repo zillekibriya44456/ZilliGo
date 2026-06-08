@@ -223,4 +223,7 @@ export const api = {
     fetch(`${API_BASE}/marketplace/passport/stamp`, {
       method: 'POST', headers: getHeaders(), body: JSON.stringify(data)
     }).then(res => res.json()),
+
+  // Public
+  getPublicHomepage: () => fetch(`${API_BASE}/public/homepage`).then(res => res.json()),
 };

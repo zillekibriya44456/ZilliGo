@@ -13,6 +13,29 @@ CREATE TABLE users (
     verified BOOLEAN DEFAULT false,
     suspended BOOLEAN DEFAULT false,
     reward_points INTEGER DEFAULT 0,
+    is_seed_data BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Live Streams Table
+CREATE TABLE live_streams (
+    id SERIAL PRIMARY KEY,
+    guide_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    location VARCHAR(255),
+    viewer_count INTEGER DEFAULT 0,
+    cover_image VARCHAR(255),
+    is_seed_data BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Activities (Platform Feed) Table
+CREATE TABLE activities (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL,
+    description TEXT NOT NULL,
+    is_seed_data BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -33,6 +56,7 @@ CREATE TABLE tours (
     kid_friendly BOOLEAN DEFAULT false,
     rating DECIMAL(2, 1) DEFAULT 0.0,
     review_count INTEGER DEFAULT 0,
+    is_seed_data BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -45,6 +69,7 @@ CREATE TABLE bookings (
     booking_time TIME NOT NULL,
     status VARCHAR(50) DEFAULT 'pending', -- pending, confirmed, completed, cancelled
     total_amount DECIMAL(10, 2),
+    is_seed_data BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -77,6 +102,7 @@ CREATE TABLE reviews (
     tour_id INTEGER REFERENCES tours(id),
     rating INTEGER CHECK (rating >= 1 AND rating <= 5),
     comment TEXT,
+    is_seed_data BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

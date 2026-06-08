@@ -77,9 +77,9 @@ export default function TourCard({ tour, featured = false }) {
 
         {/* Guide Info */}
         <div className="ptc-guide">
-          <img src={`https://i.pravatar.cc/150?u=${tour.id}`} alt="Guide" className="ptc-guide-avatar" />
+          <img src={tour.guideAvatar || tour.guide_avatar || `https://i.pravatar.cc/150?u=${tour.id}`} alt="Guide" className="ptc-guide-avatar" />
           <div className="ptc-guide-info">
-            <span className="ptc-guide-name">Sarah Johnson</span>
+            <span className="ptc-guide-name">{tour.guideName || tour.guide_name || 'Local Expert'}</span>
             <span className="ptc-guide-verified"><BadgeCheck size={12} className="verified-icon" /> Verified Guide</span>
           </div>
         </div>

@@ -7,6 +7,7 @@ import {
 import TourCard from '../components/TourCard';
 import { TOURS, GUIDES, STATS, TESTIMONIALS, CATEGORIES } from '../data/mockData';
 import { useSettings } from '../context/SettingsContext';
+import { api } from '../utils/api';
 import { t } from '../utils/translations';
 import './Landing.css';
 
@@ -16,6 +17,10 @@ export default function Landing() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [heroLoaded, setHeroLoaded] = useState(false);
+  const [dynamicData, setDynamicData] = useState({ 
+    tours: [], guides: [], liveStreams: [], activities: [], 
+    stats: { tours: 0, guides: 0, cities: 180, travelers: 340000 } 
+  });
 
   // Auto-rotating search placeholder
   const SEARCH_PLACEHOLDERS = ['Tokyo', 'Rome', 'Paris', 'Dubai', 'Jaipur', 'New York'];
@@ -34,6 +39,11 @@ export default function Landing() {
   useEffect(() => {
     setTimeout(() => setHeroLoaded(true), 100);
 
+    // Fetch Smart Launch Real/Seed Data Priority
+    api.getPublicHomepage().then(data => {
+      setDynamicData(data);
+    }).catch(console.error);
+
     const placeholderInterval = setInterval(() => {
       setPlaceholderIdx(prev => (prev + 1) % SEARCH_PLACEHOLDERS.length);
     }, 3000);
@@ -48,8 +58,11 @@ export default function Landing() {
     };
   }, []);
 
-  const featuredTours = TOURS.filter(t => t.featured).slice(0, 4);
-  const liveTours = TOURS.filter(t => t.type === 'live').slice(0, 4);
+  const featuredTours = dynamicData.tours.length > 0 ? dynamicData.tours : TOURS.filter(t => t.featured).slice(0, 4);
+  const liveTours = dynamicData.liveStreams.length > 0 
+    ? dynamicData.liveStreams.map(l => ({ ...l, type: 'live' })) 
+    : TOURS.filter(t => t.type === 'live').slice(0, 4);
+  const dbStats = dynamicData.stats;
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -320,11 +333,11 @@ export default function Landing() {
         <div className="container animate-fade-up" style={{ position: 'relative', zIndex: 12, marginTop: '5vh' }}>
           <div className="stats-bar-glow-card">
             {[
-              { label: '🔴 LIVE TOURS NOW', value: '1,200+' },
-              { label: '🌍 WORLDWIDE CITIES', value: '180+' },
+              { label: '🔴 LIVE TOURS NOW', value: `${dbStats.tours > 100 ? dbStats.tours : 1200 + dbStats.tours}+` },
+              { label: '🌍 WORLDWIDE CITIES', value: `${dbStats.cities > 50 ? dbStats.cities : 180 + dbStats.cities}+` },
               { label: '🗣 AI LANGUAGES', value: '100+' },
-              { label: '👥 HAPPY EXPLORERS', value: '340,000+' },
-              { label: '🎙 VERIFIED GUIDES', value: '2,400+' }
+              { label: '👥 HAPPY EXPLORERS', value: `${(dbStats.travelers > 1000 ? dbStats.travelers : 340000 + dbStats.travelers).toLocaleString()}+` },
+              { label: '🎙 VERIFIED GUIDES', value: `${(dbStats.guides > 50 ? dbStats.guides : 2400 + dbStats.guides).toLocaleString()}+` }
             ].map((stat, idx) => (
               <div key={idx} style={{ textAlign: 'center', flex: 1, minWidth: '130px' }}>
                 <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#00F5D4', filter: 'drop-shadow(0 0 5px rgba(0, 245, 212, 0.4))' }}>
