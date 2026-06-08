@@ -3,7 +3,7 @@ import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { 
   Users, Video, DollarSign, CheckCircle, ShieldAlert, MoreHorizontal, 
   Globe, Clock, ArrowRight, Ban, MapPin, Settings, Power, Bell, 
-  ShieldCheck, Activity, BarChart3, AlertTriangle, Eye, EyeOff, Edit, Trash2, Key, HelpCircle as HelpIcon, Sparkles
+  ShieldCheck, Activity, BarChart3, AlertTriangle, Eye, EyeOff, Edit, Trash2, Key, HelpCircle, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/api';
@@ -615,7 +615,7 @@ export default function AdminPanel() {
                   </div>
                 ) : (
                   <div className="ticket-empty-view">
-                    <HelpIcon size={36} />
+                    <HelpCircle size={36} />
                     <p>Select a ticket from the left panel to review and reply.</p>
                   </div>
                 )}
