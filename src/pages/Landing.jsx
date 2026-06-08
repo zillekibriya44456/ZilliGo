@@ -64,6 +64,25 @@ export default function Landing() {
     : TOURS.filter(t => t.type === 'live').slice(0, 4);
   const dbStats = dynamicData.stats;
 
+  // Merge real database live streams with aesthetic fallback pads up to 6 slots
+  const fallbackLiveStreams = [
+    { id: 'f1', title: 'Tokyo Streets', guideName: 'Keiko', viewerCount: 420, coverImage: 'https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?w=300&q=80', location: 'Tokyo' },
+    { id: 'f2', title: 'Rome Sunset', guideName: 'Marco', viewerCount: 580, coverImage: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=300&q=80', location: 'Rome' },
+    { id: 'f3', title: 'Kerala Palms', guideName: 'Anjali', viewerCount: 310, coverImage: 'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?w=300&q=80', location: 'Kerala' },
+    { id: 'f4', title: 'Desert Caravan', guideName: 'Rajesh', viewerCount: 185, coverImage: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=300&q=80', location: 'Jaipur' },
+    { id: 'f5', title: 'Paris Night Lights', guideName: 'Sophie', viewerCount: 290, coverImage: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&q=80', location: 'Paris' },
+    { id: 'f6', title: 'Times Square', guideName: 'John', viewerCount: 450, coverImage: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=300&q=80', location: 'New York' }
+  ];
+
+  const dbLiveStreams = dynamicData.liveStreams.map(l => ({
+    id: l.id, title: l.title, guideName: l.guideName || l.guide_name, 
+    viewerCount: l.viewerCount || l.viewer_count, coverImage: l.coverImage || l.cover_image, location: l.location
+  }));
+
+  const fullLivePortals = [...dbLiveStreams, ...fallbackLiveStreams].slice(0, 6);
+  const showcasePortal = fullLivePortals[0];
+  const dbActivities = dynamicData.activities.slice(0, 5);
+
   const handleSearch = (e) => {
     e.preventDefault();
     navigate(`/explore?q=${encodeURIComponent(searchQuery || SEARCH_PLACEHOLDERS[placeholderIdx])}`);
@@ -201,77 +220,23 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Live Portal 1: Tokyo Night Streets */}
-            <div className="hologram-portal-floating portal-p1" onClick={() => navigate('/explore?q=Tokyo')}>
-              <div className="portal-media-frame">
-                <img src="https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?w=300&q=80" alt="Tokyo" />
-                <div className="portal-badge-live">LIVE</div>
-                <div className="portal-title-overlay">
-                  <h5>Tokyo Streets</h5>
-                  <p>Keiko • 420 watching</p>
+            {/* Dynamic Real-Time Live Portals */}
+            {fullLivePortals.map((stream, idx) => (
+              <div 
+                key={stream.id || idx} 
+                className={`hologram-portal-floating portal-p${idx + 1}`} 
+                onClick={() => navigate(stream.id.toString().startsWith('f') ? `/explore?q=${stream.location}` : `/tour/${stream.id}`)}
+              >
+                <div className="portal-media-frame">
+                  <img src={stream.coverImage} alt={stream.title} />
+                  <div className="portal-badge-live">LIVE</div>
+                  <div className="portal-title-overlay">
+                    <h5 style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stream.title}</h5>
+                    <p>{stream.guideName} • {stream.viewerCount} watching</p>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Live Portal 2: Rome Colosseum */}
-            <div className="hologram-portal-floating portal-p2" onClick={() => navigate('/explore?q=Rome')}>
-              <div className="portal-media-frame">
-                <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=300&q=80" alt="Rome" />
-                <div className="portal-badge-live">LIVE</div>
-                <div className="portal-title-overlay">
-                  <h5>Rome Sunset</h5>
-                  <p>Marco • 580 watching</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Live Portal 3: Kerala Backwaters */}
-            <div className="hologram-portal-floating portal-p3" onClick={() => navigate('/explore?q=Kerala')}>
-              <div className="portal-media-frame">
-                <img src="https://images.unsplash.com/photo-1593693397690-362cb9666fc2?w=300&q=80" alt="Kerala" />
-                <div className="portal-badge-live">LIVE</div>
-                <div className="portal-title-overlay">
-                  <h5>Kerala Palms</h5>
-                  <p>Anjali • 310 watching</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Live Portal 4: Rajasthan Desert */}
-            <div className="hologram-portal-floating portal-p4" onClick={() => navigate('/explore?q=Jaipur')}>
-              <div className="portal-media-frame">
-                <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=300&q=80" alt="Rajasthan" />
-                <div className="portal-badge-live">LIVE</div>
-                <div className="portal-title-overlay">
-                  <h5>Desert Caravan</h5>
-                  <p>Rajesh • 185 watching</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Live Portal 5: Paris Eiffel Tower */}
-            <div className="hologram-portal-floating portal-p5" onClick={() => navigate('/explore?q=Paris')}>
-              <div className="portal-media-frame">
-                <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&q=80" alt="Paris" />
-                <div className="portal-badge-live">LIVE</div>
-                <div className="portal-title-overlay">
-                  <h5>Paris Night Lights</h5>
-                  <p>Sophie • 290 watching</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Live Portal 6: New York Times Square */}
-            <div className="hologram-portal-floating portal-p6" onClick={() => navigate('/explore?q=New%20York')}>
-              <div className="portal-media-frame">
-                <img src="https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=300&q=80" alt="New York" />
-                <div className="portal-badge-live">LIVE</div>
-                <div className="portal-title-overlay">
-                  <h5>Times Square</h5>
-                  <p>John • 450 watching</p>
-                </div>
-              </div>
-            </div>
+            ))}
 
             {/* AI Language Companion Widget */}
             <div className="ai-translator-widget">
@@ -296,28 +261,31 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Virtual Digital Passport */}
-            <div className="digital-passport-widget">
-              <div className="passport-header-glow">Digital Travel Passport</div>
-              <div className="passport-stamps-deck">
-                <div className="passport-stamp-item">🇯🇵 JP • Visited</div>
-                <div className="passport-stamp-item">🇮🇹 IT • Visited</div>
-                <div className="passport-stamp-item">🇮🇳 IN • Visited</div>
-                <div className="passport-stamp-item">🇫🇷 FR • Visited</div>
-                <div className="passport-stamp-item">🇧🇷 BR • Stamp</div>
+            {/* Global Activity Feed Widget */}
+            <div className="digital-passport-widget" style={{ padding: '15px' }}>
+              <div className="passport-header-glow" style={{ marginBottom: '10px' }}>Global Platform Activity</div>
+              <div className="passport-stamps-deck" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
+                {dbActivities.length > 0 ? dbActivities.map((act, i) => (
+                  <div key={i} className="passport-stamp-item" style={{ fontSize: '0.75rem', justifyContent: 'flex-start', padding: '6px 10px', width: '100%' }}>
+                    <span className="dot-live" style={{ marginRight: '8px' }} />
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-color)' }}>{act.description}</span>
+                  </div>
+                )) : (
+                  <div className="passport-stamp-item" style={{ fontSize: '0.75rem' }}>Waiting for activity...</div>
+                )}
               </div>
             </div>
 
             {/* Floating Live Tour Showcase Widget */}
-            <div className="live-showcase-floating-card">
+            <div className="live-showcase-floating-card" onClick={() => navigate(showcasePortal.id.toString().startsWith('f') ? `/explore?q=${showcasePortal.location}` : `/tour/${showcasePortal.id}`)} style={{ cursor: 'pointer' }}>
               <div className="showcase-header">
                 <span className="showcase-red-badge">🔴 LIVE NOW</span>
-                <span className="showcase-watching">1,245 Watching</span>
+                <span className="showcase-watching">{showcasePortal.viewerCount} Watching</span>
               </div>
               <div className="showcase-body">
-                <h6>Ancient Rome Tour</h6>
+                <h6 style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{showcasePortal.title}</h6>
                 <div className="showcase-guide-line">
-                  <span>Marco Rossi</span>
+                  <span>{showcasePortal.guideName}</span>
                   <span style={{ color: '#FFD166' }}>★★★★★ 4.9</span>
                 </div>
                 <div className="showcase-ai-indicator">
