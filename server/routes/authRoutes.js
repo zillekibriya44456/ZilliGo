@@ -66,7 +66,8 @@ async function findOrCreateOAuthUser({ email, name, avatar, provider }) {
 }
 
 /** Redirect to frontend with user data encoded in URL */
-function redirectWithUser(res, user) {
+function redirectWithUser(req, res, user) {
+  const frontendUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
   const payload = encodeURIComponent(JSON.stringify({
     id: user.id,
     name: user.name,
@@ -76,12 +77,13 @@ function redirectWithUser(res, user) {
     verified: user.verified,
     token: user.token,
   }));
-  res.redirect(`${FRONTEND_URL}/auth/callback?user=${payload}`);
+  res.redirect(`${frontendUrl}/auth/callback?user=${payload}`);
 }
 
 /** Redirect to frontend with an error message */
-function redirectWithError(res, msg) {
-  res.redirect(`${FRONTEND_URL}/auth?error=${encodeURIComponent(msg)}`);
+function redirectWithError(req, res, msg) {
+  const frontendUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+  res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent(msg)}`);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -110,7 +112,7 @@ router.get('/check-oauth', (req, res) => {
 
 router.get('/google', (req, res) => {
   if (!process.env.GOOGLE_CLIENT_ID) {
-    return redirectWithError(res, 'Google login is not configured yet. Please use email/password to sign in.');
+    return redirectWithError(req, res, 'Google login is not configured yet. Please use email/password to sign in.');
   }
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID,
@@ -125,7 +127,7 @@ router.get('/google', (req, res) => {
 
 router.get('/google/callback', async (req, res) => {
   const { code, error } = req.query;
-  if (error || !code) return redirectWithError(res, 'Google login was cancelled or failed.');
+  if (error || !code) return redirectWithError(req, res, 'Google login was cancelled or failed.');
 
   try {
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
@@ -158,10 +160,10 @@ router.get('/google/callback', async (req, res) => {
       avatar: profile.picture,
       provider: 'google',
     });
-    redirectWithUser(res, user);
+    redirectWithUser(req, res, user);
   } catch (err) {
     console.error('Google OAuth error:', err.message);
-    redirectWithError(res, 'Google login failed. Please try again or use email/password.');
+    redirectWithError(req, res, 'Google login failed. Please try again or use email/password.');
   }
 });
 
@@ -171,7 +173,7 @@ router.get('/google/callback', async (req, res) => {
 
 router.get('/github', (req, res) => {
   if (!process.env.GITHUB_CLIENT_ID) {
-    return redirectWithError(res, 'GitHub login is not configured yet. Please use email/password to sign in.');
+    return redirectWithError(req, res, 'GitHub login is not configured yet. Please use email/password to sign in.');
   }
   const params = new URLSearchParams({
     client_id: process.env.GITHUB_CLIENT_ID,
@@ -183,7 +185,7 @@ router.get('/github', (req, res) => {
 
 router.get('/github/callback', async (req, res) => {
   const { code, error } = req.query;
-  if (error || !code) return redirectWithError(res, 'GitHub login was cancelled or failed.');
+  if (error || !code) return redirectWithError(req, res, 'GitHub login was cancelled or failed.');
 
   try {
     const redirectUri = process.env.GITHUB_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/github/callback`;
@@ -225,10 +227,10 @@ router.get('/github/callback', async (req, res) => {
       avatar: profile.avatar_url,
       provider: 'github',
     });
-    redirectWithUser(res, user);
+    redirectWithUser(req, res, user);
   } catch (err) {
     console.error('GitHub OAuth error:', err.message);
-    redirectWithError(res, 'GitHub login failed. Please try again or use email/password.');
+    redirectWithError(req, res, 'GitHub login failed. Please try again or use email/password.');
   }
 });
 
@@ -238,7 +240,7 @@ router.get('/github/callback', async (req, res) => {
 
 router.get('/facebook', (req, res) => {
   if (!process.env.FACEBOOK_CLIENT_ID) {
-    return redirectWithError(res, 'Facebook login is not configured yet. Please use email/password to sign in.');
+    return redirectWithError(req, res, 'Facebook login is not configured yet. Please use email/password to sign in.');
   }
   const params = new URLSearchParams({
     client_id: process.env.FACEBOOK_CLIENT_ID,
@@ -251,7 +253,7 @@ router.get('/facebook', (req, res) => {
 
 router.get('/facebook/callback', async (req, res) => {
   const { code, error } = req.query;
-  if (error || !code) return redirectWithError(res, 'Facebook login was cancelled or failed.');
+  if (error || !code) return redirectWithError(req, res, 'Facebook login was cancelled or failed.');
 
   try {
     const redirectUri = process.env.FACEBOOK_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/facebook/callback`;
@@ -273,10 +275,10 @@ router.get('/facebook/callback', async (req, res) => {
       avatar: profile.picture?.data?.url,
       provider: 'facebook',
     });
-    redirectWithUser(res, user);
+    redirectWithUser(req, res, user);
   } catch (err) {
     console.error('Facebook OAuth error:', err.message);
-    redirectWithError(res, 'Facebook login failed. Please try again or use email/password.');
+    redirectWithError(req, res, 'Facebook login failed. Please try again or use email/password.');
   }
 });
 
@@ -286,7 +288,7 @@ router.get('/facebook/callback', async (req, res) => {
 
 router.get('/linkedin', (req, res) => {
   if (!process.env.LINKEDIN_CLIENT_ID) {
-    return redirectWithError(res, 'LinkedIn login is not configured yet. Please use email/password to sign in.');
+    return redirectWithError(req, res, 'LinkedIn login is not configured yet. Please use email/password to sign in.');
   }
   const params = new URLSearchParams({
     response_type: 'code',
@@ -299,7 +301,7 @@ router.get('/linkedin', (req, res) => {
 
 router.get('/linkedin/callback', async (req, res) => {
   const { code, error } = req.query;
-  if (error || !code) return redirectWithError(res, 'LinkedIn login was cancelled or failed.');
+  if (error || !code) return redirectWithError(req, res, 'LinkedIn login was cancelled or failed.');
 
   try {
     const redirectUri = process.env.LINKEDIN_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/linkedin/callback`;
@@ -330,10 +332,10 @@ router.get('/linkedin/callback', async (req, res) => {
       avatar: profile.picture,
       provider: 'linkedin',
     });
-    redirectWithUser(res, user);
+    redirectWithUser(req, res, user);
   } catch (err) {
     console.error('LinkedIn OAuth error:', err.message);
-    redirectWithError(res, 'LinkedIn login failed. Please try again or use email/password.');
+    redirectWithError(req, res, 'LinkedIn login failed. Please try again or use email/password.');
   }
 });
 
@@ -343,7 +345,7 @@ router.get('/linkedin/callback', async (req, res) => {
 // ──────────────────────────────────────────────────────────────────────────────
 
 router.get('/instagram', (req, res) => {
-  redirectWithError(res, 'Instagram login requires a Facebook Business account. Please use Google, GitHub, or email/password instead.');
+  redirectWithError(req, res, 'Instagram login requires a Facebook Business account. Please use Google, GitHub, or email/password instead.');
 });
 
 module.exports = router;

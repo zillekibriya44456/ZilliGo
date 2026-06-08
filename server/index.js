@@ -15,6 +15,7 @@ const guideRoutes = require('./routes/guideRoutes');
 const marketplaceRoutes = require('./routes/marketplaceRoutes');
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // Security Middleware
@@ -113,7 +114,11 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 5001;
-server.listen(PORT, () => {
-  console.log(`🚀 ZilliGO Server running on port ${PORT}`);
-  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
+  server.listen(PORT, () => {
+    console.log(`🚀 ZilliGO Server running on port ${PORT}`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
+
+module.exports = app;
