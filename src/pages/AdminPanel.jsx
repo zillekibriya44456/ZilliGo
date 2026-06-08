@@ -3,7 +3,7 @@ import { Navigate, Link } from 'react-router-dom';
 import { 
   Users, Video, DollarSign, CheckCircle, ShieldAlert, MoreHorizontal, 
   Globe, Clock, ArrowRight, Ban, MapPin, Settings, Power, Bell, 
-  HelpCircle, ShieldCheck, Activity, BarChart3, AlertTriangle, Eye, EyeOff, Edit, Trash2, Key, HelpCircle as HelpIcon, Sparkles
+  ShieldCheck, Activity, BarChart3, AlertTriangle, Eye, EyeOff, Edit, Trash2, Key, HelpCircle as HelpIcon, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/api';
