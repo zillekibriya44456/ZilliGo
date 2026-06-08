@@ -34,7 +34,7 @@ export default function TourCard({ tour, featured = false }) {
   const flag = getFlag(tour.location);
 
   return (
-    <Link to={`/tour/${tour.id}`} className={`premium-tour-card ${featured ? 'featured-card' : ''}`}>
+    <Link to={isLive ? `/live/${tour.id}` : `/tour/${tour.id}`} className={`premium-tour-card ${featured ? 'featured-card' : ''}`}>
       
       {/* ── Image Section (16:9) ── */}
       <div className="ptc-image-wrap">

@@ -222,7 +222,7 @@ export default function Landing() {
               <div 
                 key={stream.id || idx} 
                 className={`hologram-portal-floating portal-p${idx + 1}`} 
-                onClick={() => navigate(`/tour/${stream.id}`)}
+                onClick={() => navigate(`/live/${stream.id}`)}
               >
                 <div className="portal-media-frame">
                   <img src={stream.coverImage} alt={stream.title} />
@@ -275,7 +275,7 @@ export default function Landing() {
 
             {/* Floating Live Tour Showcase Widget */}
             {showcasePortal && (
-              <div className="live-showcase-floating-card" onClick={() => navigate(`/tour/${showcasePortal.id}`)} style={{ cursor: 'pointer' }}>
+              <div className="live-showcase-floating-card" onClick={() => navigate(`/live/${showcasePortal.id}`)} style={{ cursor: 'pointer' }}>
                 <div className="showcase-header">
                   <span className="showcase-red-badge">🔴 LIVE NOW</span>
                   <span className="showcase-watching">{showcasePortal.viewerCount} Watching</span>

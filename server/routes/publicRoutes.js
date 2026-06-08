@@ -72,4 +72,27 @@ router.get('/homepage', async (req, res) => {
   }
 });
 
+// @desc    Get single live stream by ID
+// @route   GET /api/public/live/:id
+router.get('/live/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const streamRes = await db.query(`
+      SELECT l.*, u.name as guide_name, u.avatar as guide_avatar, u.location as guide_location 
+      FROM live_streams l 
+      JOIN users u ON l.guide_id = u.id 
+      WHERE l.id = $1
+    `, [id]);
+
+    if (streamRes.rows.length === 0) {
+      return res.status(404).json({ message: 'Live stream not found' });
+    }
+
+    res.json(toCamel(streamRes.rows[0]));
+  } catch (error) {
+    console.error('Error fetching live stream:', error);
+    res.status(500).json({ message: 'Error fetching live stream' });
+  }
+});
+
 module.exports = router;

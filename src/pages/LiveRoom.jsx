@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Mic, MicOff, Video, VideoOff, MessageCircle, Users, Heart, Share2, Phone, Settings, MoreHorizontal, Send, Star, Globe, Clock, ShieldAlert, ShoppingBasket, Glasses } from 'lucide-react';
-import { getTourById, getGuideForTour } from '../data/mockData';
+import { api } from '../utils/api';
 import RatingModal from '../components/RatingModal';
 import './LiveRoom.css';
 
@@ -14,8 +14,9 @@ const MOCK_CHAT = [
 
 export default function LiveRoom() {
   const { id } = useParams();
-  const tour = getTourById(id);
-  const guide = getGuideForTour(id);
+  const [streamData, setStreamData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
   const [chatMsg, setChatMsg] = useState('');
   const [chatMessages, setChatMessages] = useState(MOCK_CHAT);
   const [micOn, setMicOn] = useState(true);
@@ -28,11 +29,43 @@ export default function LiveRoom() {
   const [vrMode, setVrMode] = useState(false);
 
   useEffect(() => {
+    // Fetch live stream from database
+    api.getPublicLiveStream(id)
+      .then(data => {
+        setStreamData(data);
+        if (data.viewerCount) setViewers(data.viewerCount);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+
     const interval = setInterval(() => {
       setViewers(v => v + Math.floor(Math.random() * 3 - 1));
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [id]);
+
+  const tour = streamData ? {
+    id: streamData.id,
+    title: streamData.title,
+    location: streamData.location,
+    language: streamData.language || 'English',
+    duration: streamData.durationMinutes || 60,
+    coverImage: streamData.coverImage || streamData.cover_image,
+    rating: 4.9,
+    tags: ['Live', 'Culture', 'Interactive'],
+    description: `Experience ${streamData.title} live from ${streamData.location}. Interact directly with your guide and viewers from around the world.`
+  } : null;
+
+  const guide = streamData ? {
+    id: streamData.guideId || streamData.guide_id,
+    name: streamData.guideName || streamData.guide_name,
+    avatar: streamData.guideAvatar || streamData.guide_avatar || `https://i.pravatar.cc/150?u=${streamData.guideId}`,
+    rating: 4.9,
+    location: streamData.guideLocation || streamData.guide_location
+  } : null;
 
   const sendMessage = (e) => {
     e.preventDefault();
@@ -52,13 +85,22 @@ export default function LiveRoom() {
     setTimeout(() => setTipSent(false), 3000);
   };
 
+  if (loading) {
+    return (
+      <div className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner" />
+      </div>
+    );
+  }
+
   if (!tour || !guide) {
     return (
       <div className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '3rem' }}>📡</div>
-          <h2>Tour not available</h2>
-          <Link to="/explore" className="btn btn-primary" style={{ marginTop: '1rem' }}>Browse Tours</Link>
+          <h2>Live Stream not available</h2>
+          <p style={{ color: 'var(--text-muted)' }}>This session may have ended or does not exist.</p>
+          <Link to="/explore" className="btn btn-primary" style={{ marginTop: '1rem' }}>Browse Live Tours</Link>
         </div>
       </div>
     );

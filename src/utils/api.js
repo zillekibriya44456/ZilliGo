@@ -226,4 +226,5 @@ export const api = {
 
   // Public
   getPublicHomepage: () => fetch(`${API_BASE}/public/homepage`).then(res => res.json()),
+  getPublicLiveStream: (id) => fetch(`${API_BASE}/public/live/${id}`).then(res => res.json()),
 };
