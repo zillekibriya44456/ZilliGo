@@ -206,8 +206,7 @@ export default function Navbar() {
             </>
           ) : (
             <div className="navbar__auth-btns">
-              <Link to="/auth" className="btn btn-ghost btn-sm">{t('sign_in', language)}</Link>
-              <Link to="/auth?tab=register" className="btn btn-primary btn-sm">{t('join', language)}</Link>
+              <Link to="/auth" className="navbar__link">Sign In</Link>
             </div>
           )}
 
@@ -232,8 +231,7 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <NavLink to="/auth" onClick={() => setMenuOpen(false)}>{t('sign_in', language)}</NavLink>
-              <NavLink to="/auth?tab=register" onClick={() => setMenuOpen(false)}>{t('join', language)}</NavLink>
+              <NavLink to="/auth" onClick={() => setMenuOpen(false)}>Sign In</NavLink>
             </>
           )}
         </div>
