@@ -56,6 +56,8 @@ router.put('/suspend/:id', protect, admin, async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error updating user status' });
   }
+});
+
 // @desc    Get support tickets
 // @route   GET /api/admin/tickets
 router.get('/tickets', protect, admin, async (req, res) => {
