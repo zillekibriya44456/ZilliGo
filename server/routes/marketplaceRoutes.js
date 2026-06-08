@@ -273,4 +273,39 @@ router.patch('/notifications/read-all', protect, async (req, res) => {
   }
 });
 
+// GET /api/marketplace/passport — get user's stamps and achievements
+router.get('/passport', protect, async (req, res) => {
+  try {
+    const stampsRes = await db.query('SELECT * FROM digital_passports WHERE user_id = $1 ORDER BY acquired_at DESC', [req.user.id]);
+    const achievementsRes = await db.query('SELECT * FROM user_achievements WHERE user_id = $1 ORDER BY unlocked_at DESC', [req.user.id]);
+    res.json({
+      stamps: stampsRes.rows.map(toCamel),
+      achievements: achievementsRes.rows.map(toCamel)
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Error retrieving digital passport details' });
+  }
+});
+
+// POST /api/marketplace/passport/stamp — award a new stamp
+router.post('/passport/stamp', protect, async (req, res) => {
+  const { countryCode, stampName } = req.body;
+  if (!countryCode || !stampName) return res.status(400).json({ message: 'countryCode and stampName required' });
+  try {
+    const result = await db.query(`
+      INSERT INTO digital_passports (user_id, country_code, stamp_name)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (user_id, stamp_name) DO NOTHING
+      RETURNING *
+    `, [req.user.id, countryCode, stampName]);
+
+    // Award reward points for the achievement
+    await db.query('UPDATE users SET reward_points = reward_points + 50 WHERE id = $1', [req.user.id]);
+
+    res.status(201).json(toCamel(result.rows[0] || {}));
+  } catch (err) {
+    res.status(500).json({ message: 'Error awarding stamp' });
+  }
+});
+
 module.exports = router;

@@ -1,0 +1,471 @@
+/* ═══════════════════════════════════════════════════
+   ZilliGo — Digital Passport CSS
+   Dark Luxury & Gold Theme
+   ═══════════════════════════════════════════════════ */
+
+.passport-page {
+  padding-top: 100px;
+  padding-bottom: 4rem;
+  background: var(--bg-primary, #030712);
+  min-height: 100vh;
+  color: #F8FAFC;
+}
+
+.passport-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  gap: 1rem;
+  color: #94A3B8;
+}
+
+.passport-spin {
+  animation: passport-spin 1s linear infinite;
+  color: #D4AF37;
+}
+
+@keyframes passport-spin {
+  to { transform: rotate(360deg); }
+}
+
+.passport-header {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+
+.passport-badge-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  color: #D4AF37;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.1);
+}
+
+.passport-header h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(2.2rem, 5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.5rem;
+}
+
+.passport-header p {
+  color: #94A3B8;
+  max-width: 540px;
+  margin: 0 auto;
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+
+/* ── Anonymous Card ── */
+.passport-anonymous {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.passport-anon-card {
+  width: 100%;
+  max-width: 440px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+  padding: 3rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.passport-anon-card span {
+  font-size: 3.5rem;
+}
+
+.passport-anon-card h3 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.passport-anon-card p {
+  color: #94A3B8;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 0.5rem;
+}
+
+/* ── Grid ── */
+.passport-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 2rem;
+}
+
+/* ── Booklet Card (Left) ── */
+.passport-booklet {
+  background: linear-gradient(135deg, #07192C 0%, #030a14 100%);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 0 30px rgba(212, 175, 55, 0.02);
+}
+
+.passport-booklet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.booklet-meta-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #D4AF37;
+  font-weight: 700;
+}
+
+.booklet-holder-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 4px 0 2px;
+}
+
+.booklet-meta-sub {
+  font-size: 0.82rem;
+  color: #94A3B8;
+}
+
+.booklet-stamp-metric {
+  text-align: right;
+}
+
+.booklet-stamp-val {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #D4AF37;
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+/* ── XP Card ── */
+.passport-xp-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.xp-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #E2E8F0;
+  margin-bottom: 8px;
+}
+
+.xp-progress-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 100px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.xp-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #D4AF37, #F59E0B);
+  border-radius: 100px;
+  transition: width 0.4s ease;
+}
+
+.xp-hint {
+  font-size: 0.75rem;
+  color: #64748B;
+  margin: 0;
+}
+
+/* ── Stamps Shelf ── */
+.passport-stamps-shelf {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.shelf-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 0;
+  color: #F8FAFC;
+}
+
+.passport-empty-shelf {
+  padding: 3rem 2rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+}
+
+.passport-empty-shelf p {
+  color: #64748B;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.stamps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 1.25rem;
+}
+
+.passport-stamp-circle {
+  aspect-ratio: 1/1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0.02) 100%);
+  border: 2px solid rgba(212, 175, 55, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.passport-stamp-circle:hover {
+  transform: scale(1.06) rotate(4deg);
+  border-color: rgba(212, 175, 55, 0.6);
+  box-shadow: 0 8px 24px rgba(212, 175, 55, 0.25);
+}
+
+.stamp-circle-emoji {
+  font-size: 2rem;
+  margin-bottom: 4px;
+}
+
+.stamp-circle-country {
+  font-size: 0.8rem;
+  font-weight: 800;
+  margin: 0;
+  color: #E2E8F0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.stamp-circle-date {
+  font-size: 0.6rem;
+  color: #64748B;
+  margin-top: 2px;
+}
+
+.passport-stamp-circle.placeholder {
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  background: transparent;
+  box-shadow: none;
+}
+.passport-stamp-circle.placeholder:hover {
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.passport-stamp-circle.placeholder .stamp-circle-emoji {
+  color: rgba(255, 255, 255, 0.15);
+}
+.passport-stamp-circle.placeholder .stamp-circle-country {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 0.72rem;
+}
+
+/* ── Right Column Cards ── */
+.passport-side-card {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 1.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.passport-side-card h3 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem;
+}
+
+.card-hint-text {
+  font-size: 0.8rem;
+  color: #94A3B8;
+  margin: 0 0 1.25rem;
+  line-height: 1.45;
+}
+
+/* ── Forms ── */
+.simulation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-group label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748B;
+  letter-spacing: 0.04em;
+}
+
+.simulation-form select,
+.simulation-form input {
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  color: #F8FAFC;
+  font-size: 0.875rem;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.25s;
+}
+
+.simulation-form select:focus,
+.simulation-form input:focus {
+  border-color: #D4AF37;
+  background: rgba(212, 175, 55, 0.02);
+}
+
+.simulation-form select option {
+  background: #030712;
+  color: #F8FAFC;
+}
+
+/* ── Buttons ── */
+.passport-btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #D4AF37, #B58F22);
+  color: #030712;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-decoration: none;
+  font-family: inherit;
+  margin-top: 0.25rem;
+}
+
+.passport-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.25);
+}
+
+.passport-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Achievements List ── */
+.achievements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.achievement-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.01);
+  transition: all 0.25s;
+}
+
+.achievement-row.unlocked {
+  border-color: rgba(212, 175, 55, 0.15);
+  background: rgba(212, 175, 55, 0.015);
+}
+
+.achievement-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.achievement-details {
+  flex: 1;
+}
+
+.achievement-details h4 {
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin: 0 0 2px;
+  color: #E2E8F0;
+}
+
+.achievement-row.locked .achievement-details h4 {
+  color: #64748B;
+}
+
+.achievement-details p {
+  font-size: 0.75rem;
+  color: #64748B;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.achievement-status {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 100px;
+}
+
+.achievement-row.unlocked .achievement-status {
+  color: #34D399;
+  background: rgba(52, 211, 153, 0.08);
+}
+
+.achievement-row.locked .achievement-status {
+  color: #64748B;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .passport-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}

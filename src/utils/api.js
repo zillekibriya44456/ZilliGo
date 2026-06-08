@@ -166,4 +166,12 @@ export const api = {
   markAllNotificationsRead: () => fetch(`${API_BASE}/marketplace/notifications/read-all`, {
     method: 'PATCH', headers: getHeaders(),
   }).then(res => res.json()),
+
+  getPassport: () =>
+    fetch(`${API_BASE}/marketplace/passport`, { headers: getHeaders() }).then(res => res.json()),
+
+  addPassportStamp: (data) =>
+    fetch(`${API_BASE}/marketplace/passport/stamp`, {
+      method: 'POST', headers: getHeaders(), body: JSON.stringify(data)
+    }).then(res => res.json()),
 };
