@@ -65,25 +65,46 @@ async function findOrCreateOAuthUser({ email, name, avatar, provider }) {
   }
 }
 
+function getFrontendUrl(req) {
+  if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
+  try {
+    const host = req.get('host') || 'zilli-go.vercel.app';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    return `${protocol}://${host}`;
+  } catch (err) {
+    return 'https://zilli-go.vercel.app';
+  }
+}
+
 /** Redirect to frontend with user data encoded in URL */
 function redirectWithUser(req, res, user) {
-  const frontendUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
-  const payload = encodeURIComponent(JSON.stringify({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    avatar: user.avatar,
-    verified: user.verified,
-    token: user.token,
-  }));
-  res.redirect(`${frontendUrl}/auth/callback?user=${payload}`);
+  try {
+    const frontendUrl = getFrontendUrl(req);
+    const payload = encodeURIComponent(JSON.stringify({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar,
+      verified: user.verified,
+      token: user.token,
+    }));
+    return res.redirect(`${frontendUrl}/auth/callback?user=${payload}`);
+  } catch (err) {
+    console.error('Redirect with user failed:', err);
+    return res.status(500).json({ error: 'Redirect failed', details: err.message });
+  }
 }
 
 /** Redirect to frontend with an error message */
 function redirectWithError(req, res, msg) {
-  const frontendUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
-  res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent(msg)}`);
+  try {
+    const frontendUrl = getFrontendUrl(req);
+    return res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent(msg)}`);
+  } catch (err) {
+    console.error('Redirect with error failed:', err);
+    return res.status(500).json({ error: 'Redirect error failed', details: err.message, originalError: msg });
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -127,10 +148,10 @@ router.get('/google', (req, res) => {
 
 router.get('/google/callback', async (req, res) => {
   const { code, error } = req.query;
-  if (error || !code) return redirectWithError(req, res, 'Google login was cancelled or failed.');
+  if (error || !code) return redirectWithError(req, res, `Google login was cancelled or failed. Error: ${error || 'No code'}`);
 
   try {
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${getFrontendUrl(req)}/api/auth/google/callback`;
 
     // Exchange code for tokens
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -145,14 +166,18 @@ router.get('/google/callback', async (req, res) => {
       }),
     });
     const tokenData = await tokenRes.json();
-    if (!tokenData.access_token) throw new Error('No access token from Google');
+    if (!tokenData.access_token) {
+      throw new Error(`No access token from Google. response: ${JSON.stringify(tokenData)}`);
+    }
 
     // Get user profile
     const profileRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
     const profile = await profileRes.json();
-    if (!profile.email) throw new Error('No email from Google');
+    if (!profile.email) {
+      throw new Error(`No email from Google userinfo. response: ${JSON.stringify(profile)}`);
+    }
 
     const user = await findOrCreateOAuthUser({
       email: profile.email,
@@ -162,8 +187,8 @@ router.get('/google/callback', async (req, res) => {
     });
     redirectWithUser(req, res, user);
   } catch (err) {
-    console.error('Google OAuth error:', err.message);
-    redirectWithError(req, res, 'Google login failed. Please try again or use email/password.');
+    console.error('Google OAuth error:', err.stack || err.message);
+    redirectWithError(req, res, `Google login failed: ${err.message}`);
   }
 });
 
@@ -301,10 +326,10 @@ router.get('/linkedin', (req, res) => {
 
 router.get('/linkedin/callback', async (req, res) => {
   const { code, error } = req.query;
-  if (error || !code) return redirectWithError(req, res, 'LinkedIn login was cancelled or failed.');
+  if (error || !code) return redirectWithError(req, res, `LinkedIn login was cancelled or failed. Error: ${error || 'No code'}`);
 
   try {
-    const redirectUri = process.env.LINKEDIN_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/linkedin/callback`;
+    const redirectUri = process.env.LINKEDIN_REDIRECT_URI || `${getFrontendUrl(req)}/api/auth/linkedin/callback`;
 
     const tokenRes = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
       method: 'POST',
@@ -318,13 +343,18 @@ router.get('/linkedin/callback', async (req, res) => {
       }),
     });
     const tokenData = await tokenRes.json();
-    if (!tokenData.access_token) throw new Error('No access token from LinkedIn');
+    if (!tokenData.access_token) {
+      throw new Error(`No access token from LinkedIn. response: ${JSON.stringify(tokenData)}`);
+    }
 
     // Get profile via OpenID Connect userinfo endpoint
     const profileRes = await fetch('https://api.linkedin.com/v2/userinfo', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
     const profile = await profileRes.json();
+    if (!profile.email) {
+      throw new Error(`No email from LinkedIn userinfo. response: ${JSON.stringify(profile)}`);
+    }
 
     const user = await findOrCreateOAuthUser({
       email: profile.email,
@@ -334,8 +364,8 @@ router.get('/linkedin/callback', async (req, res) => {
     });
     redirectWithUser(req, res, user);
   } catch (err) {
-    console.error('LinkedIn OAuth error:', err.message);
-    redirectWithError(req, res, 'LinkedIn login failed. Please try again or use email/password.');
+    console.error('LinkedIn OAuth error:', err.stack || err.message);
+    redirectWithError(req, res, `LinkedIn login failed: ${err.message}`);
   }
 });
 
