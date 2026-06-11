@@ -4,7 +4,7 @@ import { CheckCircle, Upload, Shield, Video, DollarSign, Globe, ArrowRight, Aler
 import { useAuth } from '../context/AuthContext';
 import './BecomeGuide.css';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://zilli-go.vercel.app/api';
 
 export default function BecomeGuide() {
   const { user } = useAuth();
@@ -53,8 +53,7 @@ export default function BecomeGuide() {
         }),
       });
 
-      // Accept both success and demo-mode (no backend) gracefully
-      if (response.ok || response.status === 404 || response.status === 401) {
+      if (response.ok) {
         setStep(3);
         setTimeout(() => {
           navigate(user ? (user.role === 'guide' ? '/guide-dashboard' : '/dashboard') : '/auth?tab=register&role=guide');
