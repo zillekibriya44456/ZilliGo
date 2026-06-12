@@ -71,6 +71,26 @@ export default function LiveRoom() {
       newSocket.disconnect();
     };
   }, [id]);
+  const tour = streamData ? {
+    id: streamData.id,
+    title: streamData.title,
+    location: streamData.location,
+    language: streamData.language || 'English',
+    duration: streamData.durationMinutes || 60,
+    coverImage: streamData.coverImage || streamData.cover_image,
+    rating: 4.9,
+    tags: ['Live', 'Culture', 'Interactive'],
+    description: `Experience ${streamData.title} live from ${streamData.location}. Interact directly with your guide and viewers from around the world.`
+  } : null;
+
+  const guide = streamData ? {
+    id: streamData.guideId || streamData.guide_id,
+    name: streamData.guideName || streamData.guide_name,
+    avatar: streamData.guideAvatar || streamData.guide_avatar || `https://i.pravatar.cc/150?u=${streamData.guideId}`,
+    rating: 4.9,
+    location: streamData.guideLocation || streamData.guide_location
+  } : null;
+
 
   // Agora Integration
   useEffect(() => {
@@ -123,26 +143,6 @@ export default function LiveRoom() {
       client.leave();
     };
   }, [id, guide, user]);
-
-  const tour = streamData ? {
-    id: streamData.id,
-    title: streamData.title,
-    location: streamData.location,
-    language: streamData.language || 'English',
-    duration: streamData.durationMinutes || 60,
-    coverImage: streamData.coverImage || streamData.cover_image,
-    rating: 4.9,
-    tags: ['Live', 'Culture', 'Interactive'],
-    description: `Experience ${streamData.title} live from ${streamData.location}. Interact directly with your guide and viewers from around the world.`
-  } : null;
-
-  const guide = streamData ? {
-    id: streamData.guideId || streamData.guide_id,
-    name: streamData.guideName || streamData.guide_name,
-    avatar: streamData.guideAvatar || streamData.guide_avatar || `https://i.pravatar.cc/150?u=${streamData.guideId}`,
-    rating: 4.9,
-    location: streamData.guideLocation || streamData.guide_location
-  } : null;
 
   const sendMessage = (e) => {
     e.preventDefault();
