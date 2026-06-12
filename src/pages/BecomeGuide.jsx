@@ -14,10 +14,16 @@ export default function BecomeGuide() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
-    bio: '',
-    location: '',
+    name: user?.name || '',
+    phone: '',
+    country: '',
+    state: '',
+    city: '',
     languages: '',
-    specialties: '',
+    experience: '',
+    bio: '',
+    instagram: '',
+    linkedin: '',
     idFront: null,
     idBack: null,
   });
@@ -67,12 +73,18 @@ export default function BecomeGuide() {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          bio: form.bio,
-          location: form.location,
-          languages: form.languages,
-          specialties: form.specialties,
+          name: form.name,
           email: user?.email || 'guest@zilligo.com',
-          name: user?.name || 'Guest Applicant',
+          phone: form.phone,
+          country: form.country,
+          state: form.state,
+          city: form.city,
+          languages: form.languages,
+          bio: form.bio,
+          experience: form.experience,
+          socialLinks: { instagram: form.instagram, linkedin: form.linkedin },
+          idFront: form.idFront,
+          idBack: form.idBack
         }),
       });
 
@@ -191,22 +203,57 @@ export default function BecomeGuide() {
               <form onSubmit={(e) => { e.preventDefault(); setStep(2); }}>
                 <h2 style={{ marginBottom: 'var(--space-xl)' }}>Tell us about yourself</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                  <div className="auth-field">
-                    <label>City & Country *</label>
-                    <input name="location" value={form.location} onChange={handleChange} required className="input" placeholder="e.g. Rome, Italy" />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+                    <div className="auth-field">
+                      <label>Full Name *</label>
+                      <input name="name" value={form.name} onChange={handleChange} required className="input" placeholder="Legal Name" />
+                    </div>
+                    <div className="auth-field">
+                      <label>Phone Number *</label>
+                      <input name="phone" value={form.phone} onChange={handleChange} required className="input" placeholder="+1 234 567 8900" />
+                    </div>
                   </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-md)' }}>
+                    <div className="auth-field">
+                      <label>Country *</label>
+                      <input name="country" value={form.country} onChange={handleChange} required className="input" placeholder="e.g. Italy" />
+                    </div>
+                    <div className="auth-field">
+                      <label>State/Province *</label>
+                      <input name="state" value={form.state} onChange={handleChange} required className="input" placeholder="e.g. Lazio" />
+                    </div>
+                    <div className="auth-field">
+                      <label>City *</label>
+                      <input name="city" value={form.city} onChange={handleChange} required className="input" placeholder="e.g. Rome" />
+                    </div>
+                  </div>
+
                   <div className="auth-field">
                     <label>Languages Spoken *</label>
                     <input name="languages" value={form.languages} onChange={handleChange} required className="input" placeholder="e.g. English, Italian, Spanish" />
                   </div>
+
                   <div className="auth-field">
-                    <label>Tour Specialties</label>
-                    <input name="specialties" value={form.specialties} onChange={handleChange} className="input" placeholder="e.g. Historical, Food, Art, Adventure" />
+                    <label>Relevant Experience *</label>
+                    <textarea name="experience" value={form.experience} onChange={handleChange} required className="input" placeholder="Tell us about your background in tourism or local hosting..." rows={3} style={{ resize: 'vertical' }} />
                   </div>
+
                   <div className="auth-field">
                     <label>Short Bio *</label>
-                    <textarea name="bio" value={form.bio} onChange={handleChange} required className="input" placeholder="What makes you a great guide? Your background, passions, and what visitors love about touring with you." rows={4} style={{ resize: 'vertical' }} />
+                    <textarea name="bio" value={form.bio} onChange={handleChange} required className="input" placeholder="What makes you a great guide? Your passions, and what visitors love about touring with you." rows={3} style={{ resize: 'vertical' }} />
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{form.bio.length}/500 characters</span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+                    <div className="auth-field">
+                      <label>Instagram Link (Optional)</label>
+                      <input name="instagram" value={form.instagram} onChange={handleChange} className="input" placeholder="https://instagram.com/..." />
+                    </div>
+                    <div className="auth-field">
+                      <label>LinkedIn Link (Optional)</label>
+                      <input name="linkedin" value={form.linkedin} onChange={handleChange} className="input" placeholder="https://linkedin.com/in/..." />
+                    </div>
                   </div>
                   <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-end', marginTop: 'var(--space-sm)' }}>
                     Continue <ArrowRight size={16} />

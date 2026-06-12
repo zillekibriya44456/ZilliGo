@@ -8,10 +8,7 @@ import {
   Globe, Search, Bell, Menu, X, ChevronDown,
   User, LogOut, Star, Map, Video, MessageSquare
 } from 'lucide-react';
-import { io } from 'socket.io-client';
 import './Navbar.css';
-
-const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -56,23 +53,8 @@ export default function Navbar() {
       }
     };
     fetchNotifs();
-    
-    // Global WebSocket Listener
-    const socket = io(SOCKET_URL);
-    socket.on('new_notification', (notif) => {
-      // If the notification belongs to the current user
-      if (notif.user_id === user.id) {
-        setNotifications(prev => [notif, ...prev]);
-        // Also play a sound or trigger a toast here if desired
-      }
-    });
-
-    const interval = setInterval(fetchNotifs, 60000); // Poll less frequently now that socket is active
-    
-    return () => {
-      clearInterval(interval);
-      socket.disconnect();
-    };
+    const interval = setInterval(fetchNotifs, 15000); // Poll every 15s
+    return () => clearInterval(interval);
   }, [user]);
 
   const handleMarkAllRead = async () => {

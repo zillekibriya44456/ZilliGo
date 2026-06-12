@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Star, MapPin, Globe, CheckCircle, Clock, Award, MessageCircle, Calendar, TrendingUp, Heart } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { api } from '../utils/api';
+import { getGuideById, TOURS } from '../data/mockData';
 import { useBooking } from '../context/BookingContext';
 import { useAuth } from '../context/AuthContext';
 import MatchingOverlay from '../components/MatchingOverlay';
@@ -20,46 +19,18 @@ export default function GuideProfile() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { startMatching, matchingState } = useBooking();
-  const [guide, setGuide] = useState(null);
-  const [guideTours, setGuideTours] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const guide = getGuideById(id);
   const [showMatching, setShowMatching] = useState(false);
   const [activeTab, setActiveTab] = useState('about');
 
-  useEffect(() => {
-    const fetchGuideData = async () => {
-      setLoading(true);
-      try {
-        const [gData, tData] = await Promise.all([
-          api.getMarketplaceGuide(id).catch(() => null),
-          api.getTours(`guideId=${id}`).catch(() => [])
-        ]);
-        if (gData && !gData.message) setGuide(gData);
-        if (tData && tData.tours) setGuideTours(tData.tours.slice(0, 4));
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchGuideData();
-  }, [id]);
-
-  if (loading) {
-    return (
-      <div className="gp-loading">
-        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="spinner-lg" />
-        <p>Loading guide profile...</p>
-      </div>
-    );
-  }
+  const guideTours = TOURS.filter(t => t.guide === id).slice(0, 4);
 
   if (!guide) {
     return (
-      <div className="gp-empty">
-        <span className="gp-empty-icon">👤</span>
+      <div className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', flexDirection: 'column' }}>
+        <div style={{ fontSize: '3rem' }}>👤</div>
         <h2>Guide not found</h2>
-        <Link to="/guides" className="btn-liquid">Browse Guides</Link>
+        <Link to="/guides" className="btn btn-primary">Browse Guides</Link>
       </div>
     );
   }
@@ -71,174 +42,186 @@ export default function GuideProfile() {
   };
 
   return (
-    <div className="guide-profile-liquid">
-      {showMatching && matchingState !== 'idle' && <MatchingOverlay onClose={() => setShowMatching(false)} />}
+    <div className="page-wrapper guide-profile">
+      {showMatching && matchingState !== 'idle' && (
+        <MatchingOverlay onClose={() => setShowMatching(false)} />
+      )}
 
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="gp-hero">
+      {/* Hero */}
+      <div className="gp-hero">
         <div className="gp-hero-bg" />
         <div className="container gp-hero-content">
           <div className="gp-avatar-wrap">
             <img src={guide.avatar} alt={guide.name} className="gp-avatar" />
             <span className={`gp-status ${guide.available ? 'available' : 'busy'}`}>
-              <span className="status-dot" /> {guide.available ? 'Available Now' : 'Busy'}
+              {guide.available ? 'Available Now' : 'Busy'}
             </span>
           </div>
-
           <div className="gp-hero-info">
-            <div className="gp-hero-title-row">
-              <h1>{guide.name}</h1>
-              {guide.verified && <CheckCircle size={24} className="text-teal" />}
-              {guide.topGuide && <span className="badge-liquid badge-amber">⭐ Top Guide</span>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <h1 style={{ marginBottom: 0 }}>{guide.name}</h1>
+              {guide.verified && <CheckCircle size={24} style={{ color: 'var(--accent-teal)' }} />}
+              {guide.topGuide && <span className="badge badge-amber">⭐ Top Guide</span>}
             </div>
-
             <div className="gp-hero-meta">
-              <span><MapPin size={16} /> {guide.location || 'Global'}</span>
-              <span><Star size={16} fill="var(--accent-amber)" color="var(--accent-amber)" /> {guide.avgRating || 0} ({(guide.reviewCount || 0).toLocaleString()} reviews)</span>
-              <span><Globe size={16} /> English</span>
-              <span><Calendar size={16} /> Joined {guide.createdAt ? new Date(guide.createdAt).getFullYear() : '2026'}</span>
+              <span><MapPin size={15} /> {guide.location}</span>
+              <span><Star size={15} fill="var(--accent-amber)" stroke="none" /> {guide.rating} ({guide.reviewCount.toLocaleString()} reviews)</span>
+              <span><Globe size={15} /> {guide.languages.join(', ')}</span>
+              <span><Calendar size={15} /> Joined {guide.joinedYear}</span>
             </div>
-
             <div className="gp-badges">
-              <span className="badge-glass">Cultural Expert</span>
-              <span className="badge-glass">Local Verified</span>
+              {guide.badges.map(b => <span key={b} className="guide-card__badge-item">{b}</span>)}
             </div>
           </div>
-
-          <div className="gp-hero-actions glass-panel">
+          <div className="gp-hero-actions">
             <div className="gp-rate">
-              <span className="gp-rate-amount">${guide.hourlyRate || 40}</span>
-              <span className="gp-rate-per">/hr starting rate</span>
+              <span className="gp-rate-amount">${guide.hourlyRate}</span>
+              <span className="gp-rate-per">/hr</span>
             </div>
-            <button className="btn-liquid" onClick={handleBook}>Book a Live Tour</button>
-            <button className="btn-ghost"><MessageCircle size={16} /> Message Guide</button>
+            <button className="btn btn-primary btn-lg" onClick={handleBook}>
+              Book This Guide
+            </button>
+            <button className="btn btn-secondary"><MessageCircle size={16} /> Message</button>
           </div>
         </div>
-      </motion.div>
+      </div>
 
+      {/* Stats */}
       <div className="gp-stats-bar">
-        <div className="container gp-stats-grid">
+        <div className="container gp-stats">
           {[
-            { label: 'Tours Completed', value: (guide.toursCompleted || 0).toLocaleString(), icon: '🎥' },
-            { label: 'Reward Points', value: Math.floor((guide.avgRating || 5) * (guide.toursCompleted || 1) * 15).toLocaleString(), icon: '🏆' },
-            { label: 'Overall Rating', value: guide.avgRating || 0, icon: '⭐' },
-            { label: 'Total Reviews', value: (guide.reviewCount || 0).toLocaleString(), icon: '💬' },
-            { label: 'Response Time', value: '< 1 hr', icon: '⚡' },
-          ].map((s, i) => (
-            <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="gp-stat-item glass-panel">
-              <span className="gp-stat-icon">{s.icon}</span>
-              <div className="gp-stat-info">
-                <span className="gp-stat-value">{s.value}</span>
-                <span className="gp-stat-label">{s.label}</span>
-              </div>
-            </motion.div>
+            { label: 'Tours Done', value: guide.toursCompleted.toLocaleString(), icon: '🎥' },
+            { label: 'Reward Points', value: Math.floor(guide.rating * guide.toursCompleted * 15).toLocaleString(), icon: '🏆' },
+            { label: 'Rating', value: guide.rating, icon: '⭐' },
+            { label: 'Reviews', value: guide.reviewCount.toLocaleString(), icon: '💬' },
+            { label: 'Response', value: guide.responseTime, icon: '⚡' },
+          ].map(s => (
+            <div key={s.label} className="gp-stat">
+              <span className="gp-stat__icon">{s.icon}</span>
+              <span className="gp-stat__value">{s.value}</span>
+              <span className="gp-stat__label">{s.label}</span>
+            </div>
           ))}
         </div>
       </div>
 
+      {/* Tabs Body */}
       <div className="container gp-body">
         <div className="gp-tabs">
           {['about', 'tours', 'reviews'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`gp-tab-btn ${activeTab === tab ? 'active' : ''}`}>
+            <button key={tab} onClick={() => setActiveTab(tab)}
+              className={`gp-tab ${activeTab === tab ? 'active' : ''}`}>
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
 
-        <AnimatePresence mode="wait">
-          {activeTab === 'about' && (
-            <motion.div key="about" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="gp-about-grid">
-              <div className="gp-about-main glass-panel">
+        {activeTab === 'about' && (
+          <div className="gp-about">
+            <div className="gp-about-main">
+              <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
                 <h3>About {guide.name}</h3>
-                <p className="gp-bio">{guide.bio}</p>
-                <div className="gp-details-row">
-                  <div className="gp-details-col">
-                    <h5>Specialties</h5>
-                    <div className="gp-tags">
-                      {(guide.specialties || ['Cultural Explorer', 'Historian']).map(s => <span key={s} className="tag-glass">{s}</span>)}
-                    </div>
+                <p style={{ lineHeight: 1.8, color: 'var(--text-secondary)', marginTop: '1rem' }}>{guide.bio}</p>
+                <div className="gp-specialties" style={{ marginTop: 'var(--space-lg)' }}>
+                  <h4 style={{ marginBottom: '0.75rem' }}>Specialties</h4>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {guide.specialties.map(s => <span key={s} className="badge badge-teal">{s}</span>)}
                   </div>
-                  <div className="gp-details-col">
-                    <h5>Languages</h5>
-                    <div className="gp-tags">
-                      {(guide.languages || ['English']).map(l => <span key={l} className="tag-glass">{l}</span>)}
-                    </div>
+                </div>
+                <div style={{ marginTop: 'var(--space-lg)' }}>
+                  <h4 style={{ marginBottom: '0.75rem' }}>Languages</h4>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {guide.languages.map(l => <span key={l} className="badge badge-purple">{l}</span>)}
                   </div>
                 </div>
               </div>
-
-              <div className="gp-about-sidebar glass-panel">
-                <h4>Trust & Safety</h4>
-                <ul className="gp-trust-list">
-                  <li><CheckCircle size={16} className="text-teal" /> Identity Verified</li>
-                  <li><CheckCircle size={16} className="text-teal" /> Secure Payment via Stripe</li>
-                  <li><CheckCircle size={16} className="text-teal" /> Free Cancellation (48h)</li>
-                </ul>
-                <hr className="divider" />
-                <button className="btn-liquid w-100" onClick={handleBook}>Book a Live Tour</button>
+            </div>
+            <div className="gp-about-sidebar">
+              <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
+                <h4 style={{ marginBottom: 'var(--space-lg)' }}>Book {guide.name.split(' ')[0]}</h4>
+                <div className="gp-book-rate">
+                  <span className="gp-rate-amount">${guide.hourlyRate}</span>
+                  <span className="gp-rate-per"> / hour</span>
+                </div>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.5rem 0 1rem' }}>
+                  ⚡ Usually responds {guide.responseTime}
+                </p>
+                <button className="btn btn-primary" style={{ width: '100%', marginBottom: '0.5rem' }} onClick={handleBook}>
+                  Book a Live Tour
+                </button>
+                <button className="btn btn-secondary" style={{ width: '100%' }}>
+                  <MessageCircle size={15} /> Send Message
+                </button>
+                <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {['Free cancellation (48h)', 'Secure payment', 'Verified guide'].map(t => (
+                    <div key={t} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      <CheckCircle size={13} style={{ color: 'var(--accent-teal)' }} /> {t}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </motion.div>
-          )}
+            </div>
+          </div>
+        )}
 
-          {activeTab === 'tours' && (
-            <motion.div key="tours" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              {guideTours.length > 0 ? (
-                <div className="grid-4">
-                  {guideTours.map((t, i) => <TourCard key={t.id} tour={t} delay={i * 0.1} />)}
-                </div>
-              ) : (
-                <div className="gp-empty-state glass-panel">
-                  <span className="icon">🎥</span>
-                  <p>No tours listed yet</p>
-                </div>
-              )}
-            </motion.div>
-          )}
+        {activeTab === 'tours' && (
+          <div>
+            {guideTours.length > 0 ? (
+              <div className="grid-4">
+                {guideTours.map(t => <TourCard key={t.id} tour={t} />)}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: 'var(--space-3xl)', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '2rem' }}>🎥</div>
+                <p style={{ marginTop: '1rem' }}>No tours listed yet</p>
+              </div>
+            )}
+          </div>
+        )}
 
-          {activeTab === 'reviews' && (
-            <motion.div key="reviews" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="gp-reviews-layout">
-              <div className="gp-rating-summary glass-panel">
-                <div className="gp-rs-left">
-                  <div className="gp-rs-score">{guide.avgRating || 0}</div>
-                  <div className="gp-rs-stars">
-                    {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={16} fill="var(--accent-amber)" stroke="none" />)}
+        {activeTab === 'reviews' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+            <div className="gp-rating-summary glass-card" style={{ padding: 'var(--space-xl)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xl)' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--accent-teal)' }}>{guide.rating}</div>
+                  <div style={{ display: 'flex', gap: '2px', justifyContent: 'center', margin: '4px 0' }}>
+                    {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={14} fill="var(--accent-amber)" stroke="none" />)}
                   </div>
-                  <div className="gp-rs-count">{guide.reviewCount || 0} reviews</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{guide.reviewCount} reviews</div>
                 </div>
-                <div className="gp-rs-bars">
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {[5, 4, 3, 2, 1].map(n => (
-                    <div key={n} className="gp-rs-bar-row">
-                      <span>{n}</span>
-                      <Star size={12} fill="var(--accent-amber)" stroke="none" />
-                      <div className="gp-rs-track">
-                        <div className="gp-rs-fill" style={{ width: `${[90, 7, 2, 1, 0][5 - n]}%` }} />
+                    <div key={n} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', minWidth: 8 }}>{n}</span>
+                      <Star size={11} fill="var(--accent-amber)" stroke="none" />
+                      <div style={{ flex: 1, height: 6, background: 'var(--border-glass)', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', background: 'var(--accent-amber)', borderRadius: 3, width: `${[90, 7, 2, 1, 0][5 - n]}%` }} />
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-
-              <div className="gp-reviews-list">
-                {REVIEWS.map(r => (
-                  <div key={r.id} className="gp-review-card glass-panel">
-                    <div className="gp-rc-header">
-                      <img src={r.avatar} alt={r.user} className="gp-rc-avatar" />
-                      <div className="gp-rc-meta">
-                        <div className="gp-rc-user">{r.user}</div>
-                        <div className="gp-rc-rating-row">
-                          <div className="gp-rc-stars">
-                            {Array.from({ length: r.rating }).map((_, i) => <Star key={i} size={12} fill="var(--accent-amber)" stroke="none" />)}
-                          </div>
-                          <span className="gp-rc-date">{r.date} · {r.tour}</span>
-                        </div>
+            </div>
+            {REVIEWS.map(r => (
+              <div key={r.id} className="glass-card" style={{ padding: 'var(--space-xl)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
+                  <img src={r.avatar} alt={r.user} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{r.user}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '2px' }}>
+                        {Array.from({ length: r.rating }).map((_, i) => <Star key={i} size={12} fill="var(--accent-amber)" stroke="none" />)}
                       </div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.date} · {r.tour}</span>
                     </div>
-                    <p className="gp-rc-text">{r.text}</p>
                   </div>
-                ))}
+                </div>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>{r.text}</p>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

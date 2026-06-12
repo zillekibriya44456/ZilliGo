@@ -67,15 +67,19 @@ exports.getTourById = async (req, res) => {
 // @desc    Create a tour (Guides only)
 // @route   POST /api/tours
 exports.createTour = async (req, res) => {
-  const { title, description, price, location, latitude, longitude, category, cover_image, duration_minutes, max_participants, kid_friendly } = req.body;
+  const { 
+    title, description, price, isFree, location, country, state, exactLocation, 
+    meetingInstructions, latitude, longitude, category, coverImage, bannerImage, 
+    durationMinutes, maxParticipants, kidFriendly 
+  } = req.body;
 
   try {
     const result = await db.query(
       `INSERT INTO tours 
-      (guide_id, title, description, price, location, latitude, longitude, category, cover_image, duration_minutes, max_participants, kid_friendly) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+      (guide_id, title, description, price, is_free, location, country, state, exact_location, meeting_instructions, latitude, longitude, category, cover_image, banner_image, duration_minutes, max_participants, kid_friendly) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) 
       RETURNING *`,
-      [req.user.id, title, description, price, location, latitude, longitude, category, cover_image, duration_minutes, max_participants, kid_friendly]
+      [req.user.id, title, description, price || 0, isFree || false, location, country, state, exactLocation, meetingInstructions, latitude, longitude, category, coverImage, bannerImage, durationMinutes, maxParticipants, kidFriendly]
     );
     
     const newTour = result.rows[0];

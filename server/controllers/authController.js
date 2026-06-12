@@ -208,7 +208,9 @@ exports.resetPassword = async (req, res) => {
 exports.getUserProfile = async (req, res) => {
   try {
     const result = await db.query(
-      'SELECT id, name, email, role, avatar, verified, suspended, reward_points FROM users WHERE id = $1',
+      `SELECT id, name, email, role, avatar, cover_image, verified, suspended, reward_points, 
+       bio, location, phone_number, country, state, city, languages_spoken, experience, social_links 
+       FROM users WHERE id = $1`,
       [req.user.id]
     );
     const user = result.rows[0];
@@ -226,7 +228,11 @@ exports.getUserProfile = async (req, res) => {
 // @desc    Update user profile
 // @route   PUT /api/auth/profile
 exports.updateUserProfile = async (req, res) => {
-  const { name, bio, location, avatar, role } = req.body;
+  const { 
+    name, bio, location, avatar, role, coverImage, 
+    phone, country, state, city, languages, experience, socialLinks 
+  } = req.body;
+  
   try {
     const result = await db.query(
       `UPDATE users SET 
@@ -234,9 +240,22 @@ exports.updateUserProfile = async (req, res) => {
       bio = COALESCE($2, bio), 
       location = COALESCE($3, location), 
       avatar = COALESCE($4, avatar),
-      role = COALESCE($5, role)
-      WHERE id = $6 RETURNING id, name, email, role, avatar, bio, location, verified, reward_points`,
-      [name, bio, location, avatar, role, req.user.id]
+      role = COALESCE($5, role),
+      cover_image = COALESCE($6, cover_image),
+      phone_number = COALESCE($7, phone_number),
+      country = COALESCE($8, country),
+      state = COALESCE($9, state),
+      city = COALESCE($10, city),
+      languages_spoken = COALESCE($11, languages_spoken),
+      experience = COALESCE($12, experience),
+      social_links = COALESCE($13, social_links)
+      WHERE id = $14 RETURNING *`,
+      [
+        name, bio, location, avatar, role, coverImage, 
+        phone, country, state, city, languages, experience, 
+        socialLinks ? JSON.stringify(socialLinks) : null,
+        req.user.id
+      ]
     );
     res.json(toCamel(result.rows[0]));
   } catch (error) {

@@ -10,6 +10,7 @@ import { api } from '../utils/api';
 import TourCard from '../components/TourCard';
 import RatingModal from '../components/RatingModal';
 import VerificationModal from '../components/VerificationModal';
+import { io } from 'socket.io-client';
 import './Dashboard.css';
 
 /* ── Status badge helper ── */
@@ -60,6 +61,18 @@ export default function Dashboard() {
       }
     };
     load();
+
+    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5001');
+    
+    socket.on('booking_status_change', (data) => {
+      setBookings(prev => prev.map(b => parseInt(b.id) === parseInt(data.bookingId) ? { ...b, status: data.status } : b));
+    });
+
+    socket.on('new_notification', (notif) => {
+      setNotifications(prev => [notif, ...prev]);
+    });
+
+    return () => socket.disconnect();
   }, []);
 
   const handleCancelBooking = async (bookingId) => {

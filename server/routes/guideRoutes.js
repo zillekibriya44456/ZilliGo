@@ -6,7 +6,10 @@ const { protect } = require('../middleware/authMiddleware');
 // @desc    Submit Guide Application
 // @route   POST /api/guides/apply
 router.post('/apply', protect, async (req, res) => {
-  const { bio, location, languages, specialties, idFront, email, name } = req.body;
+  const { 
+    name, email, phone, country, state, city, languages, 
+    bio, experience, socialLinks, idFront, idBack 
+  } = req.body;
   const userId = req.user.id;
 
   try {
@@ -21,52 +24,60 @@ router.post('/apply', protect, async (req, res) => {
       return res.status(400).json({ message: 'You already have a pending application.' });
     }
 
-    // 2. Validate Required Fields for Auto-Verification
-    // We check if they provided bio, location, languages, and a document.
-    const hasRequiredFields = bio && location && languages && idFront;
-    
-    // Simulate ID verification checks (e.g., verifying it's a real passport)
-    const isProfileComplete = hasRequiredFields && bio.length >= 10;
+    // 2. Insert/Update fields in Users table immediately for the application
+    await db.query(`
+      UPDATE users 
+      SET 
+        name = COALESCE($1, name),
+        phone_number = $2,
+        country = $3,
+        state = $4,
+        city = $5,
+        languages_spoken = $6,
+        bio = $7,
+        experience = $8,
+        social_links = $9,
+        location = $10
+      WHERE id = $11
+    `, [
+      name, phone, country, state, city, languages, bio, experience, 
+      socialLinks ? JSON.stringify(socialLinks) : '{}', 
+      city && country ? `${city}, ${country}` : null,
+      userId
+    ]);
 
-    if (isProfileComplete) {
-      // AUTO VERIFICATION SYSTEM: Auto Approve!
-      
-      // Upgrade role to guide & verified true
-      await db.query(
-        'UPDATE users SET role = $1, verified = true, bio = COALESCE($2, bio), location = COALESCE($3, location) WHERE id = $4',
-        ['guide', bio, location, userId]
-      );
-      
-      // Initialize Guide Profile
-      await db.query(
-        'INSERT INTO guide_profiles (user_id, guide_level, trust_score) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
-        [userId, 'bronze', 100.00]
-      );
+    // 3. Create Pending Request
+    const requestRes = await db.query(
+      'INSERT INTO guide_verification_requests (user_id, status) VALUES ($1, $2) RETURNING id',
+      [userId, 'pending']
+    );
+    const requestId = requestRes.rows[0].id;
 
-      // Log the verification request as ai_approved
+    // 4. Store Documents
+    if (idFront) {
       await db.query(
-        'INSERT INTO guide_verification_requests (user_id, status, ai_confidence_score) VALUES ($1, $2, $3)',
-        [userId, 'ai_approved', 98.5]
+        'INSERT INTO guide_documents (request_id, document_type, encrypted_file_url) VALUES ($1, $2, $3)',
+        [requestId, 'id_front', idFront]
       );
-
-      return res.json({ 
-        message: 'Application auto-approved successfully!',
-        status: 'approved',
-        role: 'guide'
-      });
-    } else {
-      // Missing info or failed auto-check: Send to Admin Queue
-      await db.query(
-        'INSERT INTO guide_verification_requests (user_id, status) VALUES ($1, $2)',
-        [userId, 'pending']
-      );
-
-      return res.json({ 
-        message: 'Application submitted and is pending admin review.',
-        status: 'pending',
-        role: req.user.role
-      });
     }
+    if (idBack) {
+      await db.query(
+        'INSERT INTO guide_documents (request_id, document_type, encrypted_file_url) VALUES ($1, $2, $3)',
+        [requestId, 'id_back', idBack]
+      );
+    }
+
+    // Trigger realtime notification to Admins
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('new_guide_application', { userId, requestId, name });
+    }
+
+    return res.json({ 
+      message: 'Application submitted and is pending admin review.',
+      status: 'pending',
+      role: req.user.role
+    });
   } catch (error) {
     console.error('Error applying for guide:', error);
     res.status(500).json({ message: 'Server error while submitting application.' });
@@ -130,6 +141,11 @@ router.put('/applications/:id', protect, async (req, res) => {
       );
     }
     
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('guide_application_status', { userId, status });
+    }
+
     res.json({ message: `Application ${status}` });
   } catch (error) {
     console.error('Error updating guide application:', error);

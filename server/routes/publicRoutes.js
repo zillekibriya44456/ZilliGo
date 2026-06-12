@@ -65,11 +65,23 @@ router.get('/homepage', async (req, res) => {
     `);
     const stats = statsRes.rows[0];
 
+    // 6. Testimonials / Reviews (Limit 3)
+    const reviewsRes = await db.query(`
+      SELECT r.id, r.rating, r.comment as text, u.name, u.avatar, u.location, t.title as tour
+      FROM reviews r 
+      JOIN users u ON r.user_id = u.id 
+      JOIN tours t ON r.tour_id = t.id 
+      WHERE r.rating >= 4
+      ORDER BY r.rating DESC, r.created_at DESC 
+      LIMIT 3
+    `);
+
     const responseData = {
       tours: toCamel(toursRes.rows),
       guides: toCamel(guidesRes.rows),
       liveStreams: toCamel(liveRes.rows),
       activities: toCamel(activityRes.rows),
+      testimonials: toCamel(reviewsRes.rows),
       stats: {
         tours: parseInt(stats.total_tours) || 0,
         guides: parseInt(stats.total_guides) || 0,

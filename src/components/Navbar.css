@@ -325,7 +325,6 @@
 .navbar__mobile-menu {
   position: fixed;
   top: var(--navbar-height);
-  z-index: 990;
   left: 0;
   right: 0;
   background: rgba(6, 11, 22, 0.98);

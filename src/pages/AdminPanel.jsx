@@ -5,6 +5,7 @@ import {
   Globe, Clock, ArrowRight, Ban, MapPin, Settings, Power, Bell, 
   ShieldCheck, Activity, BarChart3, AlertTriangle, Eye, EyeOff, Edit, Trash2, Key, HelpCircle, Sparkles
 } from 'lucide-react';
+import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/api';
 import './AdminPanel.css';
@@ -93,6 +94,24 @@ export default function AdminPanel() {
   useEffect(() => {
     if (isAuthorized) {
       fetchData();
+
+      // Setup WebSocket for realtime dashboard updates
+      const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5001');
+      
+      socket.on('new_guide_application', (data) => {
+        // Play notification sound or show toast in real app
+        setGuideApplications(prev => [{
+          id: data.requestId,
+          user_id: data.userId,
+          name: data.name,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        }, ...prev]);
+      });
+
+      return () => {
+        socket.disconnect();
+      };
     }
   }, [isAuthorized]);
 

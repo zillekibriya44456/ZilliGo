@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Navigate, Link, useNavigate } from 'react-router-dom';
-import {
-  TrendingUp, Star, Users, DollarSign, Calendar, Play,
-  BarChart3, Clock, CheckCircle, AlertCircle, MapPin,
-  Upload, CreditCard, Bell, XCircle, MessageCircle, Settings
+import { Link, useNavigate } from 'react-router-dom';
+import { 
+  Video, DollarSign, Calendar, Users, Settings, Bell, Star, MapPin, CheckCircle, XCircle, ChevronRight, Activity, CreditCard, Upload, Clock, MessageCircle, Play
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/api';
+import { io } from 'socket.io-client';
 import './Dashboard.css';
 import './GuideDashboard.css';
 
@@ -59,6 +58,26 @@ export default function GuideDashboard() {
       }
     };
     fetchData();
+
+    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5001');
+    socket.on('new_booking_request', (data) => {
+      // If the booking is for this guide, update the bookings array
+      if (data.guideId === user.id || !data.guideId) {
+        setBookings(prev => [data.booking, ...prev]);
+        setNotifications(prev => [{
+          id: 'temp-' + Date.now(),
+          type: 'booking_request',
+          title: 'New Booking Request',
+          message: `You have a new booking request for ${data.booking.bookingDate || data.booking.booking_date}.`,
+          isRead: false,
+          createdAt: new Date().toISOString()
+        }, ...prev]);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [user]);
 
   const handleStartLiveTour = async (tourId) => {
@@ -356,13 +375,19 @@ export default function GuideDashboard() {
                   await api.createTour({
                     title: fd.get('title'),
                     location: fd.get('location'),
-                    price: parseFloat(fd.get('price')),
-                    duration_minutes: parseInt(fd.get('duration')),
-                    max_participants: parseInt(fd.get('max_participants') || 20),
+                    country: fd.get('country'),
+                    state: fd.get('state'),
+                    exactLocation: fd.get('exactLocation'),
+                    meetingInstructions: fd.get('meetingInstructions'),
+                    isFree: fd.get('isFree') === 'true',
+                    price: parseFloat(fd.get('price')) || 0,
+                    durationMinutes: parseInt(fd.get('duration')),
+                    maxParticipants: parseInt(fd.get('max_participants') || 20),
                     description: fd.get('description'),
-                    category: 'Culture',
-                    kid_friendly: true,
-                    cover_image: 'https://images.unsplash.com/photo-1542051812899-2531021487f5?w=800&q=80'
+                    category: fd.get('category') || 'Culture',
+                    kidFriendly: true,
+                    coverImage: 'https://images.unsplash.com/photo-1542051812899-2531021487f5?w=800&q=80',
+                    bannerImage: 'https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?w=1600&q=80'
                   });
                   alert('✅ Listing published! Travelers can now book it.'); 
                   window.location.reload();
@@ -370,19 +395,51 @@ export default function GuideDashboard() {
                   alert('Error publishing listing');
                 }
               }}>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label className="gd-label">Tour Title *</label>
+                  <input name="title" type="text" className="gd-input" placeholder="e.g. Kyoto Cherry Blossom Walk" required />
+                </div>
+                
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                   <div>
-                    <label className="gd-label">Tour Title *</label>
-                    <input name="title" type="text" className="gd-input" placeholder="e.g. Kyoto Cherry Blossom Walk" required />
+                    <label className="gd-label">Payment Type</label>
+                    <select name="isFree" className="gd-input">
+                      <option value="false">Paid Tour</option>
+                      <option value="true">Free Tour (Tips only)</option>
+                    </select>
                   </div>
                   <div>
-                    <label className="gd-label">Location *</label>
-                    <input name="location" type="text" className="gd-input" placeholder="e.g. Kyoto, Japan" required />
+                    <label className="gd-label">Price (USD)</label>
+                    <input name="price" type="number" className="gd-input" placeholder="45" min="0" />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div>
+                    <label className="gd-label">Country *</label>
+                    <input name="country" type="text" className="gd-input" placeholder="e.g. Japan" required />
                   </div>
                   <div>
-                    <label className="gd-label">Price (USD) *</label>
-                    <input name="price" type="number" className="gd-input" placeholder="45" min="1" required />
+                    <label className="gd-label">State/Region *</label>
+                    <input name="state" type="text" className="gd-input" placeholder="e.g. Kansai" required />
                   </div>
+                  <div>
+                    <label className="gd-label">City (Location) *</label>
+                    <input name="location" type="text" className="gd-input" placeholder="e.g. Kyoto" required />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <label className="gd-label">Exact Meeting Point (Address/Coordinates) *</label>
+                  <input name="exactLocation" type="text" className="gd-input" placeholder="e.g. 123 Main St, in front of the fountain" required />
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <label className="gd-label">Meeting Instructions *</label>
+                  <textarea name="meetingInstructions" className="gd-input" rows={2} placeholder="How travelers can find you..." required style={{ resize: 'vertical' }} />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                   <div>
                     <label className="gd-label">Duration</label>
                     <select name="duration" className="gd-input">
@@ -397,34 +454,45 @@ export default function GuideDashboard() {
                   </div>
                   <div>
                     <label className="gd-label">Category</label>
-                    <select className="gd-input">
-                      <option>Cultural</option>
-                      <option>Food</option>
-                      <option>Historical</option>
-                      <option>Adventure</option>
-                      <option>Nature</option>
+                    <select name="category" className="gd-input">
+                      <option value="Culture">Cultural</option>
+                      <option value="Food">Food</option>
+                      <option value="History">Historical</option>
+                      <option value="Adventure">Adventure</option>
                     </select>
                   </div>
                 </div>
+                
                 <div style={{ marginBottom: '1rem' }}>
                   <label className="gd-label">Description *</label>
                   <textarea name="description" className="gd-input" rows={4} placeholder="Describe what travelers will see and do..." required style={{ resize: 'vertical' }} />
                 </div>
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label className="gd-label">Cover Photo</label>
-                  <label className="gd-upload-zone" htmlFor="cover-photo">
-                    {coverPhoto ? (
-                      <div style={{ color: '#00F5D4', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <CheckCircle size={18} /> {coverPhoto.name}
-                      </div>
-                    ) : (
-                      <>
-                        <Upload size={24} style={{ color: '#64748B', marginBottom: '8px' }} />
-                        <span style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Click to upload cover image</span>
-                      </>
-                    )}
-                    <input id="cover-photo" type="file" accept="image/*" style={{ display: 'none' }} onChange={e => setCoverPhoto(e.target.files[0])} />
-                  </label>
+                
+                <div style={{ marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label className="gd-label">Cover Photo</label>
+                    <label className="gd-upload-zone" htmlFor="cover-photo">
+                      {coverPhoto ? (
+                        <div style={{ color: '#00F5D4', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <CheckCircle size={18} /> {coverPhoto.name}
+                        </div>
+                      ) : (
+                        <>
+                          <Upload size={24} style={{ color: '#64748B', marginBottom: '8px' }} />
+                          <span style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Upload Cover</span>
+                        </>
+                      )}
+                      <input id="cover-photo" type="file" accept="image/*" style={{ display: 'none' }} onChange={e => setCoverPhoto(e.target.files[0])} />
+                    </label>
+                  </div>
+                  <div>
+                    <label className="gd-label">Banner Image (Optional)</label>
+                    <label className="gd-upload-zone" htmlFor="banner-photo">
+                      <Upload size={24} style={{ color: '#64748B', marginBottom: '8px' }} />
+                      <span style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Upload Banner</span>
+                      <input id="banner-photo" type="file" accept="image/*" style={{ display: 'none' }} />
+                    </label>
+                  </div>
                 </div>
                 <button type="submit" className="db-btn-primary" style={{ padding: '0.85rem 2rem', fontSize: '1rem' }}>
                   Publish Listing
@@ -443,18 +511,58 @@ export default function GuideDashboard() {
                 <h3 style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Settings size={18} /> Profile Settings
                 </h3>
-                <form onSubmit={e => { e.preventDefault(); alert('✅ Profile updated!'); }}>
+                <form onSubmit={async e => { 
+                  e.preventDefault(); 
+                  const fd = new FormData(e.target);
+                  try {
+                    await api.updateProfile({
+                      name: fd.get('name'),
+                      bio: fd.get('bio'),
+                      city: fd.get('city'),
+                      country: fd.get('country'),
+                      languages: fd.get('languages'),
+                      socialLinks: {
+                        instagram: fd.get('instagram'),
+                        linkedin: fd.get('linkedin')
+                      }
+                    });
+                    alert('✅ Profile updated!'); 
+                    window.location.reload();
+                  } catch (err) {
+                    alert('Error updating profile');
+                  }
+                }}>
                   <div style={{ marginBottom: '1rem' }}>
                     <label className="gd-label">Full Name</label>
-                    <input type="text" className="gd-input" defaultValue={user.name} />
+                    <input name="name" type="text" className="gd-input" defaultValue={user.name} required />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                    <div>
+                      <label className="gd-label">City</label>
+                      <input name="city" type="text" className="gd-input" defaultValue={user.city || ''} placeholder="e.g. Rome" required />
+                    </div>
+                    <div>
+                      <label className="gd-label">Country</label>
+                      <input name="country" type="text" className="gd-input" defaultValue={user.country || ''} placeholder="e.g. Italy" required />
+                    </div>
                   </div>
                   <div style={{ marginBottom: '1rem' }}>
-                    <label className="gd-label">Location</label>
-                    <input type="text" className="gd-input" defaultValue={user.location || ''} placeholder="Your city" />
+                    <label className="gd-label">Languages Spoken</label>
+                    <input name="languages" type="text" className="gd-input" defaultValue={user.languagesSpoken || ''} placeholder="e.g. English, Italian" required />
                   </div>
                   <div style={{ marginBottom: '1.5rem' }}>
                     <label className="gd-label">Bio</label>
-                    <textarea className="gd-input" rows={4} defaultValue={user.bio || ''} placeholder="Tell travelers about yourself..." style={{ resize: 'vertical' }} />
+                    <textarea name="bio" className="gd-input" rows={4} defaultValue={user.bio || ''} placeholder="Tell travelers about yourself..." style={{ resize: 'vertical' }} required />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div>
+                      <label className="gd-label">Instagram URL</label>
+                      <input name="instagram" type="text" className="gd-input" defaultValue={user.socialLinks?.instagram || ''} placeholder="https://instagram.com/..." />
+                    </div>
+                    <div>
+                      <label className="gd-label">LinkedIn URL</label>
+                      <input name="linkedin" type="text" className="gd-input" defaultValue={user.socialLinks?.linkedin || ''} placeholder="https://linkedin.com/in/..." />
+                    </div>
                   </div>
                   <button type="submit" className="db-btn-primary">Save Changes</button>
                 </form>

@@ -133,10 +133,16 @@ router.post('/bookings', protect, async (req, res) => {
 
     // Create in-app notification for guide
     try {
-      await db.query(`
+      const notifRes = await db.query(`
         INSERT INTO notifications (user_id, type, title, message, reference_id)
-        VALUES ($1, 'booking_request', 'New Booking Request', $2, $3)
+        VALUES ($1, 'booking_request', 'New Booking Request', $2, $3) RETURNING *
       `, [numericGuideId, `You have a new booking request for ${date} at ${time}.`, booking.id]);
+
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('new_notification', notifRes.rows[0]);
+        io.emit('new_booking_request', { booking, guideId: numericGuideId });
+      }
     } catch (_) { /* notifications table may not exist yet */ }
 
     res.status(201).json({ booking, message: 'Booking request sent!' });
