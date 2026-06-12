@@ -6,7 +6,7 @@ const { toCamel } = require('../utils/camelCase');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'zilligo_super_secure_jwt_secret_key_2026';
 const generateToken = (id) => {
-  return jwt.sign({ id }, JWT_SECRET, { expiresIn: '15m' }); // Short lived access token
+  return jwt.sign({ id }, JWT_SECRET, { expiresIn: '30d' });
 };
 
 const generateRefreshToken = () => {
@@ -16,7 +16,7 @@ const generateRefreshToken = () => {
 // @desc    Register new user
 // @route   POST /api/auth/register
 exports.registerUser = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role, referralCode } = req.body;
 
   try {
     // Check if user exists
@@ -29,19 +29,37 @@ exports.registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Resolve referred_by if referralCode is provided
+    let referredBy = null;
+    if (referralCode) {
+      const referrer = await db.query('SELECT id FROM users WHERE referral_code = $1', [referralCode]);
+      if (referrer.rows.length > 0) {
+        referredBy = referrer.rows[0].id;
+      }
+    }
+
+    // Generate unique referral code for the new user
+    const newReferralCode = crypto.randomBytes(4).toString('hex') + Date.now().toString().slice(-4);
+
     // Create user
     const newUser = await db.query(
-      'INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role',
-      [name, email, hashedPassword, role || 'traveler']
+      'INSERT INTO users (name, email, password_hash, role, referral_code, referred_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, role, referral_code',
+      [name, email, hashedPassword, role || 'traveler', newReferralCode, referredBy]
     );
 
     const user = toCamel(newUser.rows[0]);
+
+    // If successfully referred, you could add points to referrer here
+    if (referredBy) {
+      await db.query('UPDATE users SET reward_points = reward_points + 100 WHERE id = $1', [referredBy]);
+    }
 
     res.status(201).json({
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
+      referralCode: user.referralCode,
       token: generateToken(user.id),
     });
   } catch (error) {
@@ -197,8 +215,6 @@ exports.getUserProfile = async (req, res) => {
 
     if (user) {
       res.json(toCamel(user));
-    } else if (req.user && req.user.id > 10000) {
-      res.json({ id: req.user.id, name: 'Demo User', role: 'traveler', verified: true, avatar: `https://ui-avatars.com/api/?name=Demo+User&background=00d4aa&color=000` });
     } else {
       res.status(404).json({ message: 'User not found' });
     }

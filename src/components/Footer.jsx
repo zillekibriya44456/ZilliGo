@@ -1,150 +1,116 @@
 import { Link } from 'react-router-dom';
-import { Globe, Mail, MapPin } from 'lucide-react';
+import { Globe, Mail, MapPin, Apple, Smartphone } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { t } from '../utils/translations';
 import './Footer.css';
 
 export default function Footer() {
   const { language, setLanguage, currency, setCurrency, currencies } = useSettings();
+  
   return (
-    <footer className="footer">
-      <div className="footer__glow footer__glow--left" />
-      <div className="footer__glow footer__glow--right" />
+    <footer className="liquid-footer">
       <div className="container">
-        <div className="footer__top" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr' }}>
-
-          {/* Brand */}
-          <div className="footer__brand">
-            <Link to="/" className="footer__logo">
-              <div className="footer__logo-icon"><Globe size={18} strokeWidth={2.5} /></div>
+        <div className="footer-top-row">
+          
+          {/* Brand & Newsletter */}
+          <div className="footer-brand-sect">
+            <Link to="/" className="footer-logo">
+              <Globe size={20} strokeWidth={2.5} className="logo-icon" />
               <span>Zilli<span>GO</span></span>
             </Link>
-            <p className="footer__tagline">
-              {t('footer_tagline', language) || 'Explore the world through the eyes of local experts. Live virtual tours from every corner of the globe.'}
+            <p className="footer-tagline">
+              {t('footer_tagline', language) || 'Immersive live virtual tours connecting the globe. Explore the world from anywhere.'}
             </p>
-            <div className="footer__socials">
-              <a href="#" className="footer__social" aria-label="Twitter / X">𝕏</a>
-              <a href="#" className="footer__social" aria-label="Instagram">IG</a>
-              <a href="#" className="footer__social" aria-label="YouTube">YT</a>
-              <a href="#" className="footer__social" aria-label="LinkedIn">in</a>
+            
+            <div className="footer-newsletter-compact">
+              <div className="fn-input-wrapper">
+                <Mail size={14} className="fn-icon" />
+                <input type="email" placeholder="Enter email for updates" />
+                <button className="fn-btn">Subscribe</button>
+              </div>
             </div>
-            <div style={{ marginTop: '1rem', fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <MapPin size={12} /> Global Platform · Available Worldwide
+
+            <div className="footer-app-badges">
+              <div className="app-badge">
+                <Apple size={18} />
+                <div>
+                  <div className="badge-sub">Download on the</div>
+                  <div className="badge-main">App Store</div>
+                </div>
+              </div>
+              <div className="app-badge">
+                <Smartphone size={18} />
+                <div>
+                  <div className="badge-sub">GET IT ON</div>
+                  <div className="badge-main">Google Play</div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Explore */}
-          <div className="footer__col">
-            <h4>Explore</h4>
-            <Link to="/explore">Browse Tours</Link>
-            <Link to="/guides">Find Guides</Link>
-            <Link to="/explore?type=live">Live Tours</Link>
-            <Link to="/explore?type=recorded">Recorded Tours</Link>
-            <Link to="/map">Global Map</Link>
-            <Link to="/leaderboard">Leaderboard</Link>
-          </div>
-
-          {/* For Guides & Creators */}
-          <div className="footer__col">
-            <h4>Guides & Creators</h4>
-            <Link to="/become-guide">Become a Guide</Link>
-            <Link to="/guide-dashboard">Guide Dashboard</Link>
-            <Link to="/trust-safety">Guide Verification</Link>
-            <Link to="/become-guide#earnings">Earnings & Payouts</Link>
-            <Link to="/community-guidelines">Creator Guidelines</Link>
-          </div>
-
-          {/* Company */}
-          <div className="footer__col">
-            <h4>Company</h4>
-            <Link to="/about">About ZilliGo</Link>
-            <Link to="/careers">Careers</Link>
-            <Link to="/press">Press Center</Link>
-            <Link to="/blog">Blog</Link>
-            <Link to="/sustainability">Sustainability</Link>
-            <Link to="/contact">Partnerships</Link>
-          </div>
-
-          {/* Resources */}
-          <div className="footer__col">
-            <h4>Resources</h4>
-            <Link to="/help">Help Center</Link>
-            <Link to="/safety">Safety Guidelines</Link>
-            <Link to="/community-guidelines">Community Guidelines</Link>
-            <Link to="/trust-safety">Trust & Safety</Link>
-            <Link to="/accessibility">Accessibility</Link>
-            <Link to="/contact">Contact Support</Link>
-          </div>
-
-          {/* Legal */}
-          <div className="footer__col">
-            <h4>Legal</h4>
-            <Link to="/privacy">Privacy Policy</Link>
-            <Link to="/terms">Terms of Service</Link>
-            <Link to="/cookies">Cookie Policy</Link>
-            <Link to="/dmca">DMCA Policy</Link>
-            <Link to="/disclaimer">Disclaimer</Link>
-            <Link to="/account-deletion">Account Deletion</Link>
-          </div>
-
-        </div>
-
-        {/* Newsletter Strip */}
-        <div style={{
-          borderTop: '1px solid var(--border-glass)',
-          borderBottom: '1px solid var(--border-glass)',
-          padding: '1.5rem 0',
-          margin: '1rem 0',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '1.5rem',
-          flexWrap: 'wrap'
-        }}>
-          <div>
-            <p style={{ color: 'var(--text-primary)', fontWeight: 700, margin: 0, fontSize: '0.95rem' }}>
-              Stay Updated with ZilliGo
-            </p>
-            <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.8rem' }}>
-              New tours, guide spotlights, and platform updates.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <div className="input-group" style={{ maxWidth: 300 }}>
-              <Mail size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-              <input type="email" placeholder="Your email address" style={{ fontSize: '0.875rem' }} />
+          {/* Nav Columns */}
+          <div className="footer-nav-grid">
+            <div className="footer-col">
+              <h4>Explore</h4>
+              <Link to="/explore">Marketplace</Link>
+              <Link to="/explore?type=live">Live Tours</Link>
+              <Link to="/explore?type=recorded">Recorded</Link>
+              <Link to="/guides">Global Guides</Link>
+              <Link to="/leaderboard">Leaderboard</Link>
             </div>
-            <button className="btn btn-primary btn-sm">Subscribe</button>
+            
+            <div className="footer-col">
+              <h4>Creators</h4>
+              <Link to="/become-guide">Become a Guide</Link>
+              <Link to="/guide-dashboard">Dashboard</Link>
+              <Link to="/trust-safety">Verification</Link>
+              <Link to="/community-guidelines">Guidelines</Link>
+              <Link to="/become-guide#earnings">Earnings</Link>
+            </div>
+
+            <div className="footer-col">
+              <h4>Company</h4>
+              <Link to="/about">About Us</Link>
+              <Link to="/careers">Careers</Link>
+              <Link to="/press">Press</Link>
+              <Link to="/blog">Blog</Link>
+              <Link to="/contact">Contact</Link>
+            </div>
+
+            <div className="footer-col">
+              <h4>Legal</h4>
+              <Link to="/privacy">Privacy</Link>
+              <Link to="/terms">Terms</Link>
+              <Link to="/cookies">Cookies</Link>
+              <Link to="/safety">Safety</Link>
+              <Link to="/help">Help Center</Link>
+            </div>
           </div>
         </div>
 
-        <div className="footer__bottom">
-          <div className="footer__bottom-left">
-            <p>© 2026 ZilliGo. All rights reserved. Built with ❤️ for global explorers.</p>
+        <div className="footer-bottom-row">
+          <div className="fb-left">
+            © 2026 ZilliGo Inc. All rights reserved. Built for global explorers.
+            <div className="fb-socials">
+              <a href="#">𝕏</a>
+              <a href="#">IG</a>
+              <a href="#">YT</a>
+              <a href="#">in</a>
+            </div>
           </div>
-          <div className="footer__bottom-right">
-            <Link to="/privacy">Privacy</Link>
-            <Link to="/terms">Terms</Link>
-            <Link to="/cookies">Cookies</Link>
-            <Link to="/accessibility">Accessibility</Link>
-            <div style={{ marginLeft: '8px', display: 'flex', gap: '8px' }}>
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border-glass)', borderRadius: '4px', fontSize: '0.75rem', padding: '2px 8px', cursor: 'pointer' }}
-              >
-                <option value="en">🌐 English</option>
+          
+          <div className="fb-right">
+            <div className="selector-group">
+              <select value={language} onChange={(e) => setLanguage(e.target.value)} className="footer-select">
+                <option value="en">🌐 English (US)</option>
                 <option value="es">🇪🇸 Español</option>
                 <option value="fr">🇫🇷 Français</option>
                 <option value="de">🇩🇪 Deutsch</option>
                 <option value="ja">🇯🇵 日本語</option>
-                <option value="ar">🇸🇦 العربية</option>
               </select>
-              <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border-glass)', borderRadius: '4px', fontSize: '0.75rem', padding: '2px 8px', cursor: 'pointer' }}
-              >
+            </div>
+            <div className="selector-group">
+              <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="footer-select">
                 {currencies.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>

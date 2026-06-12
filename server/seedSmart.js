@@ -84,6 +84,92 @@ const seedSmart = async () => {
       );
     }
 
+    console.log('Seeding User Profiles, Interests, and Languages for Matching...');
+    // Clear old matches seed data to prevent unique constraints or duplication
+    await pool.query('DELETE FROM friendships');
+    await pool.query('DELETE FROM user_interests');
+    await pool.query('DELETE FROM user_languages');
+    await pool.query('DELETE FROM user_profiles');
+
+    // Seed Profiles
+    const profiles = [
+      { name: 'David Chen', country: 'USA', city: 'New York', age: '20-30', occ: 'Engineer', style: 'cultural', type: 'Cultural Explorer', bio: 'Avid traveler and tech enthusiast.' },
+      { name: 'Kenji Sato', country: 'JPN', city: 'Kyoto', age: '30-40', occ: 'Guide', style: 'cultural', type: 'Cultural Explorer', bio: 'Kyoto local guide who loves Zen temples.' },
+      { name: 'Elena Rodriguez', country: 'ESP', city: 'Barcelona', age: '30-40', occ: 'Guide', style: 'cultural', type: 'Food Explorer', bio: 'Barcelona native who loves history and tapas.' },
+      { name: 'Amira Hassan', country: 'EGY', city: 'Cairo', age: '20-30', occ: 'Guide', style: 'historical', type: 'History Explorer', bio: 'Egyptologist who loves sharing ancient secrets.' },
+      { name: 'Sarah Miller', country: 'GBR', city: 'London', age: '20-30', occ: 'Writer', style: 'backpacking', type: 'Food Explorer', bio: 'Food blogger traveling the world looking for recipes.' }
+    ];
+
+    for (const p of profiles) {
+      await pool.query(`
+        INSERT INTO user_profiles (user_id, country_code, city, age_group, occupation, travel_style, explorer_type, bio)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [userMap[p.name], p.country, p.city, p.age, p.occ, p.style, p.type, p.bio]);
+    }
+
+    // Seed Interests
+    const interests = [
+      { name: 'David Chen', items: ['Food', 'Technology', 'History'] },
+      { name: 'Kenji Sato', items: ['Food', 'Technology', 'History'] },
+      { name: 'Elena Rodriguez', items: ['Food', 'Art', 'History'] },
+      { name: 'Amira Hassan', items: ['History', 'Archaeology', 'Travel'] },
+      { name: 'Sarah Miller', items: ['Food', 'Art', 'Music'] }
+    ];
+
+    for (const inter of interests) {
+      for (const item of inter.items) {
+        await pool.query('INSERT INTO user_interests (user_id, interest) VALUES ($1, $2)', [userMap[inter.name], item]);
+      }
+    }
+
+    // Seed Languages
+    const languages = [
+      { name: 'David Chen', langs: [{ code: 'en', prof: 'native' }, { code: 'ja', prof: 'learning' }] },
+      { name: 'Kenji Sato', langs: [{ code: 'ja', prof: 'native' }, { code: 'en', prof: 'fluent' }] },
+      { name: 'Elena Rodriguez', langs: [{ code: 'es', prof: 'native' }, { code: 'en', prof: 'fluent' }] },
+      { name: 'Amira Hassan', langs: [{ code: 'ar', prof: 'native' }, { code: 'en', prof: 'fluent' }] },
+      { name: 'Sarah Miller', langs: [{ code: 'en', prof: 'native' }, { code: 'es', prof: 'learning' }] }
+    ];
+
+    for (const langObj of languages) {
+      for (const l of langObj.langs) {
+        await pool.query('INSERT INTO user_languages (user_id, language_code, proficiency) VALUES ($1, $2, $3)', [userMap[langObj.name], l.code, l.prof]);
+      }
+    }
+
+    // Seed Olympic Events & Entries
+    console.log('Seeding Olympic Events & Entries...');
+    await pool.query('DELETE FROM olympic_votes');
+    await pool.query('DELETE FROM olympic_entries');
+    await pool.query('DELETE FROM olympic_events');
+
+    const eventRes = await pool.query(`
+      INSERT INTO olympic_events (category, title, description, start_time, end_time, is_live)
+      VALUES ($1, $2, $3, NOW() - INTERVAL '1 day', NOW() + INTERVAL '5 days', true) RETURNING id
+    `, ['food', 'Global Food Championship', 'Explore traditional food and culinary heritage from around the world.']);
+    
+    const eventId = eventRes.rows[0].id;
+
+    const entries = [
+      { guide: 'Kenji Sato', country: 'JPN', title: 'Kyoto Tea Ceremony & Kaiseki Artistry' },
+      { guide: 'Elena Rodriguez', country: 'ESP', title: 'Traditional Barcelona Tapas Showcase' },
+      { guide: 'Amira Hassan', country: 'EGY', title: 'Flavors of Cairo: Koshary & Traditional Bread Making' }
+    ];
+
+    for (const e of entries) {
+      const entryRes = await pool.query(`
+        INSERT INTO olympic_entries (event_id, guide_id, country_code, presentation_title, live_stream_url)
+        VALUES ($1, $2, $3, $4, $5) RETURNING id
+      `, [eventId, userMap[e.guide], e.country, e.title, 'https://youtube.com/live/example']);
+      
+      // Add initial votes
+      const entryId = entryRes.rows[0].id;
+      await pool.query(`
+        INSERT INTO olympic_votes (user_id, entry_id, category, points)
+        VALUES ($1, $2, $3, $4)
+      `, [userMap['David Chen'], entryId, 'best_taste', 10]);
+    }
+
     console.log('Smart Seed Completed Successfully!');
     process.exit(0);
   } catch (err) {

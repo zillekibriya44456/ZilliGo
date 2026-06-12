@@ -1,6 +1,5 @@
-import app from '../server/index.js';
+const app = require('../server/index.js');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   return app(req, res);
-}
-
+};

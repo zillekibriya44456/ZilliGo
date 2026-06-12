@@ -7,9 +7,9 @@ services:
     env: node
     region: singapore  # Change to oregon/ohio/frankfurt as needed
     plan: free
-    rootDir: server
-    buildCommand: npm install
-    startCommand: node index.js
+    rootDir: .
+    buildCommand: npm install && npm run build && cd server && npm install
+    startCommand: cd server && node index.js
     envVars:
       - key: NODE_ENV
         value: production

@@ -1,4 +1,5 @@
 const db = require('../utils/db');
+const { toCamel } = require('../utils/camelCase');
 
 // @desc    Check tour availability for a specific date and time slot
 // @route   GET /api/bookings/availability/:tour_id
@@ -102,7 +103,7 @@ exports.getMyBookings = async (req, res) => {
        ORDER BY b.booking_date DESC`,
       [req.user.id]
     );
-    res.json(result.rows);
+    res.json(toCamel(result.rows));
   } catch (error) {
     res.status(500).json({ message: 'Error fetching bookings' });
   }

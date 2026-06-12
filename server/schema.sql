@@ -13,9 +13,57 @@ CREATE TABLE users (
     verified BOOLEAN DEFAULT false,
     suspended BOOLEAN DEFAULT false,
     reward_points INTEGER DEFAULT 0,
+    referral_code VARCHAR(50) UNIQUE,
+    referred_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     is_seed_data BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Waitlist Table
+CREATE TABLE waitlist (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS support_tickets (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id),
+  title VARCHAR(255) NOT NULL,
+  category VARCHAR(50) NOT NULL,
+  priority VARCHAR(20) DEFAULT 'medium',
+  status VARCHAR(20) DEFAULT 'open',
+  description TEXT,
+  reply TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS safety_reports (
+  id SERIAL PRIMARY KEY,
+  reporter_id INT REFERENCES users(id),
+  reported_user_id INT REFERENCES users(id),
+  content_type VARCHAR(50) NOT NULL,
+  content_id INT,
+  reason TEXT NOT NULL,
+  status VARCHAR(20) DEFAULT 'open',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id SERIAL PRIMARY KEY,
+  admin_id INT REFERENCES users(id),
+  action VARCHAR(255) NOT NULL,
+  details TEXT,
+  ip_address VARCHAR(50),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_settings (
+  key VARCHAR(255) PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 
 -- Live Streams Table
 CREATE TABLE live_streams (
@@ -31,14 +79,119 @@ CREATE TABLE live_streams (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE live_chat_messages (
+    id SERIAL PRIMARY KEY,
+    room_id VARCHAR(100) NOT NULL,
+    sender_id VARCHAR(100) NOT NULL,
+    sender_name VARCHAR(255),
+    avatar VARCHAR(255),
+    text TEXT NOT NULL,
+    is_system BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE live_questions (
+    id SERIAL PRIMARY KEY,
+    room_id VARCHAR(100) NOT NULL,
+    asker_id VARCHAR(100) NOT NULL,
+    asker_name VARCHAR(255),
+    question TEXT NOT NULL,
+    is_answered BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Creator Economy Tables
+CREATE TABLE creator_profiles (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    bio TEXT,
+    youtube_url VARCHAR(255),
+    instagram_url VARCHAR(255),
+    tiktok_url VARCHAR(255),
+    is_verified BOOLEAN DEFAULT false,
+    total_views INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE uploaded_videos (
+    id SERIAL PRIMARY KEY,
+    creator_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    video_url VARCHAR(255) NOT NULL,
+    thumbnail_url VARCHAR(255),
+    views INTEGER DEFAULT 0,
+    likes INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE creator_followers (
+    creator_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    follower_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (creator_id, follower_id)
+);
+
 -- Activities (Platform Feed) Table
 CREATE TABLE activities (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    type VARCHAR(50) NOT NULL,
-    description TEXT NOT NULL,
-    is_seed_data BOOLEAN DEFAULT false,
+    activity_type VARCHAR(50) NOT NULL, 
+    reference_id INTEGER,
+    metadata JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Marketplace & Academy Tables
+CREATE TABLE digital_products (
+    id SERIAL PRIMARY KEY,
+    seller_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    cover_image VARCHAR(255),
+    file_url VARCHAR(255),
+    category VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_purchases (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    item_id INTEGER,
+    item_type VARCHAR(50),
+    purchase_price DECIMAL(10,2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE academy_courses (
+    id SERIAL PRIMARY KEY,
+    author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    category VARCHAR(100),
+    level VARCHAR(50),
+    cover_image VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE course_lessons (
+    id SERIAL PRIMARY KEY,
+    course_id INTEGER REFERENCES academy_courses(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    content TEXT,
+    video_url VARCHAR(255),
+    quiz_data JSONB,
+    order_index INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE course_enrollments (
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    course_id INTEGER REFERENCES academy_courses(id) ON DELETE CASCADE,
+    progress_data JSONB DEFAULT '{}',
+    completed BOOLEAN DEFAULT false,
+    enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, course_id)
 );
 
 -- Tours Table
@@ -93,6 +246,18 @@ CREATE TABLE messages (
     sender_id INTEGER REFERENCES users(id),
     receiver_id INTEGER REFERENCES users(id),
     content TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Notifications
+CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    reference_id VARCHAR(100),
     is_read BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -440,7 +605,7 @@ CREATE TABLE user_achievements (
 );
 
 -- ====================================================================
-2026 ADMIN ECOSYSTEM ADDITIONS
+-- 2026 ADMIN ECOSYSTEM ADDITIONS
 -- ====================================================================
 
 -- Support Tickets Table

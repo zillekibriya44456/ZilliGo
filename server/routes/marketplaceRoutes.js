@@ -185,18 +185,62 @@ router.get('/bookings/guide', protect, async (req, res) => {
   }
 });
 
-// PATCH /api/marketplace/bookings/:id/status — Guide accept/decline
+// PATCH /api/marketplace/bookings/:id/status — Guide accept/decline or Traveler cancel
 router.patch('/bookings/:id/status', protect, async (req, res) => {
-  const { status } = req.body; // 'confirmed' | 'declined' | 'completed'
+  const { status } = req.body;
   const allowed = ['confirmed', 'declined', 'completed', 'cancelled'];
   if (!allowed.includes(status)) return res.status(400).json({ message: 'Invalid status' });
 
   try {
+    // Verify booking exists and authorization
+    const existingRes = await db.query(`
+      SELECT b.user_id, t.guide_id 
+      FROM bookings b 
+      JOIN tours t ON b.tour_id = t.id 
+      WHERE b.id = $1
+    `, [req.params.id]);
+
+    if (!existingRes.rows[0]) return res.status(404).json({ message: 'Booking not found' });
+    
+    const { user_id, guide_id } = existingRes.rows[0];
+
+    // Authorization checks
+    if (status === 'cancelled' && req.user.id !== user_id) {
+      return res.status(403).json({ message: 'Only the traveler can cancel this booking' });
+    }
+    if (['confirmed', 'declined', 'completed'].includes(status) && req.user.id !== guide_id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Only the guide can perform this action' });
+    }
+
     const bookingRes = await db.query(`
       UPDATE bookings SET status = $1 WHERE id = $2 RETURNING *
     `, [status, req.params.id]);
 
-    if (!bookingRes.rows[0]) return res.status(404).json({ message: 'Booking not found' });
+    // Notify Traveler
+    let message = '';
+    if (status === 'confirmed') message = 'Your booking has been accepted by the guide!';
+    if (status === 'declined') message = 'Your booking was declined by the guide.';
+    if (status === 'cancelled') message = 'Your booking was cancelled.';
+    if (status === 'completed') message = 'Your tour is complete. Please leave a review!';
+
+      if (message && user_id) {
+      try {
+        const notifRes = await db.query(`
+          INSERT INTO notifications (user_id, type, title, message, reference_id)
+          VALUES ($1, 'booking_update', 'Booking Update', $2, $3) RETURNING *
+        `, [user_id, message, req.params.id]);
+        
+        // Real-time synchronization
+        const io = req.app.get('io');
+        if (io) {
+          io.emit('new_notification', notifRes.rows[0]);
+          io.emit('booking_status_change', { bookingId: req.params.id, status });
+        }
+      } catch (err) {
+        console.error('Failed to notify traveler:', err);
+      }
+    }
+
     res.json(toCamel(bookingRes.rows[0]));
   } catch (err) {
     res.status(500).json({ message: 'Error updating booking' });
@@ -206,23 +250,32 @@ router.patch('/bookings/:id/status', protect, async (req, res) => {
 // GET /api/marketplace/guide/stats — Guide earnings & stats
 router.get('/guide/stats', protect, async (req, res) => {
   try {
-    const [earningsRes, bookingCountRes, ratingRes, toursRes] = await Promise.all([
+    const [earningsRes, bookingCountRes, ratingRes, toursRes, monthlyRes] = await Promise.all([
       db.query(`SELECT COALESCE(SUM(total_amount * 0.85), 0) AS net_earnings FROM bookings WHERE tour_id IN (SELECT id FROM tours WHERE guide_id = $1) AND status = 'completed'`, [req.user.id]),
       db.query(`SELECT COUNT(*) AS total FROM bookings WHERE tour_id IN (SELECT id FROM tours WHERE guide_id = $1)`, [req.user.id]),
       db.query(`SELECT COALESCE(AVG(r.rating), 0)::DECIMAL(3,1) AS avg, COUNT(r.id) AS count FROM reviews r JOIN tours t ON r.tour_id = t.id WHERE t.guide_id = $1`, [req.user.id]),
       db.query(`SELECT COUNT(*) AS count FROM tours WHERE guide_id = $1`, [req.user.id]),
+      db.query(`
+        SELECT to_char(created_at, 'Mon') as month, COALESCE(SUM(total_amount * 0.85), 0) as amount
+        FROM bookings
+        WHERE tour_id IN (SELECT id FROM tours WHERE guide_id = $1) AND status = 'completed'
+        GROUP BY to_char(created_at, 'Mon'), date_part('month', created_at)
+        ORDER BY date_part('month', created_at)
+      `, [req.user.id]),
     ]);
 
     res.json({
-      netEarnings: parseFloat(earningsRes.rows[0].net_earnings) || 0,
-      totalBookings: parseInt(bookingCountRes.rows[0].total) || 0,
-      avgRating: parseFloat(ratingRes.rows[0].avg) || 0,
-      reviewCount: parseInt(ratingRes.rows[0].count) || 0,
-      totalTours: parseInt(toursRes.rows[0].count) || 0,
+      netEarnings: parseFloat(earningsRes.rows[0]?.net_earnings) || 0,
+      totalBookings: parseInt(bookingCountRes.rows[0]?.total) || 0,
+      avgRating: parseFloat(ratingRes.rows[0]?.avg) || 0,
+      reviewCount: parseInt(ratingRes.rows[0]?.count) || 0,
+      totalTours: parseInt(toursRes.rows[0]?.count) || 0,
+      monthlyEarnings: monthlyRes.rows.map(r => ({ month: r.month, amount: parseFloat(r.amount) }))
     });
   } catch (err) {
-    // Return demo stats if DB unavailable
-    res.json({ netEarnings: 8450, totalBookings: 456, avgRating: 4.7, reviewCount: 389, totalTours: 12 });
+    console.error(err);
+    // Return empty stats if DB fails
+    res.json({ netEarnings: 0, totalBookings: 0, avgRating: 0, reviewCount: 0, totalTours: 0, monthlyEarnings: [] });
   }
 });
 
@@ -254,12 +307,10 @@ router.post('/reviews', protect, async (req, res) => {
 // GET /api/marketplace/notifications — In-app notifications
 router.get('/notifications', protect, async (req, res) => {
   try {
-    const result = await db.query(`
-      SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20
-    `, [req.user.id]);
+    const result = await db.query('SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC', [req.user.id]);
     res.json(result.rows.map(toCamel));
   } catch (err) {
-    res.json([]);
+    res.status(500).json({ message: 'Error fetching notifications' });
   }
 });
 
@@ -267,9 +318,9 @@ router.get('/notifications', protect, async (req, res) => {
 router.patch('/notifications/read-all', protect, async (req, res) => {
   try {
     await db.query('UPDATE notifications SET is_read = true WHERE user_id = $1', [req.user.id]);
-    res.json({ success: true });
+    res.json({ message: 'All notifications marked as read' });
   } catch (err) {
-    res.json({ success: false });
+    res.status(500).json({ message: 'Error updating notifications' });
   }
 });
 

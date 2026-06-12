@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/api';
-import { TOURS, GUIDES } from '../data/mockData';
 import TourCard from '../components/TourCard';
 import RatingModal from '../components/RatingModal';
 import VerificationModal from '../components/VerificationModal';
@@ -26,14 +25,7 @@ const StatusBadge = ({ status }) => {
   return <span className={`badge ${s.cls}`}>{s.label}</span>;
 };
 
-/* ── Demo booking data (shown when DB is offline) ── */
-const DEMO_BOOKINGS = [
-  { id: 'b1', tourTitle: 'Tokyo Neon Lights Tour', tourLocation: 'Tokyo, Japan', coverImage: TOURS[0]?.coverImage, bookingDate: '2026-06-12', bookingTime: '14:00', status: 'confirmed', totalAmount: 45, guideName: 'Yuki Tanaka', guideAvatar: GUIDES?.[0]?.avatar, tourId: '1' },
-  { id: 'b2', tourTitle: 'Rajasthan Desert Safari', tourLocation: 'Jaipur, India', coverImage: TOURS[3]?.coverImage, bookingDate: '2026-06-18', bookingTime: '10:00', status: 'pending', totalAmount: 35, guideName: 'Priya Sharma', guideAvatar: GUIDES?.[1]?.avatar, tourId: '4' },
-  { id: 'b3', tourTitle: 'Paris Midnight Walk', tourLocation: 'Paris, France', coverImage: TOURS[1]?.coverImage, bookingDate: '2026-05-20', bookingTime: '20:00', status: 'completed', totalAmount: 55, guideName: 'Sophie Dubois', guideAvatar: GUIDES?.[2]?.avatar, tourId: '2', rating: 5 },
-];
 
-const DEMO_WISHLIST = TOURS.filter(t => ['2','5','7'].includes(t.id));
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -59,16 +51,26 @@ export default function Dashboard() {
           api.getTravelerBookings().catch(() => null),
           api.getNotifications().catch(() => []),
         ]);
-        setBookings(Array.isArray(bData) && bData.length > 0 ? bData : DEMO_BOOKINGS);
+        setBookings(Array.isArray(bData) ? bData : []);
         setNotifications(Array.isArray(nData) ? nData : []);
       } catch (_) {
-        setBookings(DEMO_BOOKINGS);
+        setBookings([]);
       } finally {
         setLoading(false);
       }
     };
     load();
   }, []);
+
+  const handleCancelBooking = async (bookingId) => {
+    if (!window.confirm('Are you sure you want to cancel this booking?')) return;
+    try {
+      await api.updateBookingStatus(bookingId, 'cancelled');
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } : b));
+    } catch (err) {
+      alert('Failed to cancel booking. Please try again.');
+    }
+  };
 
   const filteredBookings = bookings.filter(b => {
     const matchesSearch = b.tourTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -139,8 +141,7 @@ export default function Dashboard() {
           {[
             { icon: '🗓️', label: 'Upcoming Tours', value: upcoming.length, accent: 'teal' },
             { icon: '🏁', label: 'Completed', value: completed.length, accent: 'purple' },
-            { icon: '⭐', label: 'Avg Rating Given', value: completed.filter(b => b.rating).length > 0 ? (completed.reduce((s, b) => s + (b.rating || 0), 0) / completed.filter(b => b.rating).length).toFixed(1) : '—', accent: 'amber' },
-            { icon: '❤️', label: 'Wishlist', value: DEMO_WISHLIST.length, accent: 'rose' },
+            { icon: '⭐', label: 'Avg Rating Given', value: completed.filter(b => b.rating).length > 0 ? (completed.reduce((s, b) => s + (b.rating || 0), 0) / completed.filter(b => b.rating).length).toFixed(1) : '—', accent: 'amber' }
           ].map(s => (
             <div key={s.label} className={`db-stat-card db-stat-${s.accent}`}>
               <span className="db-stat-icon">{s.icon}</span>
@@ -160,7 +161,6 @@ export default function Dashboard() {
             { id: 'bookings', label: 'My Bookings', count: bookings.length },
             { id: 'upcoming', label: 'Upcoming', count: upcoming.length },
             { id: 'completed', label: 'Completed', count: completed.length },
-            { id: 'wishlist', label: 'Wishlist', count: DEMO_WISHLIST.length },
             { id: 'payments', label: 'Payments' },
           ].map(t => (
             <button
@@ -240,6 +240,11 @@ export default function Dashboard() {
                             <Play size={13} /> Join
                           </Link>
                         )}
+                        {(b.status === 'pending' || b.status === 'confirmed') && (
+                          <button className="db-btn-secondary btn-sm" onClick={() => handleCancelBooking(b.id)} style={{ color: 'var(--accent-rose)', borderColor: 'var(--accent-rose)', background: 'transparent' }}>
+                            <XCircle size={13} /> Cancel
+                          </button>
+                        )}
                         {b.status === 'completed' && !b.rating && (
                           <button className="db-btn-secondary btn-sm" onClick={() => setReviewTarget(b)}>
                             <Star size={13} /> Review
@@ -293,6 +298,11 @@ export default function Dashboard() {
                       <Play size={14} /> Join Tour
                     </Link>
                   )}
+                  {(b.status === 'pending' || b.status === 'confirmed') && (
+                    <button className="db-btn-secondary" onClick={() => handleCancelBooking(b.id)} style={{ marginTop: '8px', width: '100%', color: 'var(--accent-rose)', borderColor: 'var(--accent-rose)', background: 'transparent' }}>
+                      <XCircle size={14} /> Cancel
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -339,8 +349,10 @@ export default function Dashboard() {
 
         {/* ── Wishlist Tab ── */}
         {activeTab === 'wishlist' && (
-          <div className="db-grid">
-            {DEMO_WISHLIST.map(t => <TourCard key={t.id} tour={t} />)}
+          <div className="db-empty">
+            <span>❤️</span>
+            <h3>Your wishlist is empty</h3>
+            <p>Save tours you like here!</p>
           </div>
         )}
 

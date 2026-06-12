@@ -79,7 +79,7 @@ export const api = {
   }).then(res => res.json()),
 
   // Payments
-  createCheckoutSession: (data) => fetch(`${API_BASE}/payments/create-checkout-session`, {
+  createCheckoutSession: (data) => fetch(`${API_BASE}/payments/stripe/create-checkout`, {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify(data),
@@ -138,6 +138,8 @@ export const api = {
     headers: getHeaders(),
   }).then(res => res.json()),
 
+  getGuideProfile: (id) => fetch(`${API_BASE}/marketplace/guides/${id}`).then(res => res.json()),
+
   updateAdminReport: (id, status) => fetch(`${API_BASE}/admin/reports/${id}`, {
     method: 'PUT',
     headers: getHeaders(),
@@ -178,6 +180,20 @@ export const api = {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify(data),
+  }).then(res => res.json()),
+
+  getGuideApplicationStatus: () => fetch(`${API_BASE}/guides/status`, {
+    headers: getHeaders(),
+  }).then(res => res.json()),
+
+  getGuideApplications: () => fetch(`${API_BASE}/guides/applications`, {
+    headers: getHeaders(),
+  }).then(res => res.json()),
+
+  updateGuideApplication: (id, status) => fetch(`${API_BASE}/guides/applications/${id}`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify({ status }),
   }).then(res => res.json()),
 
   getGuides: () => fetch(`${API_BASE}/guides`).then(res => res.json()),
@@ -227,4 +243,82 @@ export const api = {
   // Public
   getPublicHomepage: () => fetch(`${API_BASE}/public/homepage`).then(res => res.json()),
   getPublicLiveStream: (id) => fetch(`${API_BASE}/public/live/${id}`).then(res => res.json()),
+  getLiveChat: (id) => fetch(`${API_BASE}/public/live/${id}/chat`).then(res => res.json()),
+  getLiveQuestions: (id) => fetch(`${API_BASE}/public/live/${id}/questions`).then(res => res.json()),
+
+  // Creators
+  getCreatorProfile: (id) => fetch(`${API_BASE}/creators/profile/${id}`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+  }).then(res => res.json()),
+  updateCreatorProfile: (data) => fetch(`${API_BASE}/creators/profile`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+  uploadVideo: (data) => fetch(`${API_BASE}/creators/videos`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+  followCreator: (id) => fetch(`${API_BASE}/creators/follow/${id}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+  }).then(res => res.json()),
+
+  // Shop & Academy
+  getDigitalProducts: (category) => fetch(`${API_BASE}/shop/products${category ? `?category=${category}` : ''}`).then(res => res.json()),
+  purchaseProduct: (data) => fetch(`${API_BASE}/shop/purchase`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+  getCourses: () => fetch(`${API_BASE}/academy/courses`).then(res => res.json()),
+  getCourseLessons: (id) => fetch(`${API_BASE}/academy/courses/${id}/lessons`).then(res => res.json()),
+  enrollInCourse: (courseId) => fetch(`${API_BASE}/academy/enroll`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+    body: JSON.stringify({ courseId }),
+  }).then(res => res.json()),
+  updateCourseProgress: (data) => fetch(`${API_BASE}/academy/progress`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+
+  // Agora WebRTC
+  getAgoraToken: (channelName, role = 'subscriber') => fetch(`${API_BASE}/agora/token/${channelName}?role=${role}`, {
+    headers: getHeaders(),
+  }).then(res => res.json()),
+
+  startLiveStream: (tourId) => fetch(`${API_BASE}/agora/start-stream`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ tourId })
+  }).then(res => res.json()),
+
+  // Matching Suggestions
+  getSuggestions: (userId) => fetch(`${API_BASE}/matching/suggestions/${userId}`, {
+    headers: getHeaders(),
+  }).then(res => res.json()),
+
+  // Olympics
+  getOlympicLeaderboard: () => fetch(`${API_BASE}/olympics/leaderboard`).then(res => res.json()),
+  castOlympicVote: (data) => fetch(`${API_BASE}/olympics/vote`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
+
+  // Messages
+  getConversations: () => fetch(`${API_BASE}/messages/conversations`, {
+    headers: getHeaders(),
+  }).then(res => res.json()),
+  getChatHistory: (partnerId) => fetch(`${API_BASE}/messages/history/${partnerId}`, {
+    headers: getHeaders(),
+  }).then(res => res.json()),
+  sendMessage: (data) => fetch(`${API_BASE}/messages`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  }).then(res => res.json()),
 };

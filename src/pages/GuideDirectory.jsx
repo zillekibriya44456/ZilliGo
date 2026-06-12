@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Search, Filter, Star, MapPin, Globe, CheckCircle } from 'lucide-react';
 import GuideCard from '../components/GuideCard';
-import { GUIDES } from '../data/mockData';
 import { api } from '../utils/api';
 import './GuideDirectory.css';
 
@@ -23,10 +22,10 @@ export default function GuideDirectory() {
         if (res?.guides?.length > 0) {
           setApiGuides(res.guides);
         } else {
-          setApiGuides(GUIDES); // Fallback to mock data if empty
+          setApiGuides([]); 
         }
       } catch (err) {
-        setApiGuides(GUIDES); // Fallback to mock data on error
+        setApiGuides([]); 
       } finally {
         setLoading(false);
       }

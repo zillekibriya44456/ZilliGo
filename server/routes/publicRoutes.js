@@ -1,12 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../utils/db');
+const NodeCache = require('node-cache');
+
+// Cache homepage for 60 seconds
+const cache = new NodeCache({ stdTTL: 60 });
 const { toCamel } = require('../utils/camelCase');
 
 // @desc    Get dynamic homepage data (Smart Priority System)
 // @route   GET /api/public/homepage
 router.get('/homepage', async (req, res) => {
   try {
+    const cacheKey = 'homepage_data';
+    const cachedData = cache.get(cacheKey);
+
+    if (cachedData) {
+      console.log('⚡ Serving homepage from cache');
+      return res.json(cachedData);
+    }
+
     // 1. Featured Tours (Combine real and seed, prioritizing real, limit 12)
     const toursRes = await db.query(`
       SELECT t.*, u.name as guide_name, u.avatar as guide_avatar 
@@ -53,7 +65,7 @@ router.get('/homepage', async (req, res) => {
     `);
     const stats = statsRes.rows[0];
 
-    res.json({
+    const responseData = {
       tours: toCamel(toursRes.rows),
       guides: toCamel(guidesRes.rows),
       liveStreams: toCamel(liveRes.rows),
@@ -64,7 +76,12 @@ router.get('/homepage', async (req, res) => {
         cities: parseInt(stats.total_cities) || 1, // At least 1 (the world)
         travelers: parseInt(stats.total_travelers) || 0
       }
-    });
+    };
+
+    // Save to cache
+    cache.set(cacheKey, responseData);
+
+    res.json(responseData);
 
   } catch (error) {
     console.error('Homepage data error:', error);
@@ -92,6 +109,30 @@ router.get('/live/:id', async (req, res) => {
   } catch (error) {
     console.error('Error fetching live stream:', error);
     res.status(500).json({ message: 'Error fetching live stream' });
+  }
+});
+
+// GET /api/public/live/:id/chat — Get live room chat history
+router.get('/live/:id/chat', async (req, res) => {
+  try {
+    const roomId = `live_${req.params.id}`;
+    const result = await db.query('SELECT * FROM live_chat_messages WHERE room_id = $1 ORDER BY created_at ASC', [roomId]);
+    res.json(result.rows.map(toCamel));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error fetching chat history' });
+  }
+});
+
+// GET /api/public/live/:id/questions — Get live room questions
+router.get('/live/:id/questions', async (req, res) => {
+  try {
+    const roomId = `live_${req.params.id}`;
+    const result = await db.query('SELECT * FROM live_questions WHERE room_id = $1 ORDER BY created_at ASC', [roomId]);
+    res.json(result.rows.map(toCamel));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error fetching questions' });
   }
 });
 

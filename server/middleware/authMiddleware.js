@@ -18,11 +18,7 @@ const protect = async (req, res, next) => {
       req.user = result.rows[0];
 
       if (!req.user) {
-        if (decoded.id && decoded.id > 10000) {
-          req.user = { id: decoded.id, role: 'traveler', name: 'Demo User' };
-        } else {
-          return res.status(401).json({ message: 'Not authorized, user not found' });
-        }
+        return res.status(401).json({ message: 'Not authorized, user not found' });
       }
 
       next();

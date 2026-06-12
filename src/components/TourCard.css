@@ -1,271 +1,341 @@
-/* Premium Tour Card Design System */
-.premium-tour-card {
+/* ============================================================
+   Premium Liquid Tour Card Styles
+   ============================================================ */
+
+.liquid-tour-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  background: rgba(20, 20, 25, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
   overflow: hidden;
   text-decoration: none;
-  color: #fff;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  backdrop-filter: blur(20px);
-  position: relative;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-glass);
+  transition: var(--transition-base);
+  isolation: isolate;
   height: 100%;
 }
 
-.premium-tour-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 212, 170, 0.1);
-  border-color: rgba(0, 212, 170, 0.3);
+/* Animated Border Glow Effect */
+.liquid-tour-card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: var(--grad-aurora);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity var(--transition-slow);
+  border-radius: calc(var(--radius-xl) + 2px);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
 }
 
-.premium-tour-card:hover .ptc-image {
-  transform: scale(1.1);
+.liquid-tour-card:hover::before {
+  opacity: 1;
 }
 
-.ptc-image-wrap {
+.liquid-tour-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-aurora);
+  background: var(--bg-glass-hover);
+}
+
+/* ── Image Section ── */
+.ltc-image-wrap {
   position: relative;
   width: 100%;
-  padding-top: 56.25%; /* 16:9 Aspect Ratio */
+  aspect-ratio: 16/10;
   overflow: hidden;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 
-.ptc-image {
-  position: absolute;
-  top: 0;
-  left: 0;
+.ltc-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.6s ease;
+  transition: transform var(--transition-slow);
 }
 
-.ptc-image-overlay {
+.liquid-tour-card:hover .ltc-image {
+  transform: scale(1.05);
+}
+
+.ltc-image-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 40%, rgba(10,10,15,0.9) 100%);
+  background: linear-gradient(to bottom, rgba(6, 11, 22, 0.2) 0%, rgba(6, 11, 22, 0) 40%, rgba(6, 11, 22, 0.9) 100%);
+  pointer-events: none;
 }
 
-.ptc-badges-top {
+/* Actions Menu (Wishlist & Share) */
+.ltc-actions {
   position: absolute;
   top: 12px;
-  left: 12px;
   right: 12px;
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
   z-index: 2;
 }
 
-.ptc-badge {
+.ltc-action-btn {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-glass-strong);
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.ltc-action-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.1);
+}
+
+/* Badges */
+.ltc-badges-top {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 2;
+}
+
+.ltc-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 100px;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius-full);
   font-size: 0.7rem;
-  font-weight: 800;
-  text-transform: uppercase;
+  font-weight: 700;
   letter-spacing: 0.5px;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(8px);
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 .live-badge {
-  background: rgba(244, 63, 94, 0.9);
-  color: #fff;
-  box-shadow: 0 0 15px rgba(244, 63, 94, 0.5);
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: pulse-red 2s infinite;
 }
 
-.recorded-badge {
-  background: rgba(139, 92, 246, 0.9);
-  color: #fff;
+.category-badge {
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--text-primary);
+  border: 1px solid var(--border-glass-strong);
 }
 
-.featured-badge {
-  background: rgba(245, 158, 11, 0.9);
-  color: #000;
-}
-
-.ai-badge {
-  background: rgba(0, 212, 170, 0.8);
-  color: #000;
-}
-
-.live-dot {
-  width: 6px;
-  height: 6px;
-  background: currentColor;
-  border-radius: 50%;
-  animation: pulse 1.5s infinite;
-}
-
-.ptc-viewers {
+.ltc-viewers {
   position: absolute;
   bottom: 12px;
   left: 12px;
   display: flex;
   align-items: center;
   gap: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
   font-size: 0.75rem;
-  font-weight: 700;
-  color: #fff;
-  z-index: 2;
+  font-weight: 600;
+  color: white;
+  border: 1px solid var(--border-glass);
 }
 
-.ptc-body {
-  padding: 16px;
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 8px white;
+}
+
+/* ── Content Section ── */
+.ltc-body {
+  padding: var(--space-24);
   display: flex;
   flex-direction: column;
   flex: 1;
 }
 
-.ptc-location {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 8px;
+.ltc-location {
+  font-size: 0.85rem;
+  color: var(--accent-teal);
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-bottom: var(--space-8);
+  letter-spacing: 0.5px;
 }
 
-.ptc-flag {
-  font-size: 1.1rem;
-}
-
-.ptc-title {
-  font-size: 1.2rem;
-  font-weight: 800;
+.ltc-title {
+  font-size: 1.25rem;
   line-height: 1.3;
-  margin: 0 0 12px 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  height: 3.1rem; /* Forces consistent height for 2 lines */
+  margin-bottom: var(--space-16);
+  color: var(--text-primary);
+  font-family: var(--font-display);
 }
 
-.ptc-guide {
+/* Guide Profile Strip */
+.ltc-guide-strip {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255,255,255,0.02);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-glass);
+  margin-bottom: var(--space-16);
+  transition: var(--transition-fast);
 }
 
-.ptc-guide-avatar {
-  width: 28px;
-  height: 28px;
+.liquid-tour-card:hover .ltc-guide-strip {
+  background: rgba(255,255,255,0.05);
+}
+
+.ltc-guide-avatar {
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.2);
+  object-fit: cover;
+  border: 2px solid var(--accent-teal);
 }
 
-.ptc-guide-info {
+.ltc-guide-info {
   display: flex;
   flex-direction: column;
 }
 
-.ptc-guide-name {
-  font-size: 0.85rem;
+.ltc-guide-name {
+  font-size: 0.9rem;
   font-weight: 700;
-}
-
-.ptc-guide-verified {
-  font-size: 0.7rem;
-  color: var(--accent-teal);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
 }
 
-.ptc-rating {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 16px;
+.verified-icon {
+  color: var(--accent-blue);
+  fill: white;
 }
 
-.ptc-rating-score {
-  font-weight: 800;
-  font-size: 0.95rem;
+.ltc-guide-level {
+  font-size: 0.75rem;
+  color: var(--accent-amber);
+  font-weight: 600;
 }
 
-.ptc-rating-count {
-  color: var(--text-muted);
-  font-size: 0.8rem;
-}
-
-.ptc-details-grid {
+/* Grid Details */
+.ltc-details-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 20px;
-  padding: 12px;
-  background: rgba(255,255,255,0.03);
-  border-radius: 12px;
+  gap: 12px;
+  margin-bottom: var(--space-24);
+  padding-bottom: var(--space-16);
+  border-bottom: 1px solid var(--border-glass);
 }
 
-.ptc-detail-item {
+.ltc-detail-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
+  gap: 8px;
+  font-size: 0.8rem;
   color: var(--text-secondary);
 }
 
 .detail-icon {
-  color: var(--accent-teal);
+  color: var(--text-muted);
 }
 
-.ptc-footer {
+/* Next Slot */
+.ltc-slot {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--space-24);
+}
+
+.ltc-slot-time {
+  color: var(--text-primary);
+  font-weight: 600;
+  background: var(--bg-glass-strong);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* Footer / CTA */
+.ltc-footer {
   margin-top: auto;
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  padding-top: 16px;
+  align-items: center;
 }
 
-.ptc-price-box {
+.ltc-price-box {
   display: flex;
   flex-direction: column;
 }
 
-.ptc-price-label {
-  font-size: 0.7rem;
+.ltc-price-label {
+  font-size: 0.75rem;
   color: var(--text-muted);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
 }
 
-.ptc-price-value {
+.ltc-price-value {
   font-size: 1.4rem;
-  font-weight: 900;
-  color: #fff;
-}
-
-.ptc-price-per {
-  font-size: 0.8rem;
-  font-weight: 400;
-  color: var(--text-muted);
-}
-
-.ptc-book-btn {
-  background: var(--accent-teal);
-  color: #000;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 100px;
   font-weight: 800;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  color: var(--text-primary);
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
 }
 
-.premium-tour-card:hover .ptc-book-btn {
-  background: #fff;
-  transform: scale(1.05);
-  box-shadow: 0 0 20px rgba(255,255,255,0.4);
+.ltc-price-per {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.ltc-book-btn {
+  background: var(--grad-teal);
+  color: #060b16;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: var(--transition-base);
+  box-shadow: var(--shadow-teal);
+}
+
+.ltc-book-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 212, 170, 0.4);
 }

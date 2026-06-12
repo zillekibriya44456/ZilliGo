@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /guide-dashboard/
+Disallow: /admin/
+Disallow: /messages/
+Disallow: /auth/
+Disallow: /reset-password/
+Disallow: /*?*token=
+
+Sitemap: https://zilligo.com/sitemap.xml

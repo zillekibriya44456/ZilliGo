@@ -8,16 +8,22 @@
 :root {
   /* Background */
   --bg-primary: #060b16;
-  --bg-secondary: #0d1526;
-  --bg-card: rgba(255, 255, 255, 0.04);
-  --bg-glass: rgba(255, 255, 255, 0.06);
-  --bg-glass-strong: rgba(255, 255, 255, 0.1);
+  --bg-secondary: #0a1122;
+  --bg-card: rgba(255, 255, 255, 0.03);
+  --bg-glass: rgba(255, 255, 255, 0.05);
+  --bg-glass-strong: rgba(255, 255, 255, 0.08);
   --bg-glass-hover: rgba(255, 255, 255, 0.12);
 
-  /* Borders */
-  --border-glass: rgba(255, 255, 255, 0.1);
-  --border-glass-strong: rgba(255, 255, 255, 0.18);
+  /* Borders & Shadows */
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-glass-strong: rgba(255, 255, 255, 0.15);
   --border-accent: rgba(0, 212, 170, 0.4);
+  
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 40px rgba(0, 212, 170, 0.15);
+  --shadow-aurora: 0 0 80px rgba(139, 92, 246, 0.15);
 
   /* Accent Colors */
   --accent-teal: #00d4aa;
@@ -30,39 +36,43 @@
   --accent-rose: #f43f5e;
   --accent-blue: #3b82f6;
 
-  /* Text */
+  /* Typography Colors */
   --text-primary: #f8fafc;
-  --text-secondary: rgba(248, 250, 252, 0.7);
-  --text-muted: rgba(248, 250, 252, 0.4);
+  --text-secondary: rgba(248, 250, 252, 0.75);
+  --text-muted: rgba(248, 250, 252, 0.45);
   --text-accent: #00d4aa;
 
-  /* Gradients */
-  --grad-hero: linear-gradient(135deg, #060b16 0%, #0d1a30 50%, #060b16 100%);
+  /* Premium Gradients */
+  --grad-hero: linear-gradient(145deg, #060b16 0%, #0d1a30 50%, #060b16 100%);
   --grad-teal: linear-gradient(135deg, #00d4aa, #0096cc);
-  --grad-amber: linear-gradient(135deg, #f59e0b, #ef4444);
-  --grad-purple: linear-gradient(135deg, #8b5cf6, #ec4899);
-  --grad-card: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  --grad-aurora: linear-gradient(135deg, rgba(139, 92, 246, 0.8), rgba(0, 212, 170, 0.8), rgba(59, 130, 246, 0.8));
+  --grad-card: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.01) 100%);
+  --grad-glass: linear-gradient(to bottom right, rgba(255,255,255,0.1), rgba(255,255,255,0.0));
 
-  /* Shadows */
-  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 16px 64px rgba(0, 0, 0, 0.5);
-  --shadow-teal: 0 0 32px rgba(0, 212, 170, 0.25);
-  --shadow-amber: 0 0 32px rgba(245, 158, 11, 0.25);
+  /* Typography Scale */
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Outfit', system-ui, -apple-system, sans-serif;
 
-  /* Typography */
-  --font-body: 'Inter', sans-serif;
-  --font-display: 'Outfit', sans-serif;
-
-  /* Spacing */
-  --space-xs: 0.25rem;
-  --space-sm: 0.5rem;
-  --space-md: 1rem;
-  --space-lg: 1.5rem;
-  --space-xl: 2rem;
-  --space-2xl: 3rem;
-  --space-3xl: 4rem;
-  --space-4xl: 6rem;
+  /* 8px Spacing Grid System */
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-48: 48px;
+  --space-64: 64px;
+  --space-96: 96px;
+  --space-128: 128px;
+  
+  /* Legacy mapping (gradually phasing out but needed to prevent breaking existing components) */
+  --space-xs: var(--space-8);
+  --space-sm: var(--space-12);
+  --space-md: var(--space-16);
+  --space-lg: var(--space-24);
+  --space-xl: var(--space-32);
+  --space-2xl: var(--space-48);
+  --space-3xl: var(--space-64);
+  --space-4xl: var(--space-96);
 
   /* Border Radius */
   --radius-sm: 8px;
@@ -72,13 +82,14 @@
   --radius-2xl: 32px;
   --radius-full: 9999px;
 
-  /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Premium Motion Transitions */
+  --transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-base: 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 500ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* Navbar */
-  --navbar-height: 72px;
+  --navbar-height: 80px;
 }
 
 /* ── Reset & Base ── */
@@ -140,15 +151,15 @@ img, video {
 
 /* ── Layout ── */
 .container {
-  width: 94%;
-  max-width: 1600px;
+  width: 100%;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 var(--space-xl);
+  padding: 0 var(--space-24);
 }
 
-@media (min-width: 1440px) {
+@media (min-width: 1600px) {
   .container {
-    max-width: 1700px;
+    max-width: 1600px;
   }
 }
 

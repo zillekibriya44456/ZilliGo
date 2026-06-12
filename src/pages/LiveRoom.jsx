@@ -1,330 +1,367 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Mic, MicOff, Video, VideoOff, MessageCircle, Users, Heart, Share2, Phone, Settings, MoreHorizontal, Send, Star, Globe, Clock, ShieldAlert, ShoppingBasket, Glasses } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, MessageCircle, Users, Heart, Share2, Phone, Settings, Send, Star, Globe, Clock, ShieldAlert, ShoppingBasket, Glasses, PlayCircle, HelpCircle, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
+import { io } from 'socket.io-client';
+import AgoraRTC from 'agora-rtc-sdk-ng';
 import RatingModal from '../components/RatingModal';
 import './LiveRoom.css';
 
-const MOCK_CHAT = [
-  { id: 1, user: 'Sarah C.', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=40&q=80', msg: 'This is incredible! 😍', time: '2:34 PM' },
-  { id: 2, user: 'David O.', avatar: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?w=40&q=80', msg: 'How old is that building?', time: '2:35 PM' },
-  { id: 3, user: 'Maria G.', avatar: 'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?w=40&q=80', msg: '🔥🔥🔥 Amazing!', time: '2:36 PM' },
-  { id: 4, user: 'James W.', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&q=80', msg: 'What\'s the best time to visit?', time: '2:37 PM' },
-];
+const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001';
 
 export default function LiveRoom() {
   const { id } = useParams();
+  const { user } = useAuth();
+  
   const [streamData, setStreamData] = useState(null);
   const [loading, setLoading] = useState(true);
   
   const [chatMsg, setChatMsg] = useState('');
-  const [chatMessages, setChatMessages] = useState(MOCK_CHAT);
-  const [micOn, setMicOn] = useState(true);
-  const [videoOn, setVideoOn] = useState(true);
-  const [viewers, setViewers] = useState(213);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [questionText, setQuestionText] = useState('');
+  const [viewers, setViewers] = useState(0);
   const [tipSent, setTipSent] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
   const [showRating, setShowRating] = useState(false);
   const [emergencyActive, setEmergencyActive] = useState(false);
   const [vrMode, setVrMode] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
+
+  const [agoraClient, setAgoraClient] = useState(null);
+  const [localTracks, setLocalTracks] = useState([]);
+  const [micOn, setMicOn] = useState(true);
+  const [videoOn, setVideoOn] = useState(true);
+  const [agoraStatus, setAgoraStatus] = useState('Initializing stream...');
+
+  const socketRef = useRef(null);
+  const chatEndRef = useRef(null);
+  const videoContainerRef = useRef(null);
 
   useEffect(() => {
-    // Fetch live stream from database
-    api.getPublicLiveStream(id)
-      .then(data => {
-        setStreamData(data);
-        if (data.viewerCount) setViewers(data.viewerCount);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
-
-    const interval = setInterval(() => {
-      setViewers(v => v + Math.floor(Math.random() * 3 - 1));
-    }, 3000);
-    return () => clearInterval(interval);
+    Promise.all([
+      api.getPublicLiveStream(id).catch(() => null),
+      api.getLiveChat(id).catch(() => []),
+      api.getLiveQuestions(id).catch(() => [])
+    ]).then(([data, chatHistory, questionsHistory]) => {
+      if (data) { setStreamData(data); if (data.viewerCount) setViewers(data.viewerCount); }
+      if (Array.isArray(chatHistory)) {
+        setChatMessages(chatHistory.map(c => ({
+          id: c.id, user: c.senderName, msg: c.text, avatar: c.avatar || `https://ui-avatars.com/api/?name=${c.senderName}`,
+          isSystem: c.isSystem, time: new Date(c.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        })));
+      }
+      if (Array.isArray(questionsHistory)) setQuestions(questionsHistory);
+      setLoading(false);
+    }).catch(err => { console.error(err); setLoading(false); });
   }, [id]);
 
-  const tour = streamData ? {
-    id: streamData.id,
-    title: streamData.title,
-    location: streamData.location,
-    language: streamData.language || 'English',
-    duration: streamData.durationMinutes || 60,
-    coverImage: streamData.coverImage || streamData.cover_image,
-    rating: 4.9,
-    tags: ['Live', 'Culture', 'Interactive'],
-    description: `Experience ${streamData.title} live from ${streamData.location}. Interact directly with your guide and viewers from around the world.`
-  } : null;
+  const tour = React.useMemo(() => streamData ? {
+    id: streamData.id, title: streamData.title, location: streamData.location, language: streamData.language || 'English',
+    duration: streamData.durationMinutes || streamData.duration_minutes || 60, coverImage: streamData.coverImage || streamData.cover_image,
+    rating: 4.9, tags: ['Live', 'Culture', 'Interactive'],
+    description: `Experience ${streamData.title} live from ${streamData.location}. Interact directly with your guide.`
+  } : null, [streamData]);
 
-  const guide = streamData ? {
-    id: streamData.guideId || streamData.guide_id,
-    name: streamData.guideName || streamData.guide_name,
+  const guide = React.useMemo(() => streamData ? {
+    id: streamData.guideId || streamData.guide_id, name: streamData.guideName || streamData.guide_name,
     avatar: streamData.guideAvatar || streamData.guide_avatar || `https://i.pravatar.cc/150?u=${streamData.guideId}`,
-    rating: 4.9,
-    location: streamData.guideLocation || streamData.guide_location
-  } : null;
+    rating: 4.9, location: streamData.guideLocation || streamData.guide_location
+  } : null, [streamData]);
+
+  const isGuide = user && guide && user.id === guide.id;
+
+  useEffect(() => {
+    const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'], timeout: 5000 });
+    socket.on('connect', () => {
+      setSocketConnected(true);
+      socket.emit('join_room', `live_${id}`);
+      socket.emit('send_message', { roomId: `live_${id}`, sender: '__system__', senderName: user?.name || 'A viewer', text: `${user?.name || 'A viewer'} joined the tour 👋`, isSystem: true });
+      setViewers(v => v + 1);
+    });
+    socket.on('disconnect', () => setSocketConnected(false));
+    socket.on('connect_error', () => setSocketConnected(false));
+    socket.on('receive_message', (data) => {
+      if (data.roomId === `live_${id}`) {
+        setChatMessages(prev => [...prev, { id: Date.now() + Math.random(), user: data.senderName || 'Viewer', avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.senderName || 'V')}`, msg: data.text, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), isSystem: data.isSystem }]);
+      }
+    });
+    socket.on('new_question', (q) => { if (q.roomId === `live_${id}`) setQuestions(prev => [...prev, q]); });
+    socket.on('tour_ended', () => { alert('The guide has ended this tour.'); setShowRating(true); });
+    socketRef.current = socket;
+    return () => { socket.disconnect(); setViewers(v => Math.max(0, v - 1)); };
+  }, [id, user?.name]);
+
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages]);
+
+  useEffect(() => {
+    if (loading || !tour || !guide) return;
+    let client = null; let localVideo = null; let localAudio = null;
+    const initAgora = async () => {
+      try {
+        setAgoraStatus('Authenticating...');
+        const role = isGuide ? 'publisher' : 'subscriber';
+        const tokenData = await api.getAgoraToken(`live_${id}`, role);
+        
+        if (!tokenData || !tokenData.token) {
+          setAgoraStatus('No Agora Credentials Found. Fallback required.');
+          return;
+        }
+
+        if (tokenData.appId === 'dummy_app_id') {
+          setAgoraStatus('Simulation Mode (Bypassing WebRTC)');
+          if (isGuide) {
+            try {
+              const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+              localAudio = audioTrack; localVideo = videoTrack; setLocalTracks([audioTrack, videoTrack]);
+              if (videoContainerRef.current) { videoContainerRef.current.innerHTML = ''; videoTrack.play(videoContainerRef.current); }
+              setAgoraStatus('Live (Camera Active)');
+            } catch(e) { setAgoraStatus('Simulation Mode (No Camera)'); }
+          } else { setAgoraStatus('Simulation Mode (Live Stream Connected)'); }
+          return;
+        }
+
+        client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+        setAgoraClient(client);
+        setAgoraStatus('Connecting to Live Network...');
+        await client.join(tokenData.appId, `live_${id}`, tokenData.token, tokenData.uid);
+
+        if (isGuide) {
+          setAgoraStatus('Starting Camera...');
+          const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+          localAudio = audioTrack; localVideo = videoTrack; setLocalTracks([audioTrack, videoTrack]);
+          if (videoContainerRef.current) { videoContainerRef.current.innerHTML = ''; videoTrack.play(videoContainerRef.current); }
+          await client.publish([audioTrack, videoTrack]);
+          setAgoraStatus('Live');
+        } else {
+          setAgoraStatus('Waiting for Guide...');
+          client.on('user-published', async (remoteUser, mediaType) => {
+            await client.subscribe(remoteUser, mediaType);
+            setAgoraStatus('Live');
+            if (mediaType === 'video' && videoContainerRef.current) { videoContainerRef.current.innerHTML = ''; remoteUser.videoTrack.play(videoContainerRef.current); }
+            if (mediaType === 'audio') { remoteUser.audioTrack.play(); }
+          });
+          client.on('user-unpublished', (remoteUser, mediaType) => { if (mediaType === 'video') setAgoraStatus('Guide paused video.'); });
+        }
+      } catch (err) { setAgoraStatus('Failed to connect to Agora WebRTC.'); }
+    };
+    initAgora();
+    return () => { if (localVideo) { localVideo.stop(); localVideo.close(); } if (localAudio) { localAudio.stop(); localAudio.close(); } if (client) { client.leave(); } };
+  }, [loading, tour, guide, isGuide, id]);
+
+  const toggleMic = async () => { if (isGuide && localTracks[0]) { await localTracks[0].setMuted(micOn); setMicOn(!micOn); } };
+  const toggleVideo = async () => { if (isGuide && localTracks[1]) { await localTracks[1].setMuted(videoOn); setVideoOn(!videoOn); } };
 
   const sendMessage = (e) => {
     e.preventDefault();
     if (!chatMsg.trim()) return;
-    setChatMessages(prev => [...prev, {
-      id: Date.now(),
-      user: 'You',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&q=80',
-      msg: chatMsg,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    }]);
+    const newMsg = { id: Date.now(), user: user?.name || 'You', avatar: user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Me')}`, msg: chatMsg, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    setChatMessages(prev => [...prev, newMsg]);
+    if (socketRef.current?.connected) { socketRef.current.emit('send_message', { roomId: `live_${id}`, sender: user?.id || 'anonymous', senderName: user?.name || 'You', avatar: user?.avatar, text: chatMsg }); }
     setChatMsg('');
   };
 
-  const sendTip = (amount) => {
-    setTipSent(true);
-    setTimeout(() => setTipSent(false), 3000);
+  const sendQuestion = (e) => {
+    e.preventDefault();
+    if (!questionText.trim()) return;
+    if (socketRef.current?.connected) { socketRef.current.emit('ask_question', { roomId: `live_${id}`, askerId: user?.id, askerName: user?.name || 'Viewer', question: questionText }); }
+    setQuestionText('');
   };
+
+  const endTour = async () => {
+    if (window.confirm("Are you sure you want to end this live tour?")) {
+      if (socketRef.current?.connected) socketRef.current.emit('tour_ended', { roomId: `live_${id}` });
+      setShowRating(true);
+    }
+  };
+
+  const sendTip = (amount) => { setTipSent(true); setTimeout(() => setTipSent(false), 3000); };
 
   if (loading) {
     return (
-      <div className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="spinner" />
+      <div className="lr-loading">
+        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="spinner-lg" />
+        <p>Connecting to Live Server...</p>
       </div>
     );
   }
 
   if (!tour || !guide) {
     return (
-      <div className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem' }}>📡</div>
-          <h2>Live Stream not available</h2>
-          <p style={{ color: 'var(--text-muted)' }}>This session may have ended or does not exist.</p>
-          <Link to="/explore" className="btn btn-primary" style={{ marginTop: '1rem' }}>Browse Live Tours</Link>
-        </div>
+      <div className="lr-empty">
+        <span className="lr-empty-icon">📡</span>
+        <h2>Stream Offline</h2>
+        <p>This session may have ended or does not exist.</p>
+        <Link to="/explore" className="btn-liquid">Browse Live Tours</Link>
       </div>
     );
   }
 
   return (
-    <div className="live-room">
-      {/* Video Area */}
-      <div className="live-video-area">
-        <img src={tour.coverImage} alt={tour.title} className="live-video-bg" />
-        <div className="live-video-overlay" />
+    <div className="live-room-liquid">
+      <div className="lr-main">
+        {/* Cinematic Video Area */}
+        <div className={`lr-video-viewport ${vrMode ? 'vr-mode-active' : ''}`}>
+          {/* Fallback BG */}
+          <div className="lr-video-bg" style={{ backgroundImage: `url(${tour.coverImage})` }} />
+          
+          {/* Agora Render Surface */}
+          <div ref={videoContainerRef} className="lr-video-surface" />
 
-        {/* Top Bar */}
-        <div className="live-top-bar">
-          <div className="live-top-left">
-            <span className="badge badge-live">🔴 LIVE</span>
-            <div className="live-viewers">
-              <Users size={14} /> {viewers.toLocaleString()} watching
+          {/* VR Overlay Splitter */}
+          {vrMode && (
+            <div className="lr-vr-overlay">
+              <div className="vr-eye vr-left"><Glasses size={48} className="vr-icon" /><span>Left Eye Matrix</span></div>
+              <div className="vr-divider" />
+              <div className="vr-eye vr-right"><Glasses size={48} className="vr-icon" /><span>Right Eye Matrix</span></div>
+            </div>
+          )}
+
+          {/* Glowing Vignette Border */}
+          <div className="lr-video-vignette" />
+
+          {/* Premium HUD (Heads Up Display) */}
+          <div className="lr-hud-top">
+            <div className="hud-badge-live"><span className="live-dot" /> LIVE</div>
+            <div className="hud-viewers glass-panel"><Users size={14} className="text-teal" /> {viewers.toLocaleString()}</div>
+            <div className="hud-status glass-panel">
+               <span className={`status-dot ${socketConnected ? 'on' : 'off'}`} /> 
+               {agoraStatus}
             </div>
           </div>
-          <div className="live-top-center">
-            <h3 className="live-title">{tour.title}</h3>
-            <div className="live-location"><Globe size={13} /> {tour.location}</div>
+
+          <div className="lr-hud-bottom">
+            <div className="hud-guide-glass glass-panel">
+              <img src={guide.avatar} alt={guide.name} className="hud-guide-img" />
+              <div className="hud-guide-info">
+                <span className="hud-guide-name">{guide.name}</span>
+                <span className="hud-guide-title">{tour.title} <Globe size={10} style={{display:'inline', marginLeft:4}} /> {tour.location}</span>
+              </div>
+            </div>
+
+            <div className="hud-controls glass-panel">
+              {isGuide && (
+                <>
+                  <button className={`hud-btn ${!micOn ? 'danger' : ''}`} onClick={toggleMic}>{micOn ? <Mic size={18} /> : <MicOff size={18} />}</button>
+                  <button className={`hud-btn ${!videoOn ? 'danger' : ''}`} onClick={toggleVideo}>{videoOn ? <Video size={18} /> : <VideoOff size={18} />}</button>
+                </>
+              )}
+              <button className={`hud-btn ${vrMode ? 'active-teal' : ''}`} onClick={() => setVrMode(!vrMode)}><Glasses size={18} /></button>
+              <button className="hud-btn warning" onClick={() => { setEmergencyActive(true); setTimeout(() => setEmergencyActive(false), 5000); }}><ShieldAlert size={18} /></button>
+              {!isGuide && (
+                <button className="hud-btn danger" onClick={() => setShowRating(true)}><Phone size={18} /></button>
+              )}
+            </div>
           </div>
-          <div className="live-top-right">
-            <button className="live-icon-btn"><Share2 size={18} /></button>
-            <button className="live-icon-btn"><Settings size={18} /></button>
-          </div>
+          
+          <AnimatePresence>
+            {tipSent && (
+              <motion.div initial={{opacity: 0, y: 50, scale: 0.8}} animate={{opacity: 1, y: 0, scale: 1}} exit={{opacity: 0, y: -50}} className="hud-toast toast-rose">
+                💖 Tip sent to {guide.name}!
+              </motion.div>
+            )}
+            {emergencyActive && (
+              <motion.div initial={{opacity: 0, y: 50, scale: 0.8}} animate={{opacity: 1, y: 0, scale: 1}} exit={{opacity: 0, y: -50}} className="hud-toast toast-amber">
+                <ShieldAlert size={16} /> Support connected. Monitoring session.
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Glass Sidebar Panel */}
+      <div className="lr-sidebar glass-panel">
+        <div className="lr-sidebar-nav">
+          <button className={`lr-nav-btn ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')}><MessageCircle size={16}/> Chat</button>
+          <button className={`lr-nav-btn ${activeTab === 'questions' ? 'active' : ''}`} onClick={() => setActiveTab('questions')}><HelpCircle size={16}/> Q&A</button>
+          <button className={`lr-nav-btn ${activeTab === 'shop' ? 'active' : ''}`} onClick={() => setActiveTab('shop')}><ShoppingBasket size={16}/> Shop</button>
         </div>
 
-        {/* Guide Info */}
-        <div className="live-guide-info">
-          <img src={guide.avatar} alt={guide.name} className="live-guide-avatar" />
-          <div>
-            <div className="live-guide-name">{guide.name}</div>
-            <div className="live-guide-rating"><Star size={11} fill="var(--accent-amber)" stroke="none" /> {guide.rating} · Your Guide</div>
-          </div>
-        </div>
+        <div className="lr-sidebar-body">
+          {activeTab === 'chat' && (
+            <div className="lr-chat-container">
+              <div className="lr-chat-feed">
+                {chatMessages.length === 0 && <div className="lr-empty-state">Say hello to the guide!</div>}
+                {chatMessages.map(msg => (
+                  <div key={msg.id} className={`chat-bubble ${msg.isSystem ? 'system-bubble' : ''}`}>
+                    {!msg.isSystem && <img src={msg.avatar} alt="avatar" className="chat-avatar" />}
+                    <div className="chat-content">
+                      <span className="chat-user">{msg.user} <span className="chat-time">{msg.time}</span></span>
+                      <p className="chat-text">{msg.msg}</p>
+                    </div>
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
+              <form className="lr-chat-input-area" onSubmit={sendMessage}>
+                <input type="text" placeholder="Type a message..." value={chatMsg} onChange={e => setChatMsg(e.target.value)} disabled={!socketConnected} className="chat-input" />
+                <button type="submit" disabled={!chatMsg.trim() || !socketConnected} className="chat-send"><Send size={16} /></button>
+              </form>
+            </div>
+          )}
 
-        {/* Simulated Video Placeholder */}
-        <div className="live-video-placeholder" style={{ display: vrMode ? 'flex' : 'block', background: vrMode ? '#000' : '' }}>
-          {vrMode ? (
-            <>
-              <div style={{ flex: 1, borderRight: '2px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                <div style={{ position: 'absolute', inset: 0, opacity: 0.4, backgroundImage: 'url("https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                <Glasses size={48} color="var(--accent-teal)" style={{ opacity: 0.5, zIndex: 1 }} />
-                <span style={{ position: 'absolute', bottom: 20, fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', zIndex: 1 }}>Left Eye</span>
+          {activeTab === 'questions' && (
+            <div className="lr-chat-container">
+              <div className="lr-chat-feed">
+                {questions.length === 0 && <div className="lr-empty-state">Ask the guide a question!</div>}
+                {questions.map(q => (
+                  <div key={q.id} className="chat-bubble qa-bubble">
+                    <div className="chat-content">
+                      <span className="chat-user text-teal">{q.askerName || q.asker_name}</span>
+                      <p className="chat-text">{q.question}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                <div style={{ position: 'absolute', inset: 0, opacity: 0.4, backgroundImage: 'url("https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                <Glasses size={48} color="var(--accent-teal)" style={{ opacity: 0.5, zIndex: 1 }} />
-                <span style={{ position: 'absolute', bottom: 20, fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', zIndex: 1 }}>Right Eye</span>
+              <form className="lr-chat-input-area" onSubmit={sendQuestion}>
+                <input type="text" placeholder="Ask a question..." value={questionText} onChange={e => setQuestionText(e.target.value)} disabled={!socketConnected} className="chat-input" />
+                <button type="submit" disabled={!questionText.trim() || !socketConnected} className="chat-send"><Send size={16} /></button>
+              </form>
+            </div>
+          )}
+
+          {activeTab === 'shop' && (
+            <div className="lr-shop-container">
+              <div className="lr-shop-header">
+                <ShoppingBasket size={18} className="text-teal" /> <span>Live Commerce</span>
               </div>
-            </>
-          ) : (
-            <div className="live-video-text">
-              <div className="live-connecting">
-                <div className="live-connecting__pulse" />
-                <span>Live stream powered by Agora RTC</span>
+              <div className="lr-shop-list">
+                {[
+                  { id: '1', name: 'Silk Scarf', price: '$45', image: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=150&q=80' },
+                  { id: '2', name: 'Vintage Compass', price: '$85', image: 'https://images.unsplash.com/photo-1577083165230-07e15d862e31?w=150&q=80' }
+                ].map(item => (
+                  <div key={item.id} className="shop-item glass-panel">
+                    <img src={item.image} alt={item.name} className="shop-item-img" />
+                    <div className="shop-item-info">
+                      <span className="shop-item-name">{item.name}</span>
+                      <span className="shop-item-price text-teal">{item.price}</span>
+                      <button className="btn-liquid btn-sm" onClick={() => alert('Checkout initiated!')}>Buy & Ship</button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem' }}>
-                Connect Agora App ID in .env to enable real video streaming
-              </p>
             </div>
           )}
         </div>
-
-        {/* Controls */}
-        <div className="live-controls">
-          <button className={`live-control-btn ${!micOn ? 'live-control-btn--off' : ''}`} onClick={() => setMicOn(!micOn)}>
-            {micOn ? <Mic size={20} /> : <MicOff size={20} />}
-          </button>
-          <button className={`live-control-btn ${!videoOn ? 'live-control-btn--off' : ''}`} onClick={() => setVideoOn(!videoOn)}>
-            {videoOn ? <Video size={20} /> : <VideoOff size={20} />}
-          </button>
-          <button className={`live-control-btn ${!vrMode ? 'live-control-btn--off' : ''}`} onClick={() => setVrMode(!vrMode)} title="Toggle VR Headset Mode">
-            <Glasses size={20} />
-          </button>
-          <button className="live-control-btn" style={{ background: 'rgba(245, 158, 11, 0.2)', borderColor: 'var(--accent-amber)' }} onClick={() => { setEmergencyActive(true); setTimeout(() => setEmergencyActive(false), 5000); }} title="Emergency Support">
-            <ShieldAlert size={20} style={{ color: 'var(--accent-amber)' }} />
-          </button>
-          <button className="live-control-btn live-control-btn--end" onClick={() => setShowRating(true)}>
-            <Phone size={20} />
-          </button>
-          <button className="live-control-btn" onClick={() => sendTip(5)}>
-            <Heart size={20} style={{ color: tipSent ? 'var(--accent-rose)' : 'inherit' }} />
-          </button>
-        </div>
-
-        {tipSent && (
-          <div className="live-tip-toast">💰 Tip sent to {guide.name}!</div>
-        )}
-
-        {emergencyActive && (
-          <div className="live-tip-toast" style={{ background: 'var(--accent-amber)', color: '#060b16' }}>
-            <ShieldAlert size={16} style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle' }} /> 
-            Emergency Support connected. We are monitoring this session.
-          </div>
-        )}
       </div>
 
       {showRating && (
-         <RatingModal 
-           tour={tour} 
-           guide={guide} 
-           onSubmit={(rating, review) => {
-             setShowRating(false);
-             window.location.href = '/dashboard';
-           }} 
+         <RatingModal
+           tour={tour}
+           guide={guide}
+           onSubmit={async (rating, review) => {
+             try {
+               await api.submitReview({ tourId: tour.id, rating, comment: review });
+               await api.addPassportStamp(tour.id).catch(() => {});
+             } catch (err) { console.error(err); } finally {
+               setShowRating(false);
+               window.location.href = '/dashboard';
+             }
+           }}
          />
       )}
-
-      {/* Sidebar */}
-      <div className="live-sidebar">
-        {/* Tabs */}
-        <div className="live-tabs">
-          {['chat', 'shop', 'info', 'tips'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`live-tab ${activeTab === tab ? 'active' : ''}`}>
-              {tab === 'chat' ? <><MessageCircle size={14} /> Chat</> :
-               tab === 'shop' ? <><ShoppingBasket size={14} /> Shop</> :
-               tab === 'info' ? <><Globe size={14} /> Info</> :
-               <><Heart size={14} /> Tips</>}
-            </button>
-          ))}
-        </div>
-
-        {/* Chat Tab */}
-        {activeTab === 'chat' && (
-          <>
-            <div className="live-chat">
-              {chatMessages.map(msg => (
-                <div key={msg.id} className="live-chat-msg">
-                  <img src={msg.avatar} alt={msg.user} className="live-chat-avatar" />
-                  <div className="live-chat-body">
-                    <div className="live-chat-user">{msg.user} <span className="live-chat-time">{msg.time}</span></div>
-                    <div className="live-chat-text">{msg.msg}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <form className="live-chat-input" onSubmit={sendMessage}>
-              <input
-                type="text"
-                placeholder="Send a message..."
-                value={chatMsg}
-                onChange={e => setChatMsg(e.target.value)}
-                id="live-chat-input"
-              />
-              <button type="submit"><Send size={16} /></button>
-            </form>
-          </>
-        )}
-
-        {/* Shop Tab */}
-        {activeTab === 'shop' && (
-          <div className="live-shop">
-            <div style={{ padding: '0 0 var(--space-md) 0', borderBottom: '1px solid var(--border-glass)', marginBottom: 'var(--space-md)' }}>
-              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingBasket size={16} color="var(--accent-teal)" /> Live Commerce</h4>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Guide purchases these items live and ships them to you.</p>
-            </div>
-            <div className="live-shop-items" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-              {[
-                { id: 'item1', name: 'Handwoven Silk Scarf', price: '$45', image: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=150&q=80', desc: 'Local artisan craft, 100% pure silk.' },
-                { id: 'item2', name: 'Vintage Brass Compass', price: '$85', image: 'https://images.unsplash.com/photo-1577083165230-07e15d862e31?w=150&q=80', desc: 'Antique market find, working condition.' },
-                { id: 'item3', name: 'Spices Gift Box', price: '$25', image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=150&q=80', desc: 'Assorted local spices and herbs.' }
-              ].map(item => (
-                <div key={item.id} className="glass-card" style={{ padding: 'var(--space-sm)', display: 'flex', gap: '12px' }}>
-                  <img src={item.image} alt={item.name} style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: 'var(--radius-sm)' }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{item.name}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '2px 0 6px 0' }}>{item.desc}</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 700, color: 'var(--accent-teal)' }}>{item.price}</span>
-                      <button className="btn btn-primary btn-sm" style={{ padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => alert('Secure Checkout Started (Simulated Stripe Flow)')}>Buy & Ship</button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Info Tab */}
-        {activeTab === 'info' && (
-          <div className="live-info">
-            <h4 style={{ marginBottom: 'var(--space-md)' }}>{tour.title}</h4>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{tour.description}</p>
-            <div className="live-info-stats">
-              <div className="live-info-stat"><Clock size={14} /> {tour.duration} min</div>
-              <div className="live-info-stat"><Globe size={14} /> {tour.language}</div>
-              <div className="live-info-stat"><Star size={14} fill="var(--accent-amber)" stroke="none" /> {tour.rating}</div>
-              <div className="live-info-stat"><Users size={14} /> {viewers} watching</div>
-            </div>
-            <div style={{ marginTop: 'var(--space-md)' }}>
-              {tour.tags.map(t => <span key={t} className="badge badge-teal" style={{ marginRight: '6px', marginBottom: '6px' }}>{t}</span>)}
-            </div>
-          </div>
-        )}
-
-        {/* Tips Tab */}
-        {activeTab === 'tips' && (
-          <div className="live-tips">
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 'var(--space-lg)' }}>
-              Show your appreciation for {guide.name}'s amazing tour!
-            </p>
-            <div className="live-tips-grid">
-              {[5, 10, 20, 50].map(amount => (
-                <button key={amount} className="btn btn-secondary" onClick={() => sendTip(amount)}>
-                  💰 ${amount}
-                </button>
-              ))}
-            </div>
-            <div className="live-top-tippers">
-              <div className="live-tippers-label">Recent Tips</div>
-              {[{ name: 'Sarah', amount: 20 }, { name: 'David', amount: 10 }, { name: 'Maria', amount: 50 }].map(t => (
-                <div key={t.name} className="live-tipper-item">
-                  <span>❤️ {t.name} sent ${t.amount}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useNavigate } from 'react-router-dom';
 import {
   TrendingUp, Star, Users, DollarSign, Calendar, Play,
   BarChart3, Clock, CheckCircle, AlertCircle, MapPin,
@@ -7,28 +7,10 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/api';
-import { TOURS } from '../data/mockData';
 import './Dashboard.css';
 import './GuideDashboard.css';
 
-/* ─── Demo Booking Requests ─── */
-const DEMO_REQUESTS = [
-  { id: 'r1', tourTitle: 'Tokyo Neon Lights Tour', tourCoverImage: TOURS[0]?.coverImage, bookingDate: '2026-06-14', bookingTime: '14:00', status: 'pending', totalAmount: 45, travelerName: 'Alex Johnson', travelerAvatar: null, participants: 2 },
-  { id: 'r2', tourTitle: 'Tokyo Street Food Walk', tourCoverImage: TOURS[2]?.coverImage, bookingDate: '2026-06-16', bookingTime: '10:00', status: 'pending', totalAmount: 35, travelerName: 'Maria Garcia', travelerAvatar: null, participants: 1 },
-  { id: 'r3', tourTitle: 'Tokyo Neon Lights Tour', tourCoverImage: TOURS[0]?.coverImage, bookingDate: '2026-06-08', bookingTime: '18:00', status: 'confirmed', totalAmount: 45, travelerName: 'John Smith', travelerAvatar: null, participants: 3 },
-  { id: 'r4', tourTitle: 'Historical Kyoto Walk', tourCoverImage: TOURS[4]?.coverImage, bookingDate: '2026-05-25', bookingTime: '09:00', status: 'completed', totalAmount: 60, travelerName: 'Priya Patel', travelerAvatar: null, participants: 2 },
-];
-
-const DEMO_STATS = { netEarnings: 8450, totalBookings: 47, avgRating: 4.7, reviewCount: 389, totalTours: 12 };
-
-const EARNINGS_DATA = [
-  { month: 'Jan', amount: 1200 },
-  { month: 'Feb', amount: 1800 },
-  { month: 'Mar', amount: 2200 },
-  { month: 'Apr', amount: 2800 },
-  { month: 'May', amount: 3100 },
-  { month: 'Jun', amount: 2650 },
-];
+const DEFAULT_STATS = { netEarnings: 0, totalBookings: 0, avgRating: 0, reviewCount: 0, totalTours: 0, monthlyEarnings: [] };
 
 const StatusBadge = ({ status }) => {
   const map = {
@@ -44,9 +26,11 @@ const StatusBadge = ({ status }) => {
 
 export default function GuideDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('requests');
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('upcoming');
   const [bookings, setBookings] = useState([]);
-  const [stats, setStats] = useState(DEMO_STATS);
+  const [stats, setStats] = useState(DEFAULT_STATS);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAvailable, setIsAvailable] = useState(true);
   const [coverPhoto, setCoverPhoto] = useState(null);
@@ -56,23 +40,41 @@ export default function GuideDashboard() {
   if (user.role !== 'guide' && user.role !== 'admin') return <Navigate to="/dashboard" />;
 
   useEffect(() => {
-    const load = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const [bData, sData] = await Promise.all([
+        const [bData, sData, nData] = await Promise.all([
           api.getGuideBookings().catch(() => null),
           api.getGuideStats().catch(() => null),
+          api.getNotifications().catch(() => []),
         ]);
-        setBookings(Array.isArray(bData) && bData.length > 0 ? bData : DEMO_REQUESTS);
+        setBookings(Array.isArray(bData) ? bData : []);
+        setNotifications(Array.isArray(nData) ? nData : []);
         if (sData && sData.totalTours !== undefined) setStats(sData);
-      } catch (_) {
-        setBookings(DEMO_REQUESTS);
+      } catch (err) {
+        setBookings([]);
+        console.error('Error fetching bookings:', err);
       } finally {
         setLoading(false);
       }
     };
-    load();
-  }, []);
+    fetchData();
+  }, [user]);
+
+  const handleStartLiveTour = async (tourId) => {
+    try {
+      if (!tourId) return alert('Tour ID not found');
+      const data = await api.startLiveStream(tourId);
+      if (data.liveStreamId) {
+        navigate(`/live/${data.liveStreamId}`);
+      } else {
+        alert(data.message || 'Error starting live stream');
+      }
+    } catch (err) {
+      alert('Network error starting stream');
+      console.error(err);
+    }
+  };
 
   const handleBookingAction = async (bookingId, status) => {
     setActionLoading(bookingId);
@@ -87,7 +89,9 @@ export default function GuideDashboard() {
   const pendingRequests = bookings.filter(b => b.status === 'pending');
   const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
   const completedBookings = bookings.filter(b => b.status === 'completed');
-  const maxEarning = Math.max(...EARNINGS_DATA.map(d => d.amount));
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const monthlyData = stats.monthlyEarnings && stats.monthlyEarnings.length > 0 ? stats.monthlyEarnings : [{month: 'No Data', amount: 0}];
+  const maxEarning = Math.max(...monthlyData.map(d => d.amount), 1);
 
   return (
     <div className="gd-page">
@@ -106,7 +110,7 @@ export default function GuideDashboard() {
               </h1>
               <p style={{ color: '#94A3B8', fontSize: '0.875rem', margin: 0 }}>
                 Welcome back, <strong style={{ color: '#F8FAFC' }}>{user.name}</strong>
-                {pendingRequests.length > 0 && <span style={{ color: '#FBBF24', marginLeft: '8px' }}>· {pendingRequests.length} pending request{pendingRequests.length !== 1 ? 's' : ''}</span>}
+                {unreadCount > 0 && <span style={{ color: '#FBBF24', marginLeft: '8px' }}>· {unreadCount} new notification{unreadCount !== 1 ? 's' : ''}</span>}
               </p>
             </div>
           </div>
@@ -246,9 +250,9 @@ export default function GuideDashboard() {
                 </div>
                 <div className="gd-request-actions">
                   <StatusBadge status="confirmed" />
-                  <Link to={`/live/${b.tourId || '1'}`} className="db-btn-primary btn-sm">
+                  <button onClick={() => handleStartLiveTour(b.tourId)} className="db-btn-primary btn-sm">
                     <Play size={13} /> Start Tour
-                  </Link>
+                  </button>
                   <button className="db-btn-ghost btn-sm" onClick={() => handleBookingAction(b.id, 'completed')}>
                     <CheckCircle size={13} /> Mark Complete
                   </button>
@@ -322,8 +326,8 @@ export default function GuideDashboard() {
                 <span className="badge badge-teal">+18% ↑</span>
               </div>
               <div className="gd-bar-chart">
-                {EARNINGS_DATA.map(d => (
-                  <div key={d.month} className="gd-bar-item">
+                {monthlyData.map(d => (
+                  <div key={d.month} className="gd-chart-col">
                     <div className="gd-bar-wrap">
                       <div className="gd-bar" style={{ height: `${(d.amount / maxEarning) * 100}%` }}>
                         <span className="gd-bar-tip">${d.amount}</span>
@@ -345,31 +349,51 @@ export default function GuideDashboard() {
               <p style={{ color: '#94A3B8', marginBottom: '2rem', fontSize: '0.9rem' }}>
                 Publish a virtual or in-person experience. Travelers can discover and book it immediately.
               </p>
-              <form onSubmit={e => { e.preventDefault(); alert('✅ Listing published! Travelers can now book it.'); setActiveTab('confirmed'); }}>
+              <form onSubmit={async e => { 
+                e.preventDefault(); 
+                try {
+                  const fd = new FormData(e.target);
+                  await api.createTour({
+                    title: fd.get('title'),
+                    location: fd.get('location'),
+                    price: parseFloat(fd.get('price')),
+                    duration_minutes: parseInt(fd.get('duration')),
+                    max_participants: parseInt(fd.get('max_participants') || 20),
+                    description: fd.get('description'),
+                    category: 'Culture',
+                    kid_friendly: true,
+                    cover_image: 'https://images.unsplash.com/photo-1542051812899-2531021487f5?w=800&q=80'
+                  });
+                  alert('✅ Listing published! Travelers can now book it.'); 
+                  window.location.reload();
+                } catch(err) {
+                  alert('Error publishing listing');
+                }
+              }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                   <div>
                     <label className="gd-label">Tour Title *</label>
-                    <input type="text" className="gd-input" placeholder="e.g. Kyoto Cherry Blossom Walk" required />
+                    <input name="title" type="text" className="gd-input" placeholder="e.g. Kyoto Cherry Blossom Walk" required />
                   </div>
                   <div>
                     <label className="gd-label">Location *</label>
-                    <input type="text" className="gd-input" placeholder="e.g. Kyoto, Japan" required />
+                    <input name="location" type="text" className="gd-input" placeholder="e.g. Kyoto, Japan" required />
                   </div>
                   <div>
                     <label className="gd-label">Price (USD) *</label>
-                    <input type="number" className="gd-input" placeholder="45" min="1" required />
+                    <input name="price" type="number" className="gd-input" placeholder="45" min="1" required />
                   </div>
                   <div>
                     <label className="gd-label">Duration</label>
-                    <select className="gd-input">
-                      <option>60 mins</option>
-                      <option>90 mins</option>
-                      <option>120 mins</option>
+                    <select name="duration" className="gd-input">
+                      <option value="60">60 mins</option>
+                      <option value="90">90 mins</option>
+                      <option value="120">120 mins</option>
                     </select>
                   </div>
                   <div>
                     <label className="gd-label">Max Participants</label>
-                    <input type="number" className="gd-input" placeholder="20" min="1" />
+                    <input name="max_participants" type="number" className="gd-input" placeholder="20" min="1" />
                   </div>
                   <div>
                     <label className="gd-label">Category</label>
@@ -384,7 +408,7 @@ export default function GuideDashboard() {
                 </div>
                 <div style={{ marginBottom: '1rem' }}>
                   <label className="gd-label">Description *</label>
-                  <textarea className="gd-input" rows={4} placeholder="Describe the experience in detail..." required style={{ resize: 'vertical' }} />
+                  <textarea name="description" className="gd-input" rows={4} placeholder="Describe what travelers will see and do..." required style={{ resize: 'vertical' }} />
                 </div>
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label className="gd-label">Cover Photo</label>

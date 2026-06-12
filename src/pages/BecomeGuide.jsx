@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle, Upload, Shield, Video, DollarSign, Globe, ArrowRight, AlertCircle } from 'lucide-react';
+import { CheckCircle, Upload, Shield, Video, DollarSign, Globe, ArrowRight, AlertCircle, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../utils/api';
 import './BecomeGuide.css';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://zilli-go.vercel.app/api';
@@ -20,6 +21,28 @@ export default function BecomeGuide() {
     idFront: null,
     idBack: null,
   });
+  const [appStatus, setAppStatus] = useState(null);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'guide') {
+         setAppStatus({ hasApplication: true, status: 'approved' });
+         setCheckingStatus(false);
+         return;
+      }
+      api.getGuideApplicationStatus()
+        .then(res => {
+          if (res.hasApplication) {
+            setAppStatus(res);
+          }
+        })
+        .catch(err => console.error(err))
+        .finally(() => setCheckingStatus(false));
+    } else {
+      setCheckingStatus(false);
+    }
+  }, [user]);
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -54,23 +77,28 @@ export default function BecomeGuide() {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        
+        if (data.status === 'approved' && user) {
+           const updatedUser = { ...user, role: 'guide', verified: true };
+           localStorage.setItem('zilligo_user', JSON.stringify(updatedUser));
+        }
+
         setStep(3);
         setTimeout(() => {
-          navigate(user ? (user.role === 'guide' ? '/guide-dashboard' : '/dashboard') : '/auth?tab=register&role=guide');
+          if (data.status === 'approved' || data.role === 'guide') {
+            window.location.href = '/guide-dashboard'; // Hard navigate to reload context
+          } else {
+            navigate(user ? '/dashboard' : '/auth?tab=register&role=guide');
+          }
         }, 4000);
       } else {
         const data = await response.json();
         throw new Error(data.message || 'Submission failed. Please try again.');
       }
     } catch (err) {
-      // In demo mode (no backend), still show success
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        setStep(3);
-        setTimeout(() => navigate(user ? '/dashboard' : '/auth'), 4000);
-      } else {
-        setError(err.message);
-        setLoading(false);
-      }
+      setError(err.message);
+      setLoading(false);
     }
   };
 
@@ -128,7 +156,38 @@ export default function BecomeGuide() {
           </div>
 
           <div className="bg-app-form">
-            {step === 1 && (
+            {checkingStatus ? (
+              <div style={{ textAlign: 'center', padding: 'var(--space-3xl) 0' }}>
+                <div className="spinner" style={{ margin: '0 auto var(--space-md)' }} />
+                <p>Checking your status...</p>
+              </div>
+            ) : appStatus?.hasApplication && appStatus.status === 'pending' ? (
+              <div style={{ textAlign: 'center', padding: 'var(--space-3xl) 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-md)' }}>
+                <div style={{ width: 80, height: 80, background: 'var(--accent-amber-glow)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Clock size={40} style={{ color: 'var(--accent-amber)' }} />
+                </div>
+                <h2>Application Pending</h2>
+                <p style={{ color: 'var(--text-secondary)', maxWidth: 380, lineHeight: 1.6 }}>
+                  You have already submitted an application to become a guide. Our team is currently reviewing your profile. We will notify you once a decision is made.
+                </p>
+                <Link to="/dashboard" className="btn btn-ghost" style={{ marginTop: '1rem' }}>
+                  Return to Dashboard
+                </Link>
+              </div>
+            ) : appStatus?.hasApplication && (appStatus.status === 'approved' || appStatus.status === 'ai_approved') ? (
+              <div style={{ textAlign: 'center', padding: 'var(--space-3xl) 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-md)' }}>
+                <div style={{ width: 80, height: 80, background: 'var(--accent-teal-glow)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CheckCircle size={40} style={{ color: 'var(--accent-teal)' }} />
+                </div>
+                <h2>You're already a Guide! 🎉</h2>
+                <p style={{ color: 'var(--text-secondary)', maxWidth: 380, lineHeight: 1.6 }}>
+                  Your application has been approved. You are ready to start hosting tours and earning.
+                </p>
+                <Link to="/guide-dashboard" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                  Go to Guide Dashboard <ArrowRight size={16} />
+                </Link>
+              </div>
+            ) : step === 1 && (
               <form onSubmit={(e) => { e.preventDefault(); setStep(2); }}>
                 <h2 style={{ marginBottom: 'var(--space-xl)' }}>Tell us about yourself</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>

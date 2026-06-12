@@ -9,23 +9,6 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/api';
 import './AdminPanel.css';
 
-// Pre-seeded fallback data for demonstration when database tables are empty
-const FALLBACK_TICKETS = [
-  { id: 1, userId: 2, title: 'Audio cuts out during Japan live tour', category: 'Technical', priority: 'high', status: 'open', description: 'When the guide enters the shrines, the video runs fine but the audio completely drops.', reply: null, createdAt: new Date() },
-  { id: 2, userId: 2, title: 'Incorrect billing amount', category: 'Booking', priority: 'medium', status: 'resolved', description: 'I was charged twice for the Paris walk.', reply: 'We have processed a refund for the duplicate transaction.', createdAt: new Date() },
-];
-
-const FALLBACK_REPORTS = [
-  { id: 1, reporterId: 2, reportedUserId: 3, contentType: 'review', contentId: 1, reason: 'Guide used inappropriate words during live session', status: 'open', createdAt: new Date() },
-  { id: 2, reporterId: 2, reportedUserId: 4, contentType: 'message', contentId: 2, reason: 'Spam advertisements', status: 'resolved', createdAt: new Date() }
-];
-
-const FALLBACK_LOGS = [
-  { id: 1, adminId: 1, action: 'VERIFY_USER', details: 'Verified guide Yuki Tanaka', ipAddress: '127.0.0.1', createdAt: new Date() },
-  { id: 2, adminId: 1, action: 'UPDATE_SETTINGS', details: 'Updated platform commission to 20%', ipAddress: '127.0.0.1', createdAt: new Date() },
-  { id: 3, adminId: 1, action: 'RESOLVE_TICKET', details: 'Resolved ticket #2', ipAddress: '192.168.1.1', createdAt: new Date() }
-];
-
 export default function AdminPanel() {
   const { user, getAllUsers, updateUserStatus } = useAuth();
   const navigate = useNavigate();
@@ -41,6 +24,7 @@ export default function AdminPanel() {
   const [bookings, setBookings] = useState([]);
   const [settings, setSettings] = useState([]);
   const [tours, setTours] = useState([]);
+  const [guideApplications, setGuideApplications] = useState([]);
 
   // Filter/Search States
   const [userSearch, setUserSearch] = useState('');
@@ -64,7 +48,7 @@ export default function AdminPanel() {
     try {
       const [
         usersData, statsData, ticketsData, reportsData, 
-        logsData, bookingsData, settingsData, toursData
+        logsData, bookingsData, settingsData, toursData, guideAppsData
       ] = await Promise.all([
         getAllUsers().catch(() => []),
         api.getAdminStats().catch(() => ({})),
@@ -73,17 +57,19 @@ export default function AdminPanel() {
         api.getAdminAuditLogs().catch(() => []),
         api.getAdminBookings().catch(() => []),
         api.getAdminSettings().catch(() => []),
-        api.getTours().catch(() => [])
+        api.getTours().catch(() => []),
+        api.getGuideApplications().catch(() => [])
       ]);
 
       setSystemUsers(Array.isArray(usersData) ? usersData : []);
       setStats(statsData || {});
-      setTickets(Array.isArray(ticketsData) && ticketsData.length > 0 ? ticketsData : FALLBACK_TICKETS);
-      setReports(Array.isArray(reportsData) && reportsData.length > 0 ? reportsData : FALLBACK_REPORTS);
-      setAuditLogs(Array.isArray(logsData) && logsData.length > 0 ? logsData : FALLBACK_LOGS);
+      setTickets(Array.isArray(ticketsData) ? ticketsData : []);
+      setReports(Array.isArray(reportsData) ? reportsData : []);
+      setAuditLogs(Array.isArray(logsData) ? logsData : []);
       setBookings(Array.isArray(bookingsData) ? bookingsData : []);
       setSettings(Array.isArray(settingsData) ? settingsData : []);
       setTours(Array.isArray(toursData) ? toursData : []);
+      setGuideApplications(Array.isArray(guideAppsData) ? guideAppsData : []);
 
       // Seed settings inputs if available
       if (Array.isArray(settingsData)) {
@@ -148,6 +134,15 @@ export default function AdminPanel() {
   const handleVerify = async (userId) => {
     const success = await updateUserStatus(userId, { verified: true });
     if (success) fetchData();
+  };
+
+  const handleUpdateApplication = async (applicationId, status) => {
+    try {
+      await api.updateGuideApplication(applicationId, status);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleTicketReply = async (e) => {
@@ -341,19 +336,24 @@ export default function AdminPanel() {
                 <p className="card-desc">Review pending verifications to keep community trust scores high.</p>
                 
                 <div className="quick-verify-list">
-                  {systemUsers.filter(u => u.role === 'guide' && !u.verified).slice(0, 3).map(u => (
-                    <div key={u.id} className="quick-verify-row">
+                  {guideApplications.filter(a => a.status === 'pending').slice(0, 5).map(app => (
+                    <div key={app.id} className="quick-verify-row">
                       <div className="qv-profile">
-                        <img src={u.avatar} alt="" />
+                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+                          {app.name.charAt(0)}
+                        </div>
                         <div>
-                          <strong>{u.name}</strong>
-                          <span>{u.email}</span>
+                          <strong>{app.name}</strong>
+                          <span>{app.email}</span>
                         </div>
                       </div>
-                      <button className="qv-btn" onClick={() => handleVerify(u.id)}>Approve Verification</button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="qv-btn" onClick={() => handleUpdateApplication(app.id, 'approved')}>Approve</button>
+                        <button className="qv-btn" style={{ background: 'rgba(244,63,94,0.1)', color: '#FB7185', border: '1px solid rgba(244,63,94,0.3)' }} onClick={() => handleUpdateApplication(app.id, 'rejected')}>Reject</button>
+                      </div>
                     </div>
                   ))}
-                  {systemUsers.filter(u => u.role === 'guide' && !u.verified).length === 0 && (
+                  {guideApplications.filter(a => a.status === 'pending').length === 0 && (
                     <p className="empty-message-text">All guide applications verified. Clear queue!</p>
                   )}
                 </div>

@@ -1,20 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Trophy, Star, Medal, Award, MapPin, Search, ChevronRight } from 'lucide-react';
-import { GUIDES } from '../data/mockData';
+import { api } from '../utils/api';
 import './Leaderboard.css';
-
-// Sort guides by rating * tours count (a simple points algorithm)
-const sortedGuides = [...GUIDES].map(g => ({
-  ...g,
-  points: Math.floor(g.rating * g.tours * 15),
-})).sort((a, b) => b.points - a.points);
-
-const topThree = sortedGuides.slice(0, 3);
-const restOfGuides = sortedGuides.slice(3, 10); // Show top 10
 
 export default function Leaderboard() {
   const [timeframe, setTimeframe] = useState('month');
+  const [guides, setGuides] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchGuides = async () => {
+      try {
+        const data = await api.getMarketplaceGuides();
+        if (data && Array.isArray(data.guides)) {
+          // Sort guides by rating * tours count (a simple points algorithm)
+          const sorted = data.guides.map(g => ({
+            ...g,
+            points: Math.floor((g.rating || g.avgRating || 0) * (g.toursCompleted || g.totalTours || 1) * 15),
+          })).sort((a, b) => b.points - a.points);
+          setGuides(sorted);
+        }
+      } catch (err) {
+        console.error('Error fetching guides:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGuides();
+  }, []);
+
+  const topThree = guides.slice(0, 3);
+  const restOfGuides = guides.slice(3, 10); // Show top 10
+
+  if (loading) {
+    return <div className="page-wrapper leaderboard-page" style={{display:'flex', justifyContent:'center', alignItems:'center'}}>Loading leaderboard...</div>;
+  }
+
+  if (guides.length === 0) {
+    return <div className="page-wrapper leaderboard-page" style={{display:'flex', justifyContent:'center', alignItems:'center'}}>No guides found.</div>;
+  }
 
   return (
     <div className="page-wrapper leaderboard-page">
@@ -48,68 +73,76 @@ export default function Leaderboard() {
         {/* Podium */}
         <div className="podium-container">
           {/* 2nd Place */}
-          <div className="podium-item podium-second">
-            <div className="podium-avatar-wrap">
-              <div className="podium-badge badge-silver"><Medal size={16} /> 2</div>
-              <img src={topThree[1].avatar} alt={topThree[1].name} />
+          {topThree[1] && (
+            <div className="podium-item podium-second">
+              <div className="podium-avatar-wrap">
+                <div className="podium-badge badge-silver"><Medal size={16} /> 2</div>
+                <img src={topThree[1].avatar} alt={topThree[1].name} />
+              </div>
+              <div className="podium-name">{topThree[1].name}</div>
+              <div className="podium-points">{topThree[1].points.toLocaleString()} pts</div>
+              <div className="podium-block block-silver" />
             </div>
-            <div className="podium-name">{topThree[1].name}</div>
-            <div className="podium-points">{topThree[1].points.toLocaleString()} pts</div>
-            <div className="podium-block block-silver" />
-          </div>
+          )}
 
           {/* 1st Place */}
-          <div className="podium-item podium-first">
-            <div className="podium-avatar-wrap">
-              <div className="podium-badge badge-gold"><Trophy size={20} /> 1</div>
-              <img src={topThree[0].avatar} alt={topThree[0].name} className="avatar-lg" />
+          {topThree[0] && (
+            <div className="podium-item podium-first">
+              <div className="podium-avatar-wrap">
+                <div className="podium-badge badge-gold"><Trophy size={20} /> 1</div>
+                <img src={topThree[0].avatar} alt={topThree[0].name} className="avatar-lg" />
+              </div>
+              <div className="podium-name">{topThree[0].name}</div>
+              <div className="podium-points gradient-text">{topThree[0].points.toLocaleString()} pts</div>
+              <div className="podium-block block-gold" />
             </div>
-            <div className="podium-name">{topThree[0].name}</div>
-            <div className="podium-points gradient-text">{topThree[0].points.toLocaleString()} pts</div>
-            <div className="podium-block block-gold" />
-          </div>
+          )}
 
           {/* 3rd Place */}
-          <div className="podium-item podium-third">
-            <div className="podium-avatar-wrap">
-              <div className="podium-badge badge-bronze"><Award size={16} /> 3</div>
-              <img src={topThree[2].avatar} alt={topThree[2].name} />
+          {topThree[2] && (
+            <div className="podium-item podium-third">
+              <div className="podium-avatar-wrap">
+                <div className="podium-badge badge-bronze"><Award size={16} /> 3</div>
+                <img src={topThree[2].avatar} alt={topThree[2].name} />
+              </div>
+              <div className="podium-name">{topThree[2].name}</div>
+              <div className="podium-points">{topThree[2].points.toLocaleString()} pts</div>
+              <div className="podium-block block-bronze" />
             </div>
-            <div className="podium-name">{topThree[2].name}</div>
-            <div className="podium-points">{topThree[2].points.toLocaleString()} pts</div>
-            <div className="podium-block block-bronze" />
-          </div>
+          )}
         </div>
 
         {/* Rest of the List */}
-        <div className="lb-list glass-card">
-          <div className="lb-list-header">
-            <div>Rank</div>
-            <div>Guide</div>
-            <div>Location</div>
-            <div style={{ textAlign: 'right' }}>Score</div>
-          </div>
-          
-          <div className="lb-list-body">
-            {restOfGuides.map((guide, index) => (
-              <Link to={`/guide/${guide.id}`} key={guide.id} className="lb-row">
-                <div className="lb-rank">#{index + 4}</div>
-                <div className="lb-guide">
-                  <img src={guide.avatar} alt={guide.name} />
-                  <div>
-                    <div className="lb-guide-name">{guide.name}</div>
-                    <div className="lb-guide-rating"><Star size={12} fill="var(--accent-amber)" stroke="none" /> {guide.rating}</div>
+        {restOfGuides.length > 0 && (
+          <div className="lb-list glass-card">
+            <div className="lb-list-header">
+              <div>Rank</div>
+              <div>Guide</div>
+              <div>Location</div>
+              <div style={{ textAlign: 'right' }}>Score</div>
+            </div>
+            
+            <div className="lb-list-body">
+              {restOfGuides.map((guide, index) => (
+                <Link to={`/guide/${guide.id}`} key={guide.id} className="lb-row">
+                  <div className="lb-rank">#{index + 4}</div>
+                  <div className="lb-guide">
+                    <img src={guide.avatar} alt={guide.name} />
+                    <div>
+                      <div className="lb-guide-name">{guide.name}</div>
+                      <div className="lb-guide-rating"><Star size={12} fill="var(--accent-amber)" stroke="none" /> {parseFloat(guide.rating || guide.avgRating || 0).toFixed(1)}</div>
+                    </div>
                   </div>
-                </div>
-                <div className="lb-location"><MapPin size={14} /> {guide.location}</div>
-                <div className="lb-score">
-                  {guide.points.toLocaleString()} <span className="lb-pts-label">pts</span>
-                  <ChevronRight size={16} className="lb-chevron" />
-                </div>
-              </Link>
-            ))}
+                  <div className="lb-location"><MapPin size={14} /> {guide.location}</div>
+                  <div className="lb-score">
+                    {guide.points.toLocaleString()} <span className="lb-pts-label">pts</span>
+                    <ChevronRight size={16} className="lb-chevron" />
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </div>
