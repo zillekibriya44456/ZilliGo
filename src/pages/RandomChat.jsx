@@ -176,12 +176,12 @@ export default function RandomChat() {
            
            if (remoteIceStr) {
              const remoteIce = JSON.parse(remoteIceStr);
-              if (remoteIce.length > lastProcessedIceCount.current.remote) {
+             // CRITICAL FIX: Only process and increment count IF remoteDescription is set. 
+             // Otherwise we permanently lose early ICE candidates!
+             if (pc.remoteDescription && remoteIce.length > lastProcessedIceCount.current.remote) {
                addLog(`ICE: Found ${remoteIce.length - lastProcessedIceCount.current.remote} new remote ICE candidates`);
                for (let i = lastProcessedIceCount.current.remote; i < remoteIce.length; i++) {
-                 if (pc.remoteDescription) {
-                    await pc.addIceCandidate(new RTCIceCandidate(remoteIce[i])).catch(e=>addLog('ICE ERROR: ' + e.message));
-                 }
+                 await pc.addIceCandidate(new RTCIceCandidate(remoteIce[i])).catch(e=>addLog('ICE ERROR: ' + e.message));
                }
                lastProcessedIceCount.current.remote = remoteIce.length;
              }
@@ -208,7 +208,7 @@ export default function RandomChat() {
            alert("WebRTC Error: " + err.message);
         }
       }
-    }, 2000);
+    }, 800); // 800ms for FAST Omegle-like connection speed
   };
 
   const stopPolling = () => {
