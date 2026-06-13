@@ -30,7 +30,8 @@ export default function RandomChat() {
 
   // Initialize socket once
   useEffect(() => {
-    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5001');
+    const socketUrl = import.meta.env.PROD ? window.location.origin : 'http://localhost:5001';
+    const newSocket = io(import.meta.env.VITE_API_URL || socketUrl);
     setSocket(newSocket);
     
     return () => {
