@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { io } from 'socket.io-client';
 import { Video, VideoOff, Mic, MicOff, SkipForward, PhoneOff, Send, MessageCircle, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { api } from '../utils/api';
 import './RandomChat.css';
 
 const ICE_SERVERS = {
@@ -12,7 +12,6 @@ const ICE_SERVERS = {
 
 export default function RandomChat() {
   const [appState, setAppState] = useState('idle'); // idle, loading, matching, matched
-  const [socket, setSocket] = useState(null);
   
   const [micOn, setMicOn] = useState(true);
   const [videoOn, setVideoOn] = useState(true);
@@ -27,17 +26,13 @@ export default function RandomChat() {
   
   const localStreamRef = useRef(null);
   const peerConnectionRef = useRef(null);
-
-  // Initialize socket once
-  useEffect(() => {
-    const socketUrl = import.meta.env.PROD ? window.location.origin : 'http://localhost:5001';
-    const newSocket = io(import.meta.env.VITE_API_URL || socketUrl);
-    setSocket(newSocket);
-    
-    return () => {
-      newSocket.disconnect();
-    };
-  }, []);
+  
+  // State for polling
+  const [roomId, setRoomId] = useState(null);
+  const [myRole, setMyRole] = useState(null); // 'initiator' or 'responder'
+  const pollingInterval = useRef(null);
+  
+  const lastProcessedIceCount = useRef({ local: 0, remote: 0 });
 
   useEffect(() => {
     if (chatBottomRef.current) {
@@ -45,67 +40,15 @@ export default function RandomChat() {
     }
   }, [messages, showChat]);
 
-  // Setup WebRTC and Socket listeners
+  // Cleanup on unmount
   useEffect(() => {
-    if (!socket) return;
-
-    socket.on('rc_match_found', async ({ roomId, role }) => {
-      console.log('Match found! Role:', role);
-      setAppState('matched');
-      setMessages([]);
-      
-      try {
-        await initPeerConnection(role);
-      } catch (err) {
-        console.error('Failed to init PC', err);
-        handleSkip(); // Try matching someone else if hardware fails
-      }
-    });
-
-    socket.on('rc_signal', async (data) => {
-      try {
-        const pc = peerConnectionRef.current;
-        if (!pc) return;
-
-        if (data.type === 'offer') {
-          await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          socket.emit('rc_signal', { type: 'answer', answer });
-        } else if (data.type === 'answer') {
-          await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-        } else if (data.type === 'ice-candidate') {
-          await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-        }
-      } catch (err) {
-        console.error('Error handling signal:', err);
-      }
-    });
-
-    socket.on('rc_message', (data) => {
-      setMessages(prev => [...prev, { id: Math.random(), sender: 'Stranger', text: data.text }]);
-    });
-
-    socket.on('rc_peer_left', () => {
-      cleanupPeerConnection();
-      setAppState('matching');
-      socket.emit('rc_find_match'); // Automatically find next
-    });
-
-    socket.on('rc_skipped', () => {
-      cleanupPeerConnection();
-      setAppState('matching');
-      socket.emit('rc_find_match');
-    });
-
     return () => {
-      socket.off('rc_match_found');
-      socket.off('rc_signal');
-      socket.off('rc_message');
-      socket.off('rc_peer_left');
-      socket.off('rc_skipped');
+      stopPolling();
+      cleanupPeerConnection();
+      stopAllMedia();
+      if (roomId) api.rcLeaveRoom(roomId).catch(()=>{});
     };
-  }, [socket]);
+  }, [roomId]);
 
   const initLocalStream = async () => {
     if (localStreamRef.current) return localStreamRef.current;
@@ -120,19 +63,115 @@ export default function RandomChat() {
     }
   };
 
-  const initPeerConnection = async (role) => {
+  const startPolling = (rId, role) => {
+    stopPolling();
+    lastProcessedIceCount.current = { local: 0, remote: 0 };
+    
+    pollingInterval.current = setInterval(async () => {
+      try {
+        const room = await api.rcGetRoomStatus(rId);
+        
+        // Check if partner skipped
+        if (!room) {
+           handlePartnerLeft();
+           return;
+        }
+
+        if (appState !== 'matched' && room.status === 'matched') {
+          setAppState('matched');
+          await initPeerConnection(role, rId);
+        }
+
+        // Process WebRTC Signaling if matched
+        if (room.status === 'matched') {
+           const pc = peerConnectionRef.current;
+           if (!pc) return;
+
+           // Initiator creates offer, Responder waits for offer to create answer
+           if (role === 'responder' && room.offer && pc.signalingState === 'stable') {
+             const offerDesc = new RTCSessionDescription(JSON.parse(room.offer));
+             await pc.setRemoteDescription(offerDesc);
+             const answer = await pc.createAnswer();
+             await pc.setLocalDescription(answer);
+             await api.rcSendSignal(rId, role, 'answer', answer);
+           }
+
+           // Initiator waits for answer
+           if (role === 'initiator' && room.answer && pc.signalingState === 'have-local-offer') {
+             const answerDesc = new RTCSessionDescription(JSON.parse(room.answer));
+             await pc.setRemoteDescription(answerDesc);
+           }
+
+           // Process Remote ICE Candidates
+           const remoteIceField = role === 'initiator' ? 'user2_ice' : 'user1_ice';
+           const remoteIceStr = room[remoteIceField];
+           
+           if (remoteIceStr) {
+             const remoteIce = JSON.parse(remoteIceStr);
+             if (remoteIce.length > lastProcessedIceCount.current.remote) {
+               for (let i = lastProcessedIceCount.current.remote; i < remoteIce.length; i++) {
+                 if (pc.remoteDescription) {
+                    await pc.addIceCandidate(new RTCIceCandidate(remoteIce[i])).catch(e=>console.warn('ICE Error',e));
+                 }
+               }
+               lastProcessedIceCount.current.remote = remoteIce.length;
+             }
+           }
+           
+           // Fetch Messages
+           if (room.messages) {
+              const msgs = JSON.parse(room.messages);
+              // Simple rendering logic: assume we track the last N messages
+              if (msgs.length > messages.length) {
+                 const newMsgs = msgs.map((m, i) => ({
+                    id: m.timestamp + i,
+                    sender: 'Stranger', // In a real app we'd differentiate by sender ID
+                    text: m.text
+                 }));
+                 // It's a bit naive, but we just override the messages array 
+                 // Since it's anonymous and DB resets per room
+                 setMessages(newMsgs);
+              }
+           }
+        }
+      } catch (err) {
+        if (err.message && err.message.includes('404')) {
+           handlePartnerLeft();
+        }
+      }
+    }, 2000);
+  };
+
+  const stopPolling = () => {
+    if (pollingInterval.current) {
+      clearInterval(pollingInterval.current);
+      pollingInterval.current = null;
+    }
+  };
+
+  const initPeerConnection = async (role, rId) => {
     const pc = new RTCPeerConnection(ICE_SERVERS);
     peerConnectionRef.current = pc;
 
     pc.onicecandidate = (event) => {
-      if (event.candidate && socket) {
-        socket.emit('rc_signal', { type: 'ice-candidate', candidate: event.candidate });
+      if (event.candidate) {
+        api.rcSendSignal(rId, role, 'ice-candidate', event.candidate).catch(()=>{});
       }
     };
 
     pc.ontrack = (event) => {
-      if (remoteVideoRef.current) {
+      if (remoteVideoRef.current && remoteVideoRef.current.srcObject !== event.streams[0]) {
         remoteVideoRef.current.srcObject = event.streams[0];
+      }
+    };
+    
+    // Stop polling once fully connected to save resources!
+    pc.oniceconnectionstatechange = () => {
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+         // Only polling for messages now, or we could slow polling down to 5s
+         console.log('WebRTC P2P connected!');
+      } else if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+         handlePartnerLeft();
       }
     };
 
@@ -142,7 +181,7 @@ export default function RandomChat() {
     if (role === 'initiator') {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      socket.emit('rc_signal', { type: 'offer', offer });
+      await api.rcSendSignal(rId, role, 'offer', offer);
     }
   };
 
@@ -168,21 +207,53 @@ export default function RandomChat() {
     try {
       await initLocalStream();
       setAppState('matching');
-      socket.emit('rc_find_match');
+      
+      const myTempId = 'user_' + Math.floor(Math.random() * 1000000);
+      const res = await api.rcJoinQueue(myTempId);
+      
+      setRoomId(res.roomId);
+      setMyRole(res.role);
+      startPolling(res.roomId, res.role);
     } catch (err) {
+      console.error(err);
       setAppState('idle');
     }
   };
 
-  const handleSkip = () => {
-    socket.emit('rc_skip');
+  const handleSkip = async () => {
+    stopPolling();
+    cleanupPeerConnection();
+    if (roomId) {
+       await api.rcLeaveRoom(roomId).catch(()=>{});
+    }
+    setRoomId(null);
+    setMessages([]);
+    
+    // Immediately jump back in
+    startRandomChat();
+  };
+  
+  const handlePartnerLeft = () => {
+    stopPolling();
+    cleanupPeerConnection();
+    setRoomId(null);
+    setMessages([]);
+    
+    // Auto find new partner
+    setAppState('matching');
+    startRandomChat();
   };
 
   const handleEndCall = () => {
-    socket.emit('rc_skip'); // Triggers disconnect from room on server
+    stopPolling();
+    if (roomId) {
+       api.rcLeaveRoom(roomId).catch(()=>{});
+    }
     cleanupPeerConnection();
     stopAllMedia();
     setAppState('idle');
+    setRoomId(null);
+    setMessages([]);
   };
 
   const toggleMute = () => {
@@ -205,14 +276,35 @@ export default function RandomChat() {
     }
   };
 
-  const sendMessage = (e) => {
+  const sendMessage = async (e) => {
     e.preventDefault();
-    if (!chatMsg.trim()) return;
+    if (!chatMsg.trim() || !roomId) return;
     
-    setMessages(prev => [...prev, { id: Math.random(), sender: 'You', text: chatMsg }]);
-    socket.emit('rc_message', chatMsg);
+    const msgText = chatMsg;
     setChatMsg('');
+    
+    // Optimistic UI
+    setMessages(prev => [...prev, { id: Date.now(), sender: 'You', text: msgText }]);
+    
+    try {
+      await api.rcSendMessage(roomId, `[${myRole === 'initiator' ? 'User A' : 'User B'}] ` + msgText);
+    } catch (err) {
+      console.error(err);
+    }
   };
+
+  // Filter messages to hide the prefix wrapper if possible
+  const displayMsgs = messages.map(m => {
+     let text = m.text;
+     let sender = m.sender;
+     if (text.startsWith('[User A]') || text.startsWith('[User B]')) {
+        const isMe = (text.startsWith('[User A]') && myRole === 'initiator') || 
+                     (text.startsWith('[User B]') && myRole === 'responder');
+        sender = isMe ? 'You' : 'Stranger';
+        text = text.replace(/\[User [AB]\]\s/, '');
+     }
+     return { ...m, sender, text };
+  });
 
   return (
     <div className="random-chat-container">
@@ -264,7 +356,7 @@ export default function RandomChat() {
 
           <div className={`rc-chat-overlay ${showChat ? 'visible' : ''}`}>
             <div className="rc-chat-messages">
-              {messages.map(msg => (
+              {displayMsgs.map(msg => (
                 <div key={msg.id} className={`rc-msg ${msg.sender === 'You' ? 'rc-msg-you' : 'rc-msg-stranger'}`}>
                   <strong>{msg.sender}:</strong> {msg.text}
                 </div>

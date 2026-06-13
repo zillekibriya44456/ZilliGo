@@ -293,7 +293,35 @@ export const api = {
   startLiveStream: (tourId) => fetch(`${API_BASE}/agora/start-stream`, {
     method: 'POST',
     headers: getHeaders(),
-    body: JSON.stringify({ tourId })
+    body: JSON.stringify({ tourId }),
+  }).then(res => res.json()),
+
+  // Random Chat (Database Polling Signaling)
+  rcJoinQueue: (userId) => fetch(`${API_BASE}/random-chat/join`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ userId }),
+  }).then(res => res.json()),
+
+  rcGetRoomStatus: (roomId) => fetch(`${API_BASE}/random-chat/room/${roomId}`, {
+    headers: getHeaders()
+  }).then(res => res.json()),
+
+  rcSendSignal: (roomId, role, type, data) => fetch(`${API_BASE}/random-chat/room/${roomId}/signal`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ role, type, data }),
+  }).then(res => res.json()),
+
+  rcSendMessage: (roomId, message) => fetch(`${API_BASE}/random-chat/room/${roomId}/message`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ message }),
+  }).then(res => res.json()),
+
+  rcLeaveRoom: (roomId) => fetch(`${API_BASE}/random-chat/room/${roomId}/leave`, {
+    method: 'POST',
+    headers: getHeaders(),
   }).then(res => res.json()),
 
   // Matching Suggestions

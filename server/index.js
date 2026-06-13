@@ -24,8 +24,8 @@ const creatorRoutes = require('./routes/creatorRoutes');
 const shopRoutes = require('./routes/shopRoutes');
 const academyRoutes = require('./routes/academyRoutes');
 const agoraRoutes = require('./routes/agoraRoutes');
+const randomChatRoutes = require('./routes/randomChatRoutes');
 const db = require('./utils/db');
-const setupRandomChat = require('./sockets/randomChat');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -92,6 +92,7 @@ app.use('/api/creators', creatorRoutes);
 app.use('/api/shop', shopRoutes);
 app.use('/api/academy', academyRoutes);
 app.use('/api/agora', agoraRoutes);
+app.use('/api/random-chat', randomChatRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
@@ -176,9 +177,6 @@ io.on('connection', (socket) => {
     console.log('User disconnected');
   });
 });
-
-// Setup anonymous random chat signaling
-setupRandomChat(io);
 
 const PORT = process.env.PORT || 5001;
 if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
