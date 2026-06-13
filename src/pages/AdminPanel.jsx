@@ -281,10 +281,10 @@ export default function AdminPanel() {
         {/* Statistics Widgets Grid */}
         <div className="admin-metrics-row">
           {[
-            { label: 'Total Travelers', value: systemUsers.filter(u => u.role === 'traveler').length || 180, icon: <Users size={20} />, trend: '+14% growth' },
-            { label: 'Active Guides', value: systemUsers.filter(u => u.role === 'guide').length || 24, icon: <Globe size={20} />, trend: '+4% growth' },
-            { label: 'Tours Listed', value: tours.length || 14, icon: <Video size={20} />, trend: 'Live catalog' },
-            { label: 'Total Volume (GMV)', value: `$${bookings.reduce((acc, b) => acc + (b.totalAmount || 0), 0) || '24,500'}`, icon: <DollarSign size={20} />, trend: 'Gross platform revenue' }
+            { label: 'Total Travelers', value: systemUsers.filter(u => u.role === 'traveler').length, icon: <Users size={20} />, trend: 'Live users' },
+            { label: 'Active Guides', value: systemUsers.filter(u => u.role === 'guide').length, icon: <Globe size={20} />, trend: 'Live guides' },
+            { label: 'Tours Listed', value: tours.length, icon: <Video size={20} />, trend: 'Live catalog' },
+            { label: 'Total Volume (GMV)', value: `$${(stats.revenue || 0).toFixed(2)}`, icon: <DollarSign size={20} />, trend: 'Gross platform revenue' }
           ].map((m, i) => (
             <div key={i} className="metric-box">
               <div className="metric-box-top">
@@ -329,7 +329,7 @@ export default function AdminPanel() {
               
               <div className="admin-glass-card">
                 <h3>System Status & Service Monitoring</h3>
-                <p className="card-desc">Simulated telemetry representing CPU load, database latency, and API service levels.</p>
+                <p className="card-desc">Live telemetry representing connection, database health, and API service levels.</p>
                 
                 <div className="telemetry-grid">
                   <div className="telemetry-bar-card">
