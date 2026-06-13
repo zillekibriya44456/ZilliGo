@@ -224,6 +224,7 @@ export default function RandomChat() {
       startPolling(res.roomId, res.role);
     } catch (err) {
       console.error(err);
+      alert("Connection Error: " + err.message);
       setAppState('idle');
     }
   };
@@ -249,7 +250,7 @@ export default function RandomChat() {
     
     // Auto find new partner
     setAppState('matching');
-    startRandomChat();
+    startRandomChat().catch(() => {});
   };
 
   const handleEndCall = () => {

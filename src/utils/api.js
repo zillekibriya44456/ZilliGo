@@ -301,7 +301,10 @@ export const api = {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify({ userId }),
-  }).then(res => res.json()),
+  }).then(async res => {
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }),
 
   rcGetRoomStatus: (roomId) => fetch(`${API_BASE}/random-chat/room/${roomId}`, {
     headers: getHeaders()
