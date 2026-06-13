@@ -58,6 +58,17 @@ router.post('/join', async (req, res) => {
   }
 });
 
+// GET /api/random-chat/debug
+router.get('/debug', async (req, res) => {
+  try {
+    await ensureDb();
+    const result = await db.query('SELECT * FROM random_chat_rooms ORDER BY created_at DESC LIMIT 20');
+    res.json({ rooms: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/random-chat/room/:id
 router.get('/room/:id', async (req, res) => {
   try {
