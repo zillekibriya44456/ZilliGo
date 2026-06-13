@@ -85,7 +85,7 @@ export default function Navbar() {
 
   return (
     <nav className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
-      <div className="navbar__inner container">
+      <div className="navbar__inner container-fluid">
         {/* Logo */}
         <Link to="/" className="navbar__logo">
           <div className="navbar__logo-icon">

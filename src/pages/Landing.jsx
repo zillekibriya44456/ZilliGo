@@ -146,7 +146,7 @@ export default function Landing() {
           </svg>
         </div>
 
-        <div className={`container hero-content ${heroLoaded ? 'hero-content--visible' : ''}`}>
+        <div className={`container-fluid hero-content ${heroLoaded ? 'hero-content--visible' : ''}`}>
           <div className="hero-content__inner">
             
             {/* Floating Indicators */}
@@ -309,7 +309,7 @@ export default function Landing() {
         </div>
 
         {/* Global Activity Counter Bar */}
-        <div className="container animate-fade-up" style={{ position: 'relative', zIndex: 12, marginTop: '5vh' }}>
+        <div className="container-fluid animate-fade-up" style={{ position: 'relative', zIndex: 12, marginTop: '5vh' }}>
           <div className="stats-bar-glow-card">
             {[
               { label: '🔴 LIVE TOURS NOW', value: `${dbStats.tours > 100 ? dbStats.tours : 1200 + dbStats.tours}+` },

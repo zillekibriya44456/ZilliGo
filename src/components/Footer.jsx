@@ -10,7 +10,7 @@ export default function Footer() {
     <footer className="footer">
       <div className="footer__glow footer__glow--left" />
       <div className="footer__glow footer__glow--right" />
-      <div className="container">
+      <div className="container-fluid">
         <div className="footer__top" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr' }}>
 
           {/* Brand */}
