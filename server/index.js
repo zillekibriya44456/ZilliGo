@@ -25,6 +25,8 @@ const shopRoutes = require('./routes/shopRoutes');
 const academyRoutes = require('./routes/academyRoutes');
 const agoraRoutes = require('./routes/agoraRoutes');
 const randomChatRoutes = require('./routes/randomChatRoutes');
+const uberMatchingRoutes = require('./routes/uberMatchingRoutes');
+const MatchingEngine = require('./services/MatchingEngine');
 const db = require('./utils/db');
 
 const app = express();
@@ -93,6 +95,7 @@ app.use('/api/shop', shopRoutes);
 app.use('/api/academy', academyRoutes);
 app.use('/api/agora', agoraRoutes);
 app.use('/api/random-chat', randomChatRoutes);
+app.use('/api/uber', uberMatchingRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
@@ -177,6 +180,11 @@ io.on('connection', (socket) => {
     console.log('User disconnected');
   });
 });
+
+// Auto-Escalation Engine Loop (Runs every 5 seconds)
+setInterval(() => {
+  MatchingEngine.processEscalations(io);
+}, 5000);
 
 const PORT = process.env.PORT || 5001;
 if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {

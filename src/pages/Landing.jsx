@@ -5,7 +5,9 @@ import {
   MapPin, Clock, ChevronRight, Video, CheckCircle, Award, Search
 } from 'lucide-react';
 import TourCard from '../components/TourCard';
-import { CATEGORIES } from '../data/mockData'; // Keeping Categories for now unless API provides them
+import UberMatchingMap from '../components/UberMatchingMap';
+import { CATEGORIES } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { api } from '../utils/api';
 import { t } from '../utils/translations';
@@ -15,6 +17,8 @@ import './Landing.css';
 export default function Landing() {
   const navigate = useNavigate();
   const { language } = useSettings();
+  const { user } = useAuth();
+  const [socket, setSocket] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [heroLoaded, setHeroLoaded] = useState(false);
@@ -45,8 +49,10 @@ export default function Landing() {
       setDynamicData(data);
     }).catch(console.error);
 
-    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5001');
-    socket.on('new_tour', (newTour) => {
+    const socketInstance = io(import.meta.env.VITE_API_URL || 'http://localhost:5001');
+    setSocket(socketInstance);
+    
+    socketInstance.on('new_tour', (newTour) => {
       setDynamicData(prev => ({
         ...prev,
         tours: [newTour, ...prev.tours],
@@ -66,7 +72,7 @@ export default function Landing() {
     }, 4000);
 
     return () => {
-      socket.disconnect();
+      socketInstance.disconnect();
       clearInterval(placeholderInterval);
       clearInterval(translationInterval);
     };
@@ -435,36 +441,7 @@ export default function Landing() {
             <Link to="/explore" className="btn btn-primary">Book a Tour Now <ArrowRight size={16} /></Link>
           </div>
           <div className="matching-feature__visual">
-            <div className="matching-visual glass-card">
-              <div className="matching-visual__radar">
-                <div className="mv-ring mv-ring--1" />
-                <div className="mv-ring mv-ring--2" />
-                <div className="mv-ring mv-ring--3" />
-                <div className="mv-center">📍</div>
-                {[
-                  { top: '20%', left: '65%', name: 'Arjun', time: '2 min', active: true },
-                  { top: '60%', left: '20%', name: 'Priya', time: '5 min', active: false },
-                  { top: '35%', left: '75%', name: 'Ravi', time: '8 min', active: false },
-                ].map((g, i) => (
-                  <div key={i} className={`mv-guide ${g.active ? 'mv-guide--active' : ''}`} style={{ top: g.top, left: g.left }}>
-                    <div className="mv-guide__dot" />
-                    <div className="mv-guide__label glass-card">
-                      <strong>{g.name}</strong>
-                      <span>{g.time}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="matching-visual__status">
-                <div className="mv-status mv-status--searching">
-                  <div className="spinner" />
-                  <span>Finding nearest guide...</span>
-                </div>
-                <div className="mv-status mv-status--matched">
-                  <CheckCircle size={16} /> <span>Arjun matched! ETA: 2 min</span>
-                </div>
-              </div>
-            </div>
+            <UberMatchingMap socket={socket} user={user} />
           </div>
         </div>
       </section>

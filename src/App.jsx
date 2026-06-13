@@ -23,6 +23,7 @@ const Academy = lazy(() => import('./pages/Academy'));
 const CourseViewer = lazy(() => import('./pages/CourseViewer'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const BecomeGuide = lazy(() => import('./pages/BecomeGuide'));
+const GuideDriverApp = lazy(() => import('./pages/GuideDriverApp'));
 const Leaderboard = lazy(() => import('./pages/Leaderboard'));
 const TripPlanner = lazy(() => import('./pages/TripPlanner'));
 const Messages = lazy(() => import('./pages/Messages'));
@@ -82,6 +83,7 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/driver" element={<ProtectedRoute allowedRoles={['guide', 'admin']}><GuideDriverApp /></ProtectedRoute>} />
             <Route path="/guide-dashboard" element={<ProtectedRoute allowedRoles={['guide', 'admin']}><GuideDashboard /></ProtectedRoute>} />
             <Route path="/creator-dashboard" element={<ProtectedRoute allowedRoles={['creator', 'admin']}><CreatorDashboard /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminPanel /></ProtectedRoute>} />

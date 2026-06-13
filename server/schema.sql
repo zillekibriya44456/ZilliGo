@@ -665,3 +665,31 @@ CREATE TABLE system_settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- ====================================================================
+-- UBER-STYLE MATCHING ENGINE SCHEMA
+-- ====================================================================
+
+CREATE TABLE guide_locations (
+    guide_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
+    online_status VARCHAR(20) DEFAULT 'offline', -- online, offline
+    availability_status VARCHAR(20) DEFAULT 'available', -- available, busy, in_tour
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE booking_requests (
+    id SERIAL PRIMARY KEY,
+    traveler_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    guide_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    city VARCHAR(100),
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
+    amount DECIMAL(10, 2),
+    duration_minutes INTEGER,
+    status VARCHAR(20) DEFAULT 'pending', -- pending, accepted, rejected, expired
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+

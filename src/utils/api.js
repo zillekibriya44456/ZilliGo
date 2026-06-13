@@ -270,6 +270,36 @@ export const api = {
     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
   }).then(res => res.json()),
 
+  // ==========================================
+  // UBER-STYLE MATCHING ENGINE
+  // ==========================================
+  setGuideStatus: (data) => fetch(`${API_BASE}/uber/status`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  }).then(handleResponse),
+
+  requestGuide: (data) => fetch(`${API_BASE}/uber/request`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  }).then(handleResponse),
+
+  acceptBookingRequest: (requestId) => fetch(`${API_BASE}/uber/accept`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ requestId }),
+  }).then(handleResponse),
+
+  rejectBookingRequest: (requestId) => fetch(`${API_BASE}/uber/reject`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ requestId }),
+  }).then(handleResponse),
+
+  // ==========================================
+  // GROWTH & GAMIFICATION
+  // ==========================================
   // Shop & Academy
   getDigitalProducts: (category) => fetch(`${API_BASE}/shop/products${category ? `?category=${category}` : ''}`).then(res => res.json()),
   purchaseProduct: (data) => fetch(`${API_BASE}/shop/purchase`, {
