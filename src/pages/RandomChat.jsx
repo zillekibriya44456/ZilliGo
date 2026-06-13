@@ -143,8 +143,11 @@ export default function RandomChat() {
            }
         }
       } catch (err) {
+        console.error('Polling error:', err);
         if (err.message && (err.message.includes('404') || err.message.includes('Room closed'))) {
            handlePartnerLeft();
+        } else {
+           alert("WebRTC Error: " + err.message);
         }
       }
     }, 2000);
