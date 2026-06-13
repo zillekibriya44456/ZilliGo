@@ -38,9 +38,9 @@ router.post('/join', async (req, res) => {
     await ensureDb();
     const userId = req.body.userId || uuidv4();
     
-    // 1. Clean up dead ghosts (anyone who hasn't polled in 60 seconds)
+    // 1. Clean up dead ghosts (anyone who hasn't polled in 5 minutes)
     // Using EXTRACT(EPOCH) guarantees we don't get timezone mismatch bugs
-    await db.query(`DELETE FROM random_chat_rooms WHERE EXTRACT(EPOCH FROM CURRENT_TIMESTAMP) - EXTRACT(EPOCH FROM last_active) > 60`);
+    await db.query(`DELETE FROM random_chat_rooms WHERE EXTRACT(EPOCH FROM CURRENT_TIMESTAMP) - EXTRACT(EPOCH FROM last_active) > 300`);
     
     // 2. ATOMIC MATCHMAKING: Find a waiting room and lock it instantly so no one else can take it.
     // This perfectly simulates a dedicated Redis/Socket.io Queue using PostgreSQL.
