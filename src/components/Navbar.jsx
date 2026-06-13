@@ -108,6 +108,9 @@ export default function Navbar() {
           <NavLink to="/live/1" className={({ isActive }) => `navbar__link navbar__link--live ${isActive ? 'active' : ''}`}>
             <span className="live-dot" /> {t('live_now', language)}
           </NavLink>
+          <NavLink to="/random-chat" className={({ isActive }) => `navbar__link ${isActive ? 'active' : ''}`} style={{ color: 'var(--accent-teal)' }}>
+            <Video size={15} style={{ marginRight: '6px' }} /> Strangers
+          </NavLink>
           <NavLink to="/shop" className={({ isActive }) => `navbar__link ${isActive ? 'active' : ''}`}>
             🛍️ Shop
           </NavLink>
@@ -228,6 +231,7 @@ export default function Navbar() {
           <NavLink to="/explore" onClick={() => setMenuOpen(false)}>🗺️ {t('explore', language)}</NavLink>
           <NavLink to="/guides" onClick={() => setMenuOpen(false)}>👤 {t('guides', language)}</NavLink>
           <NavLink to="/live/1" onClick={() => setMenuOpen(false)}>🔴 {t('live_now', language)}</NavLink>
+          <NavLink to="/random-chat" onClick={() => setMenuOpen(false)}>📹 Strangers</NavLink>
           <NavLink to="/shop" onClick={() => setMenuOpen(false)}>🛍️ Shop</NavLink>
           {user ? (
             <>

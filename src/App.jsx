@@ -33,6 +33,7 @@ const DigitalPassport = lazy(() => import('./pages/DigitalPassport'));
 const FriendDiscovery = lazy(() => import('./pages/FriendDiscovery'));
 const GlobalMap = lazy(() => import('./pages/GlobalMap'));
 const ExchangeRooms = lazy(() => import('./pages/ExchangeRooms'));
+const RandomChat = lazy(() => import('./pages/RandomChat'));
 
 // Lazy load Company Pages
 const About = lazy(() => import('./pages/About'));
@@ -94,6 +95,7 @@ function App() {
             <Route path="/friends" element={<FriendDiscovery />} />
             <Route path="/map" element={<GlobalMap />} />
             <Route path="/exchange" element={<ExchangeRooms />} />
+            <Route path="/random-chat" element={<RandomChat />} />
             <Route path="/auth/callback" element={<OAuthCallback />} />
 
             {/* Company Routes */}
