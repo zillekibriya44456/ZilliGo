@@ -317,7 +317,10 @@ export const api = {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify({ role, type, data }),
-  }).then(res => res.json()),
+  }).then(async res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ` + await res.text());
+    return res.json();
+  }),
 
   rcSendMessage: (roomId, message) => fetch(`${API_BASE}/random-chat/room/${roomId}/message`, {
     method: 'POST',

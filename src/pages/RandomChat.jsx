@@ -17,6 +17,17 @@ export default function RandomChat() {
   const [appState, setAppState] = useState('idle'); // idle, loading, matching, matched
   const [statusText, setStatusText] = useState('');
   
+  const [debugLogs, setDebugLogs] = useState([]);
+  
+  // Custom logger to render network traces on mobile screen
+  const addLog = (msg) => {
+    setDebugLogs(prev => {
+      const newLogs = [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`];
+      return newLogs.slice(-50); // Keep last 50 logs
+    });
+    console.log('[WebRTC Debug]', msg);
+  };
+  
   const [micOn, setMicOn] = useState(true);
   const [videoOn, setVideoOn] = useState(true);
   const [showChat, setShowChat] = useState(true);
@@ -72,14 +83,19 @@ export default function RandomChat() {
       if (connectionTimeout.current) clearTimeout(connectionTimeout.current);
       cleanupPeerConnection();
       stopAllMedia();
-      if (roomId) api.rcLeaveRoom(roomId).catch(()=>{});
+      if (roomId) {
+         addLog('QUEUE: Leaving room ' + roomId);
+         api.rcLeaveRoom(roomId).catch(()=>{});
+      }
     };
   }, [roomId]);
 
   const initLocalStream = async () => {
     if (localStreamRef.current) return localStreamRef.current;
     try {
+      addLog('MEDIA: Requesting Camera/Mic access...');
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      addLog('MEDIA: Camera/Mic granted.');
       localStreamRef.current = stream;
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
       return stream;
@@ -99,11 +115,13 @@ export default function RandomChat() {
         
         // Check if partner skipped
         if (!room || room.error) {
+           addLog('POLLING: Room not found. Partner probably left.');
            handlePartnerLeft();
            return;
         }
 
         if (appStateRef.current !== 'matched' && room.status === 'matched') {
+          addLog('MATCH: Matched with peer! Role: ' + role);
           setAppState('matched');
           setStatusText('Negotiating secure link...');
           
@@ -127,17 +145,29 @@ export default function RandomChat() {
 
            // Initiator creates offer, Responder waits for offer to create answer
            if (role === 'responder' && room.offer && pc.signalingState === 'stable') {
-             const offerDesc = new RTCSessionDescription(JSON.parse(room.offer));
-             await pc.setRemoteDescription(offerDesc);
-             const answer = await pc.createAnswer();
-             await pc.setLocalDescription(answer);
-             await api.rcSendSignal(rId, role, 'answer', answer);
+             addLog('SIGNAL: Remote Offer received. Generating Answer...');
+             try {
+                const offerDesc = new RTCSessionDescription(JSON.parse(room.offer));
+                await pc.setRemoteDescription(offerDesc);
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                await api.rcSendSignal(rId, role, 'answer', answer);
+                addLog('SIGNAL: Answer sent to DB successfully.');
+             } catch (e) {
+                addLog('ERROR: Answer generation failed: ' + e.message);
+             }
            }
 
            // Initiator waits for answer
            if (role === 'initiator' && room.answer && pc.signalingState === 'have-local-offer') {
-             const answerDesc = new RTCSessionDescription(JSON.parse(room.answer));
-             await pc.setRemoteDescription(answerDesc);
+             addLog('SIGNAL: Remote Answer received. Setting remote description...');
+             try {
+                const answerDesc = new RTCSessionDescription(JSON.parse(room.answer));
+                await pc.setRemoteDescription(answerDesc);
+                addLog('SIGNAL: Remote description set.');
+             } catch (e) {
+                addLog('ERROR: Answer acceptance failed: ' + e.message);
+             }
            }
 
            // Process Remote ICE Candidates
@@ -146,10 +176,11 @@ export default function RandomChat() {
            
            if (remoteIceStr) {
              const remoteIce = JSON.parse(remoteIceStr);
-             if (remoteIce.length > lastProcessedIceCount.current.remote) {
+              if (remoteIce.length > lastProcessedIceCount.current.remote) {
+               addLog(`ICE: Found ${remoteIce.length - lastProcessedIceCount.current.remote} new remote ICE candidates`);
                for (let i = lastProcessedIceCount.current.remote; i < remoteIce.length; i++) {
                  if (pc.remoteDescription) {
-                    await pc.addIceCandidate(new RTCIceCandidate(remoteIce[i])).catch(e=>console.warn('ICE Error',e));
+                    await pc.addIceCandidate(new RTCIceCandidate(remoteIce[i])).catch(e=>addLog('ICE ERROR: ' + e.message));
                  }
                }
                lastProcessedIceCount.current.remote = remoteIce.length;
@@ -188,12 +219,16 @@ export default function RandomChat() {
   };
 
   const initPeerConnection = async (role, rId) => {
+    addLog(`WEBRTC: Initializing RTCPeerConnection (Role: ${role})`);
     const pc = new RTCPeerConnection(ICE_SERVERS);
     peerConnectionRef.current = pc;
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        api.rcSendSignal(rId, role, 'ice-candidate', event.candidate).catch(()=>{});
+        addLog(`ICE: Gathered local candidate (${event.candidate.protocol})`);
+        api.rcSendSignal(rId, role, 'ice-candidate', event.candidate).catch((e)=>{
+           addLog('ICE ERROR: Failed to send to DB: ' + e.message);
+        });
       }
     };
 
@@ -205,23 +240,37 @@ export default function RandomChat() {
     
     // Stop polling once fully connected to save resources!
     pc.oniceconnectionstatechange = () => {
+      addLog(`WEBRTC STATE: iceConnectionState -> ${pc.iceConnectionState}`);
       if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
          if (connectionTimeout.current) clearTimeout(connectionTimeout.current);
          setStatusText('');
-         console.log('WebRTC P2P connected!');
+         addLog('WEBRTC: P2P Connected successfully!');
       } else if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
          setStatusText('Connection failed. Reconnecting...');
          handlePartnerLeft();
       }
     };
+    
+    pc.onsignalingstatechange = () => {
+      addLog(`WEBRTC STATE: signalingState -> ${pc.signalingState}`);
+    };
 
     const stream = await initLocalStream();
+    addLog('MEDIA: Adding local tracks to PeerConnection');
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
     if (role === 'initiator') {
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      await api.rcSendSignal(rId, role, 'offer', offer);
+      try {
+        addLog('SIGNAL: Creating Offer...');
+        const offer = await pc.createOffer();
+        addLog('SIGNAL: Setting local description...');
+        await pc.setLocalDescription(offer);
+        addLog('SIGNAL: Sending Offer to DB...');
+        await api.rcSendSignal(rId, role, 'offer', offer);
+        addLog('SIGNAL: Offer successfully saved in DB.');
+      } catch (err) {
+        addLog('ERROR: Offer creation failed: ' + err.message);
+      }
     }
   };
 
@@ -245,19 +294,23 @@ export default function RandomChat() {
   const startRandomChat = async () => {
     setAppState('loading');
     setStatusText('Accessing Camera...');
+    setDebugLogs([]); // Clear logs for new session
+    addLog('QUEUE: Initializing Random Chat sequence...');
     try {
       await initLocalStream();
       setAppState('matching');
       setStatusText('Finding a stranger...');
       
       const myTempId = 'user_' + Math.floor(Math.random() * 1000000);
+      addLog(`QUEUE: Joining server queue as ${myTempId}...`);
       const res = await api.rcJoinQueue(myTempId);
+      addLog(`QUEUE: Joined successfully! Room: ${res.roomId}, Role: ${res.role}`);
       
       setRoomId(res.roomId);
       setMyRole(res.role);
       startPolling(res.roomId, res.role);
     } catch (err) {
-      console.error(err);
+      addLog(`ERROR: Queue join failed: ${err.message}`);
       alert("Connection Error: " + err.message);
       setAppState('idle');
     }
@@ -374,6 +427,18 @@ export default function RandomChat() {
             </button>
           </div>
         </div>
+      )}
+      
+      {/* ON-SCREEN DIAGNOSTICS LOGGER */}
+      {debugLogs.length > 0 && (
+         <div className="absolute top-0 left-0 w-full h-[30%] bg-black/85 text-[#0f0] font-mono text-[10px] sm:text-xs p-2 overflow-y-auto z-[9999] pointer-events-auto break-all border-b-2 border-green-500 shadow-2xl">
+           <div className="font-bold text-white mb-2 sticky top-0 bg-black/90 p-1 flex justify-between">
+              <span>WebRTC Diagnostics (Screenshot on failure)</span>
+              <button onClick={() => setDebugLogs([])} className="bg-red-500 text-white px-2 rounded">Clear</button>
+           </div>
+           {debugLogs.map((log, i) => <div key={i} className="mb-1 leading-tight">{log}</div>)}
+           <div ref={(el) => el && el.scrollIntoView()} />
+         </div>
       )}
 
       {(appState === 'loading' || appState === 'matching') && (
