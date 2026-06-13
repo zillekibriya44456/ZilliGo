@@ -125,7 +125,7 @@ export default function RandomChat() {
           setAppState('matched');
           setStatusText('Negotiating secure link...');
           
-          // GHOST BUSTING: If connection doesn't complete in 45 seconds, assume partner ghosted.
+          // GHOST BUSTING: If connection doesn't complete in 15 seconds, assume partner ghosted.
           if (connectionTimeout.current) clearTimeout(connectionTimeout.current);
           connectionTimeout.current = setTimeout(() => {
              const pc = peerConnectionRef.current;
@@ -133,7 +133,7 @@ export default function RandomChat() {
                 setStatusText('Peer lost. Finding another...');
                 setTimeout(handleSkip, 1000);
              }
-          }, 45000);
+          }, 15000);
           
           await initPeerConnection(role, rId);
         }
