@@ -143,7 +143,20 @@ export default function RandomChat() {
            const pc = peerConnectionRef.current;
            if (!pc) return;
 
-           // Initiator creates offer, Responder waits for offer to create answer
+           // Initiator creates offer
+           if (role === 'initiator' && !room.offer && pc.signalingState === 'stable') {
+             addLog('SIGNAL: Creating Offer (Polling loop)...');
+             try {
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                await api.rcSendSignal(rId, role, 'offer', offer);
+                addLog('SIGNAL: Offer successfully sent to DB.');
+             } catch (e) {
+                addLog('ERROR: Offer generation failed: ' + e.message);
+             }
+           }
+
+           // Responder waits for offer to create answer
            if (role === 'responder' && room.offer && pc.signalingState === 'stable') {
              addLog('SIGNAL: Remote Offer received. Generating Answer...');
              try {
@@ -259,19 +272,7 @@ export default function RandomChat() {
     addLog('MEDIA: Adding local tracks to PeerConnection');
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
-    if (role === 'initiator') {
-      try {
-        addLog('SIGNAL: Creating Offer...');
-        const offer = await pc.createOffer();
-        addLog('SIGNAL: Setting local description...');
-        await pc.setLocalDescription(offer);
-        addLog('SIGNAL: Sending Offer to DB...');
-        await api.rcSendSignal(rId, role, 'offer', offer);
-        addLog('SIGNAL: Offer successfully saved in DB.');
-      } catch (err) {
-        addLog('ERROR: Offer creation failed: ' + err.message);
-      }
-    }
+    // Offer generation moved to polling loop for robustness
   };
 
   const cleanupPeerConnection = () => {
