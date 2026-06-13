@@ -269,3 +269,57 @@
   transform: scale(1.05);
   box-shadow: 0 0 20px rgba(255,255,255,0.4);
 }
+
+/* Slider Controls */
+.ptc-slider-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.5);
+  border: none;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.3s ease, background 0.3s ease;
+}
+
+.ptc-slider-btn:hover {
+  background: rgba(0,0,0,0.8);
+}
+
+.ptc-slider-btn.left { left: 8px; }
+.ptc-slider-btn.right { right: 8px; }
+
+.ptc-image-wrap:hover .ptc-slider-btn {
+  opacity: 1;
+}
+
+.ptc-slider-dots {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  z-index: 10;
+}
+
+.ptc-slider-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  transition: background 0.3s ease;
+}
+
+.ptc-slider-dot.active {
+  background: rgba(255,255,255,1);
+}
