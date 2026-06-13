@@ -104,18 +104,33 @@ export default function LiveRoom() {
     const initAgora = async () => {
       try {
         const isGuide = user?.id === guide.id;
+        const role = isGuide ? 'publisher' : 'subscriber';
+
+        let token = null;
+        let uid = user?.id || Math.floor(Math.random() * 10000);
+
+        try {
+          // Attempt to fetch secure token from our backend
+          const tokenData = await api.getAgoraToken(id, role);
+          if (tokenData && tokenData.token) {
+            token = tokenData.token;
+            uid = tokenData.uid || uid;
+          }
+        } catch (err) {
+          console.warn('Agora token fetch failed, attempting tokenless dev mode fallback.', err);
+        }
         
         if (isGuide) {
           // Broadcaster
           await client.setClientRole('host');
-          await client.join(appId, id, null, user?.id || null);
+          await client.join(appId, id, token, uid);
           localTracks = await AgoraRTC.createMicrophoneAndCameraTracks();
           localTracks[1].play('agora-video-container');
           await client.publish(localTracks);
         } else {
           // Audience
           await client.setClientRole('audience');
-          await client.join(appId, id, null, user?.id || null);
+          await client.join(appId, id, token, uid);
           
           client.on('user-published', async (agoraUser, mediaType) => {
             await client.subscribe(agoraUser, mediaType);
@@ -240,14 +255,19 @@ export default function LiveRoom() {
             </>
           ) : (
             !agoraActive && (
-              <div className="live-video-text">
-                <div className="live-connecting">
-                  <div className="live-connecting__pulse" />
-                  <span>Live stream powered by Agora RTC</span>
+              <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'hidden', backgroundColor: '#000' }}>
+                <video 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }}
+                  src="https://player.vimeo.com/external/434045526.sd.mp4?s=c27ee3bb33391d4e0e56708ab3ec09c6ebf2441a&profile_id=164&oauth2_token_id=57447761"
+                />
+                <div style={{ position: 'absolute', bottom: '20px', left: '20px', background: 'rgba(0,0,0,0.6)', padding: '8px 12px', borderRadius: '8px', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="live-connecting__pulse" style={{ width: 8, height: 8 }} />
+                  <span style={{ fontSize: '0.8rem', color: '#fff' }}>Simulation Mode (Add Agora keys for real streaming)</span>
                 </div>
-                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem' }}>
-                  Connect Agora App ID in .env to enable real video streaming
-                </p>
               </div>
             )
           )}
