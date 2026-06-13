@@ -16,6 +16,7 @@ export const translations = {
     messages: "Messages",
     dashboard: "Dashboard",
     logout: "Logout",
+    footer_tagline: "Explore the world through the eyes of local experts. Live virtual tours from every corner of the globe.",
   },
   ar: {
     explore: "استكشف الجولات",
