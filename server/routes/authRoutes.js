@@ -68,14 +68,17 @@ async function findOrCreateOAuthUser({ email, name, avatar, provider }) {
 }
 
 function getFrontendUrl(req) {
-  if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
-  try {
-    const host = req.get('host') || 'zilli-go.vercel.app';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    return `${protocol}://${host}`;
-  } catch (err) {
-    return 'https://zilli-go.vercel.app';
+  let url = process.env.FRONTEND_URL;
+  if (!url) {
+    try {
+      const host = req.get('host') || 'zilli-go.vercel.app';
+      const protocol = host.includes('localhost') ? 'http' : 'https';
+      url = `${protocol}://${host}`;
+    } catch (err) {
+      url = 'https://zilli-go.vercel.app';
+    }
   }
+  return url.replace(/\/$/, ''); // Remove trailing slashes
 }
 
 /** Redirect to frontend with user data encoded in URL */
