@@ -38,17 +38,28 @@ router.post('/join', async (req, res) => {
     await ensureDb();
     const userId = req.body.userId || uuidv4();
     
-    // 1. Clean up dead ghosts (anyone who hasn't polled in 15 seconds)
+    // 1. Clean up dead ghosts (anyone who hasn't polled in 60 seconds)
     // Using EXTRACT(EPOCH) guarantees we don't get timezone mismatch bugs
-    await db.query(`DELETE FROM random_chat_rooms WHERE EXTRACT(EPOCH FROM CURRENT_TIMESTAMP) - EXTRACT(EPOCH FROM last_active) > 15`);
+    await db.query(`DELETE FROM random_chat_rooms WHERE EXTRACT(EPOCH FROM CURRENT_TIMESTAMP) - EXTRACT(EPOCH FROM last_active) > 60`);
     
-    // 2. Check if there is an existing waiting room from someone else
-    const result = await db.query(`SELECT id FROM random_chat_rooms WHERE status = 'waiting' AND user1_id != $1 LIMIT 1`, [userId]);
+    // 2. ATOMIC MATCHMAKING: Find a waiting room and lock it instantly so no one else can take it.
+    // This perfectly simulates a dedicated Redis/Socket.io Queue using PostgreSQL.
+    const result = await db.query(`
+      UPDATE random_chat_rooms 
+      SET user2_id = $1, status = 'matched', last_active = CURRENT_TIMESTAMP 
+      WHERE id = (
+        SELECT id FROM random_chat_rooms 
+        WHERE status = 'waiting' AND user1_id != $1 
+        ORDER BY created_at ASC
+        LIMIT 1 
+        FOR UPDATE SKIP LOCKED
+      )
+      RETURNING id
+    `, [userId]);
     
     if (result.rows.length > 0) {
-      const roomId = result.rows[0].id;
       // Match found! Join the room.
-      await db.query(`UPDATE random_chat_rooms SET user2_id = $1, status = 'matched', last_active = CURRENT_TIMESTAMP WHERE id = $2`, [userId, roomId]);
+      const roomId = result.rows[0].id;
       return res.json({ roomId, role: 'responder', userId });
     } else {
       // 3. Create a new waiting room
