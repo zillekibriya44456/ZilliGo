@@ -4,8 +4,11 @@ const db = require('../utils/db');
 const crypto = require('crypto');
 const uuidv4 = () => crypto.randomUUID();
 
-// Auto-create table if not exists (Vercel-compatible startup check)
-const initDb = async () => {
+let isDbInitialized = false;
+
+// Auto-create table safely before first use
+const ensureDb = async () => {
+  if (isDbInitialized) return;
   try {
     await db.query(`
       CREATE TABLE IF NOT EXISTS random_chat_rooms (
@@ -22,15 +25,17 @@ const initDb = async () => {
         last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    isDbInitialized = true;
   } catch (err) {
     console.error('Failed to init random_chat_rooms table', err);
+    throw err;
   }
 };
-initDb();
 
 // POST /api/random-chat/join
 router.post('/join', async (req, res) => {
   try {
+    await ensureDb();
     const userId = req.body.userId || uuidv4();
     
     // 1. Clean up stale rooms older than 5 minutes to prevent ghost matching
@@ -59,6 +64,7 @@ router.post('/join', async (req, res) => {
 // GET /api/random-chat/room/:id
 router.get('/room/:id', async (req, res) => {
   try {
+    await ensureDb();
     const { id } = req.params;
     const result = await db.query(`SELECT * FROM random_chat_rooms WHERE id = $1`, [id]);
     
@@ -82,6 +88,7 @@ router.get('/room/:id', async (req, res) => {
 // POST /api/random-chat/room/:id/signal
 router.post('/room/:id/signal', async (req, res) => {
   try {
+    await ensureDb();
     const { id } = req.params;
     const { type, data, role } = req.body;
     
@@ -112,6 +119,7 @@ router.post('/room/:id/signal', async (req, res) => {
 // POST /api/random-chat/room/:id/message
 router.post('/room/:id/message', async (req, res) => {
   try {
+    await ensureDb();
     const { id } = req.params;
     const { message } = req.body;
     
@@ -132,6 +140,7 @@ router.post('/room/:id/message', async (req, res) => {
 // POST /api/random-chat/room/:id/leave
 router.post('/room/:id/leave', async (req, res) => {
   try {
+    await ensureDb();
     await db.query(`DELETE FROM random_chat_rooms WHERE id = $1`, [req.params.id]);
     res.json({ success: true });
   } catch (err) {
