@@ -6,7 +6,7 @@ import './PaymentOverlay.css';
 
 export default function PaymentOverlay({ amount, onPaymentSuccess, onClose, tourId, booking }) {
   const { user } = useAuth();
-  const [method, setMethod] = useState('card'); // card, upi, paypal, razorpay
+  const [method, setMethod] = useState('razorpay'); // Only Razorpay allowed
   const [step, setStep] = useState('input'); // input, processing, success
   const [cardName, setCardName] = useState('');
   const [error, setError] = useState('');
@@ -175,86 +175,19 @@ export default function PaymentOverlay({ amount, onPaymentSuccess, onClose, tour
               <div className="summary-value">${amount.toFixed(2)}</div>
             </div>
 
-            {/* Payment Method Tabs */}
-            <div className="payment-tabs">
-              <button className={`tab-btn ${method === 'card' ? 'active' : ''}`} onClick={() => setMethod('card')}>
-                <CreditCard size={14} /> Cards
-              </button>
-              <button className={`tab-btn ${method === 'upi' ? 'active' : ''}`} onClick={() => setMethod('upi')}>
-                <Smartphone size={14} /> UPI
-              </button>
-              <button className={`tab-btn ${method === 'paypal' ? 'active' : ''}`} onClick={() => setMethod('paypal')}>
-                <Globe size={14} /> PayPal
-              </button>
-              <button className={`tab-btn ${method === 'razorpay' ? 'active' : ''}`} onClick={() => setMethod('razorpay')}>
-                <span className="razor-logo">R</span> Razorpay
-              </button>
-            </div>
-
-            {/* Method Content */}
-            <div className="method-content">
-              {method === 'card' && (
-                <form className="payment-form" onSubmit={handlePay}>
-                  <div className="form-group">
-                    <label className="form-label">Cardholder Name</label>
-                    <input type="text" className="input" placeholder="Name on Card" required value={cardName} onChange={(e) => setCardName(e.target.value)} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Card Number</label>
-                    <div className="input-with-icon">
-                      <CreditCard size={16} />
-                      <input type="text" className="input" placeholder="4242 4242 4242 4242" required />
-                    </div>
-                  </div>
-                  <div className="grid-2">
-                    <input type="text" className="input" placeholder="MM/YY" required />
-                    <input type="password" className="input" placeholder="CVV" required />
-                  </div>
-                  <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: '1.5rem' }}>
-                    Pay Securely <ArrowRight size={18} />
-                  </button>
-                </form>
-              )}
-
-              {method === 'upi' && (
-                <div className="upi-content">
-                  <div className="upi-qr-placeholder">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ZilliGO-Payment" alt="UPI QR" />
-                    <p>Scan with Google Pay, PhonePe, or Paytm</p>
-                  </div>
-                  <div className="divider">OR ENTER VPA</div>
-                  <input type="text" className="input" placeholder="username@upi" />
-                  <button className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }} onClick={handlePay}>
-                    Verify & Pay
-                  </button>
+            {/* Method Content (Razorpay Only) */}
+            <div className="method-content" style={{ marginTop: '1.5rem' }}>
+              <div className="razorpay-content">
+                <div className="razor-badge" style={{ justifyContent: 'center', marginBottom: '1rem' }}>
+                  <span className="razor-logo">R</span> Razorpay Trusted Checkout
                 </div>
-              )}
-
-              {method === 'paypal' && (
-                <div className="paypal-content">
-                  <div className="paypal-btn-mock">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" style={{ height: '24px' }} />
-                  </div>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '1rem' }}>
-                    You'll be redirected to PayPal to complete your purchase safely.
-                  </p>
-                  <button className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', background: '#0070ba' }} onClick={handlePay}>
-                    Continue to PayPal
-                  </button>
-                </div>
-              )}
-
-              {method === 'razorpay' && (
-                <div className="razorpay-content">
-                  <div className="razor-badge">
-                    <span className="razor-logo">R</span> Razorpay Trusted
-                  </div>
-                  <p style={{ textAlign: 'center', margin: '1rem 0' }}>All Indian payment methods (Netbanking, UPI, Wallets) supported.</p>
-                  <button className="btn btn-primary" style={{ width: '100%', background: '#3399cc' }} onClick={handlePay}>
-                    Pay with Razorpay
-                  </button>
-                </div>
-              )}
+                <p style={{ textAlign: 'center', margin: '1rem 0', color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  Securely pay via Credit/Debit Cards, Netbanking, UPI, and Wallets through Razorpay's trusted gateway.
+                </p>
+                <button className="btn btn-primary" style={{ width: '100%', background: '#3399cc', height: '50px', fontSize: '1rem', marginTop: '1rem' }} onClick={handlePay}>
+                  Proceed with Razorpay <ArrowRight size={18} />
+                </button>
+              </div>
             </div>
 
             <div className="payment-trust-badge">
