@@ -73,6 +73,14 @@ router.get('/debug', async (req, res) => {
   }
 });
 
+// GET /api/random-chat/time-test
+router.get('/time-test', async (req, res) => {
+  try {
+    const r = await db.query(`SELECT EXTRACT(EPOCH FROM CURRENT_TIMESTAMP) as now_epoch, CURRENT_TIMESTAMP as now_timestamp`);
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({error: e.message}); }
+});
+
 // GET /api/random-chat/room/:id
 router.get('/room/:id', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, max-age=0, must-revalidate');
