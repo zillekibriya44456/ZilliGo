@@ -35,7 +35,7 @@ export default function DigitalShop() {
   if (loading) return <div className="page-wrapper" style={{display:'flex', alignItems:'center', justifyContent:'center'}}><div className="spinner" /></div>;
 
   return (
-    <div className="page-wrapper" style={{ padding: '2rem' }}>
+    <div className="page-wrapper" style={{ padding: '2rem', paddingTop: '120px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0 0.5rem 0', fontSize: '2.5rem' }}>
