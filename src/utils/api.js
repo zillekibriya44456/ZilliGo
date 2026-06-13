@@ -306,9 +306,12 @@ export const api = {
     return res.json();
   }),
 
-  rcGetRoomStatus: (roomId) => fetch(`${API_BASE}/random-chat/room/${roomId}`, {
-    headers: getHeaders()
-  }).then(res => res.json()),
+  rcGetRoomStatus: (roomId) => fetch(`${API_BASE}/random-chat/room/${roomId}?t=${Date.now()}`, {
+    headers: { ...getHeaders(), 'Cache-Control': 'no-cache' }
+  }).then(async res => {
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }),
 
   rcSendSignal: (roomId, role, type, data) => fetch(`${API_BASE}/random-chat/room/${roomId}/signal`, {
     method: 'POST',

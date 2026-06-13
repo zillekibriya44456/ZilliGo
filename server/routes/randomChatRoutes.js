@@ -38,10 +38,7 @@ router.post('/join', async (req, res) => {
     await ensureDb();
     const userId = req.body.userId || uuidv4();
     
-    // 1. Clean up stale rooms older than 5 minutes to prevent ghost matching
-    await db.query(`DELETE FROM random_chat_rooms WHERE last_active < NOW() - INTERVAL '5 minutes'`);
-    
-    // 2. Check if there is an existing waiting room from someone else
+    // Check if there is an existing waiting room from someone else
     const result = await db.query(`SELECT id FROM random_chat_rooms WHERE status = 'waiting' AND user1_id != $1 LIMIT 1`, [userId]);
     
     if (result.rows.length > 0) {

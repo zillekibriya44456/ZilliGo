@@ -83,7 +83,7 @@ export default function RandomChat() {
         const room = await api.rcGetRoomStatus(rId);
         
         // Check if partner skipped
-        if (!room) {
+        if (!room || room.error) {
            handlePartnerLeft();
            return;
         }
@@ -143,7 +143,7 @@ export default function RandomChat() {
            }
         }
       } catch (err) {
-        if (err.message && err.message.includes('404')) {
+        if (err.message && (err.message.includes('404') || err.message.includes('Room closed'))) {
            handlePartnerLeft();
         }
       }
