@@ -94,6 +94,7 @@ export default function Auth() {
     const mode = searchParams.get('mode') || searchParams.get('tab');
     if (mode === 'login' || mode === 'signin') setTab('login');
     else if (mode === 'register' || mode === 'signup') setTab('signup');
+    else if (mode === 'onboarding') setStep(2);
     
     const err = searchParams.get('error');
     if (err) setError(decodeURIComponent(err));
@@ -161,8 +162,9 @@ export default function Auth() {
       await updateProfile({ role: selectedRole });
       if (selectedRole === 'guide') {
         setStep(3); // guide verification file uploads
+      } else if (selectedRole === 'creator') {
+        navigate('/creator-dashboard');
       } else {
-        // Traveler or Creator goes straight to traveler dashboard
         navigate('/dashboard');
       }
     } catch (err) {

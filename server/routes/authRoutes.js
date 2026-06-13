@@ -38,7 +38,7 @@ async function findOrCreateOAuthUser({ email, name, avatar, provider }) {
     const existing = await db.query('SELECT * FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
       const user = toCamel(existing.rows[0]);
-      return { ...user, token: generateToken(user.id) };
+      return { ...user, token: generateToken(user.id), isNewUser: false };
     }
 
     // Create new user (no password — OAuth users use provider)
@@ -49,7 +49,7 @@ async function findOrCreateOAuthUser({ email, name, avatar, provider }) {
       [name, email, `oauth_${provider}_${Date.now()}`, avatar || null]
     );
     const user = toCamel(newUser.rows[0]);
-    return { ...user, token: generateToken(user.id) };
+    return { ...user, token: generateToken(user.id), isNewUser: true };
   } catch (err) {
     // Demo mode — return a synthetic user
     console.warn('⚠️ DB unavailable — returning demo OAuth user');
@@ -62,6 +62,7 @@ async function findOrCreateOAuthUser({ email, name, avatar, provider }) {
       avatar: avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=00d4aa&color=000`,
       verified: true,
       token: generateToken(demoId),
+      isNewUser: true,
     };
   }
 }
@@ -89,6 +90,7 @@ function redirectWithUser(req, res, user) {
       avatar: user.avatar,
       verified: user.verified,
       token: user.token,
+      isNewUser: user.isNewUser,
     }));
     return res.redirect(`${frontendUrl}/auth/callback?user=${payload}`);
   } catch (err) {

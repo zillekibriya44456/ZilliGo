@@ -44,8 +44,10 @@ export default function OAuthCallback() {
 
       // Redirect based on role
       setTimeout(() => {
-        if (user.role === 'admin') navigate('/admin');
+        if (user.isNewUser) navigate('/auth?mode=onboarding');
+        else if (user.role === 'admin') navigate('/admin');
         else if (user.role === 'guide') navigate('/guide-dashboard');
+        else if (user.role === 'creator') navigate('/creator-dashboard');
         else navigate('/dashboard');
       }, 1500);
     } catch (err) {
