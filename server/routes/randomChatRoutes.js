@@ -81,6 +81,15 @@ router.get('/time-test', async (req, res) => {
   } catch(e) { res.status(500).json({error: e.message}); }
 });
 
+router.get('/time-test2', async (req, res) => {
+  try {
+    await db.query(`INSERT INTO random_chat_rooms (id, user1_id) VALUES ('test-time-id', 'test')`);
+    const r = await db.query(`SELECT EXTRACT(EPOCH FROM CURRENT_TIMESTAMP) - EXTRACT(EPOCH FROM last_active) as diff FROM random_chat_rooms WHERE id = 'test-time-id'`);
+    await db.query(`DELETE FROM random_chat_rooms WHERE id = 'test-time-id'`);
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({error: e.message}); }
+});
+
 // GET /api/random-chat/room/:id
 router.get('/room/:id', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, max-age=0, must-revalidate');
