@@ -32,7 +32,18 @@ export default function RandomChat() {
   const [myRole, setMyRole] = useState(null); // 'initiator' or 'responder'
   const pollingInterval = useRef(null);
   
+  const appStateRef = useRef('idle');
+  const messagesRef = useRef([]);
+  
   const lastProcessedIceCount = useRef({ local: 0, remote: 0 });
+
+  useEffect(() => {
+    appStateRef.current = appState;
+  }, [appState]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   useEffect(() => {
     if (chatBottomRef.current) {
@@ -77,7 +88,7 @@ export default function RandomChat() {
            return;
         }
 
-        if (appState !== 'matched' && room.status === 'matched') {
+        if (appStateRef.current !== 'matched' && room.status === 'matched') {
           setAppState('matched');
           await initPeerConnection(role, rId);
         }
@@ -121,15 +132,12 @@ export default function RandomChat() {
            // Fetch Messages
            if (room.messages) {
               const msgs = JSON.parse(room.messages);
-              // Simple rendering logic: assume we track the last N messages
-              if (msgs.length > messages.length) {
+              if (msgs.length > messagesRef.current.length) {
                  const newMsgs = msgs.map((m, i) => ({
                     id: m.timestamp + i,
-                    sender: 'Stranger', // In a real app we'd differentiate by sender ID
+                    sender: 'Stranger', // Will be parsed below
                     text: m.text
                  }));
-                 // It's a bit naive, but we just override the messages array 
-                 // Since it's anonymous and DB resets per room
                  setMessages(newMsgs);
               }
            }
