@@ -1,11 +1,36 @@
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Globe, Mail, MapPin } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { t } from '../utils/translations';
+import { api } from '../utils/api';
 import './Footer.css';
 
 export default function Footer() {
   const { language, setLanguage, currency, setCurrency, currencies } = useSettings();
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('idle'); // idle, loading, success, error
+  const [message, setMessage] = useState('');
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+    setStatus('loading');
+    try {
+      const res = await api.subscribeNewsletter(email);
+      if (res.error || res.message?.toLowerCase().includes('already')) {
+         setStatus('error');
+         setMessage(res.error || res.message);
+      } else {
+         setStatus('success');
+         setMessage('Subscribed successfully!');
+         setEmail('');
+      }
+    } catch (err) {
+      setStatus('error');
+      setMessage('Failed to subscribe. Please try again.');
+    }
+  };
   return (
     <footer className="footer">
       <div className="footer__glow footer__glow--left" />
@@ -109,13 +134,30 @@ export default function Footer() {
               New tours, guide spotlights, and platform updates.
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <div className="input-group" style={{ maxWidth: 300 }}>
-              <Mail size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-              <input type="email" placeholder="Your email address" style={{ fontSize: '0.875rem' }} />
+          <form onSubmit={handleSubscribe} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="input-group" style={{ maxWidth: 300 }}>
+                <Mail size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                <input 
+                  type="email" 
+                  placeholder="Your email address" 
+                  style={{ fontSize: '0.875rem', border: 'none', background: 'transparent', outline: 'none', color: 'var(--text-primary)', width: '100%' }} 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={status === 'loading'}
+                  required
+                />
+              </div>
+              <button type="submit" className="btn btn-primary btn-sm" disabled={status === 'loading'}>
+                {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
+              </button>
             </div>
-            <button className="btn btn-primary btn-sm">Subscribe</button>
-          </div>
+            {message && (
+              <span style={{ fontSize: '0.75rem', color: status === 'success' ? 'var(--accent-teal)' : 'var(--text-danger)' }}>
+                {message}
+              </span>
+            )}
+          </form>
         </div>
 
         <div className="footer__bottom">

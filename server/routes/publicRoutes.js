@@ -215,4 +215,26 @@ router.get('/live/:id/questions', async (req, res) => {
   }
 });
 
+// POST /api/public/subscribe — Handle newsletter subscriptions
+router.post('/subscribe', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ message: 'Please provide a valid email address.' });
+    }
+    
+    // Check if email already exists
+    const existing = await db.query('SELECT id FROM waitlist WHERE email = $1', [email]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ message: 'You are already subscribed!' });
+    }
+    
+    await db.query('INSERT INTO waitlist (email) VALUES ($1)', [email]);
+    res.json({ success: true, message: 'Successfully subscribed to the newsletter!' });
+  } catch (err) {
+    console.error('Newsletter Subscribe Error:', err);
+    res.status(500).json({ message: 'An error occurred. Please try again later.' });
+  }
+});
+
 module.exports = router;

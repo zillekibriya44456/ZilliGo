@@ -242,6 +242,11 @@ export const api = {
 
   // Public
   getPublicHomepage: () => fetch(`${API_BASE}/public/homepage`).then(res => res.json()),
+  subscribeNewsletter: (email) => fetch(`${API_BASE}/public/subscribe`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  }).then(res => res.json()),
   getPublicLiveStream: (id) => fetch(`${API_BASE}/public/live/${id}`).then(res => res.json()),
   getLiveChat: (id) => fetch(`${API_BASE}/public/live/${id}/chat`).then(res => res.json()),
   getLiveQuestions: (id) => fetch(`${API_BASE}/public/live/${id}/questions`).then(res => res.json()),
