@@ -71,6 +71,7 @@ router.get('/debug', async (req, res) => {
 
 // GET /api/random-chat/room/:id
 router.get('/room/:id', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, max-age=0, must-revalidate');
   try {
     await ensureDb();
     const { id } = req.params;
