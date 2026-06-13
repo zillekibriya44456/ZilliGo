@@ -38,7 +38,11 @@ router.post('/join', async (req, res) => {
     await ensureDb();
     const userId = req.body.userId || uuidv4();
     
-    // Check if there is an existing waiting room from someone else
+    // 1. Clean up dead ghosts (anyone who hasn't polled in 15 seconds)
+    // Using EXTRACT(EPOCH) guarantees we don't get timezone mismatch bugs
+    await db.query(`DELETE FROM random_chat_rooms WHERE EXTRACT(EPOCH FROM CURRENT_TIMESTAMP) - EXTRACT(EPOCH FROM last_active) > 15`);
+    
+    // 2. Check if there is an existing waiting room from someone else
     const result = await db.query(`SELECT id FROM random_chat_rooms WHERE status = 'waiting' AND user1_id != $1 LIMIT 1`, [userId]);
     
     if (result.rows.length > 0) {
@@ -83,10 +87,8 @@ router.get('/room/:id', async (req, res) => {
     
     const room = result.rows[0];
     
-    // Update last active so the room doesn't expire while they are actively signaling
-    if (room.status === 'matched') {
-      await db.query(`UPDATE random_chat_rooms SET last_active = CURRENT_TIMESTAMP WHERE id = $1`, [id]);
-    }
+    // Update last active so the room doesn't expire while they are actively polling
+    await db.query(`UPDATE random_chat_rooms SET last_active = CURRENT_TIMESTAMP WHERE id = $1`, [id]);
     
     res.json(room);
   } catch (err) {

@@ -7,11 +7,15 @@ const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
   ],
 };
 
 export default function RandomChat() {
   const [appState, setAppState] = useState('idle'); // idle, loading, matching, matched
+  const [statusText, setStatusText] = useState('');
   
   const [micOn, setMicOn] = useState(true);
   const [videoOn, setVideoOn] = useState(true);
@@ -31,6 +35,7 @@ export default function RandomChat() {
   const [roomId, setRoomId] = useState(null);
   const [myRole, setMyRole] = useState(null); // 'initiator' or 'responder'
   const pollingInterval = useRef(null);
+  const connectionTimeout = useRef(null);
   
   const appStateRef = useRef('idle');
   const messagesRef = useRef([]);
@@ -51,10 +56,20 @@ export default function RandomChat() {
     }
   }, [messages, showChat]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount & page close
   useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (roomId) {
+        // Use sendBeacon to ensure the request goes out even if the tab is closing instantly
+        navigator.sendBeacon(`${api.API_BASE || '/api'}/random-chat/room/${roomId}/leave`);
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
     return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       stopPolling();
+      if (connectionTimeout.current) clearTimeout(connectionTimeout.current);
       cleanupPeerConnection();
       stopAllMedia();
       if (roomId) api.rcLeaveRoom(roomId).catch(()=>{});
@@ -90,6 +105,18 @@ export default function RandomChat() {
 
         if (appStateRef.current !== 'matched' && room.status === 'matched') {
           setAppState('matched');
+          setStatusText('Negotiating secure link...');
+          
+          // GHOST BUSTING: If connection doesn't complete in 15 seconds, assume partner ghosted.
+          if (connectionTimeout.current) clearTimeout(connectionTimeout.current);
+          connectionTimeout.current = setTimeout(() => {
+             const pc = peerConnectionRef.current;
+             if (pc && pc.iceConnectionState !== 'connected' && pc.iceConnectionState !== 'completed') {
+                setStatusText('Peer lost. Finding another...');
+                setTimeout(handleSkip, 1000);
+             }
+          }, 15000);
+          
           await initPeerConnection(role, rId);
         }
 
@@ -179,9 +206,11 @@ export default function RandomChat() {
     // Stop polling once fully connected to save resources!
     pc.oniceconnectionstatechange = () => {
       if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
-         // Only polling for messages now, or we could slow polling down to 5s
+         if (connectionTimeout.current) clearTimeout(connectionTimeout.current);
+         setStatusText('');
          console.log('WebRTC P2P connected!');
       } else if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+         setStatusText('Connection failed. Reconnecting...');
          handlePartnerLeft();
       }
     };
@@ -215,9 +244,11 @@ export default function RandomChat() {
 
   const startRandomChat = async () => {
     setAppState('loading');
+    setStatusText('Accessing Camera...');
     try {
       await initLocalStream();
       setAppState('matching');
+      setStatusText('Finding a stranger...');
       
       const myTempId = 'user_' + Math.floor(Math.random() * 1000000);
       const res = await api.rcJoinQueue(myTempId);
@@ -234,6 +265,7 @@ export default function RandomChat() {
 
   const handleSkip = async () => {
     stopPolling();
+    if (connectionTimeout.current) clearTimeout(connectionTimeout.current);
     cleanupPeerConnection();
     if (roomId) {
        await api.rcLeaveRoom(roomId).catch(()=>{});
@@ -247,12 +279,14 @@ export default function RandomChat() {
   
   const handlePartnerLeft = () => {
     stopPolling();
+    if (connectionTimeout.current) clearTimeout(connectionTimeout.current);
     cleanupPeerConnection();
     setRoomId(null);
     setMessages([]);
     
     // Auto find new partner
     setAppState('matching');
+    setStatusText('Partner left. Finding a new stranger...');
     startRandomChat().catch(() => {});
   };
 
@@ -347,7 +381,7 @@ export default function RandomChat() {
           <video ref={localVideoRef} autoPlay playsInline muted className="rc-bg-video-blur" />
           <div className="rc-matching-overlay">
             <div className="spinner rc-spinner" />
-            <h2>{appState === 'loading' ? 'Accessing Camera...' : 'Finding a stranger...'}</h2>
+            <h2>{statusText}</h2>
             <button className="btn btn-secondary" onClick={handleEndCall} style={{ marginTop: '2rem' }}>Cancel</button>
           </div>
         </div>
@@ -355,6 +389,11 @@ export default function RandomChat() {
 
       {appState === 'matched' && (
         <div className="rc-active-call">
+          {statusText && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full z-50 animate-pulse">
+              {statusText}
+            </div>
+          )}
           <div className="rc-video-grid">
             <div className="rc-video-wrapper rc-remote-video">
               <video ref={remoteVideoRef} autoPlay playsInline className="rc-video-element" />
